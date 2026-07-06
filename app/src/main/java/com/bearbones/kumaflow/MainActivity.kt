@@ -2210,17 +2210,21 @@ fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: c
     val allIcons = listOf(normalIcon, prideIcon, bearIcon, prideGlassIcon, bearGlassIcon, kumaGlassIcon, orIcon, orGlassIcon)
 
     fun applyIconChanges(targetIcon: android.content.ComponentName) {
-        for (icon in allIcons) {
-            val state = if (icon == targetIcon) {
-                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
+        // Enable the target icon FIRST to prevent the app from being killed before the new icon is registered
+        if (pm.getComponentEnabledSetting(targetIcon) != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            pm.setComponentEnabledSetting(
+                targetIcon,
+                android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                android.content.pm.PackageManager.DONT_KILL_APP
+            )
+        }
 
-            if (pm.getComponentEnabledSetting(icon) != state) {
+        // Then disable all other icons
+        for (icon in allIcons) {
+            if (icon != targetIcon && pm.getComponentEnabledSetting(icon) != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
                 pm.setComponentEnabledSetting(
                     icon,
-                    state,
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                     android.content.pm.PackageManager.DONT_KILL_APP
                 )
             }
