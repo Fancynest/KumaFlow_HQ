@@ -129,7 +129,33 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- PINTU 7: LOGO OR (Default Mati) -->
+        <activity-alias
+            android:name=".MainActivityAliasOR"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher_kumarodrigo"
+            android:roundIcon="@mipmap/ic_launcher_kumarodrigo_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
+        <!-- PINTU 8: LOGO OR GLASS (Default Mati) -->
+        <activity-alias
+            android:name=".MainActivityAliasORGlass"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher_kumarodrigo_glass"
+            android:roundIcon="@mipmap/ic_launcher_kumarodrigo_glass_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <service
             android:name=".KumaService"

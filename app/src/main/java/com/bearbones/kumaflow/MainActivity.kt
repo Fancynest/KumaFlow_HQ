@@ -2204,9 +2204,12 @@ fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: c
     val prideGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasPrideGlass")
     val bearGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasBearGlass")
     val kumaGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasKumaGlass")
+    val orIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasOR")
+    val orGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasORGlass")
 
-    fun setIcon(targetIcon: android.content.ComponentName) {
-        val allIcons = listOf(normalIcon, prideIcon, bearIcon, prideGlassIcon, bearGlassIcon, kumaGlassIcon)
+    val allIcons = listOf(normalIcon, prideIcon, bearIcon, prideGlassIcon, bearGlassIcon, kumaGlassIcon, orIcon, orGlassIcon)
+
+    fun applyIconChanges(targetIcon: android.content.ComponentName) {
         for (icon in allIcons) {
             val state = if (icon == targetIcon) {
                 android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
@@ -2225,20 +2228,44 @@ fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: c
     }
 
     if (userProfile == null || userProfile.userName.isEmpty()) {
-        setIcon(normalIcon)
+        if (pm.getComponentEnabledSetting(normalIcon) != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            applyIconChanges(normalIcon)
+        }
         return
     }
 
     val isGlass = userProfile.isLiquidGlass
     val userName = userProfile.userName
-
     val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
+    val isOR = userName.contains("#OR", ignoreCase = true)
 
-    when {
-        isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> setIcon(if (isGlass) prideGlassIcon else prideIcon)
-        isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> setIcon(if (isGlass) bearGlassIcon else bearIcon)
-        isGlass -> setIcon(kumaGlassIcon)
-        else -> setIcon(normalIcon)
+    val targetIcon = when {
+        isOR -> if (isGlass) orGlassIcon else orIcon
+        isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
+        isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon
+        isGlass -> kumaGlassIcon
+        else -> normalIcon
+    }
+
+    if (pm.getComponentEnabledSetting(targetIcon) == android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+        return
+    }
+
+    try {
+        androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onStop(owner: androidx.lifecycle.LifecycleOwner) {
+                super.onStop(owner)
+                try {
+                    applyIconChanges(targetIcon)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                owner.lifecycle.removeObserver(this)
+            }
+        })
+    } catch (e: Exception) {
+        // Fallback in case ProcessLifecycleOwner is not available
+        applyIconChanges(targetIcon)
     }
 }
 

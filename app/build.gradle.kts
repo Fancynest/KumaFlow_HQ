@@ -82,4 +82,5 @@ dependencies {
     implementation("dev.chrisbanes.haze:haze-materials:1.1.1")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.7")
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.3")
 }
