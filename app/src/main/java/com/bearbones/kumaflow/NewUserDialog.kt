@@ -43,7 +43,7 @@ fun NewUserAnnouncementDialog() {
             },
             text = {
                 Column {
-                    Text(text = "Biar KumaFlow bisa selalu ngingetin kamu nyatat pengeluaran, kamu akan melihat notifikasi \"KumaFlow Aktif\" di atas layar.")
+                    Text(text = if(AppStr.isId) "Biar KumaFlow bisa selalu ngingetin kamu nyatat pengeluaran, kamu akan melihat notifikasi \"KumaFlow Aktif\" di atas layar." else "To remind you to track expenses, you will see a \"KumaFlow Active\" notification at the top of the screen.")
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(text = "🛡️ Pelindung Sistem", fontWeight = FontWeight.Bold)
@@ -67,7 +67,7 @@ fun NewUserAnnouncementDialog() {
                         showDialog = false
                     }
                 ) {
-                    Text("Paham & Lanjutkan")
+                    Text(if(AppStr.isId) "Paham & Lanjutkan" else "Understand & Continue")
                 }
             }
         )

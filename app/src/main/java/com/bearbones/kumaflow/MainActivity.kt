@@ -14,6 +14,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
+import androidx.compose.ui.draw.alpha
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +25,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,8 +74,8 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -307,7 +309,7 @@ fun MainScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     val transactionListWithSplits by dao.getAllTransactionsWithSplits().collectAsState(initial = emptyList())
     val userProfile = userProfileState ?: UserProfile(userName = "User")
     var selectedItemIndex by remember { mutableIntStateOf(0) }
@@ -373,6 +375,24 @@ fun MainScreen(
     val totalIncome by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { it.transaction.isIncome }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
     val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
 
+    var showMilestone by remember { mutableStateOf(userProfile.currentStreak > 0 && userProfile.currentStreak % 30 == 0 && userProfile.currentStreak > userProfile.lastMilestoneNotified) }
+    
+    if (showMilestone) {
+        com.bearbones.kumaflow.ui.screens.MilestonePopUp(
+            profile = userProfile,
+            onDismiss = {
+                showMilestone = false
+                scope.launch {
+                    val updatedProfile = userProfile.copy(lastMilestoneNotified = userProfile.currentStreak)
+                    dao.saveProfile(updatedProfile)
+                }
+            },
+            onShare = {
+                com.bearbones.kumaflow.utils.ShareStreakUtils.shareStreak(context, userProfile)
+            }
+        )
+    }
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showBottomSheet by remember { mutableStateOf(false) }
     LaunchedEffect(showBottomSheet) { onOverlayStateChange(showBottomSheet) }
@@ -394,7 +414,7 @@ fun MainScreen(
     Scaffold(
                 containerColor = Color.Transparent,
         floatingActionButton = {
-            val showFab = selectedItemIndex != 2 && (selectedItemIndex != 0 || isFabVisible) && !isSelectionMode && !showBottomSheet
+            val showFab = selectedItemIndex == 0 && isFabVisible && !isSelectionMode && !showBottomSheet
             androidx.compose.animation.AnimatedVisibility(
                 visible = showFab,
                 enter = androidx.compose.animation.scaleIn(),
@@ -403,7 +423,12 @@ fun MainScreen(
                 FloatingActionButton(
                     onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); transactionToEdit = null; showBottomSheet = true },
                     containerColor = if (LocalIsLiquidGlass.current) Color.Transparent else AppPrimary(),
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
+                        pressedElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
+                        focusedElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
+                        hoveredElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp
+                    ),
                     contentColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White,
                     shape = CircleShape,
                     modifier = Modifier.size(70.dp).let { if (LocalIsLiquidGlass.current) it.clip(CircleShape).background(if (LocalIsDark.current) Color.Black.copy(alpha=0.4f) else Color.White.copy(alpha=0.4f), CircleShape).border(1.dp, Color.White.copy(0.3f), CircleShape) else it }
@@ -425,6 +450,152 @@ fun MainScreen(
             start = paddingValues.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
             end = paddingValues.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
         )) {
+            val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true)
+            if (isOREasterEgg) {
+                val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
+                val lightProgressState = infiniteTransition.animateFloat(
+                    initialValue = -0.5f,
+                    targetValue = 1.5f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(4000, easing = androidx.compose.animation.core.LinearEasing),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                    )
+                )
+
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                    val pageOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                    val screenWidth = size.width
+
+                    translate(left = -pageOffset * screenWidth) {
+                        val path = androidx.compose.ui.graphics.Path().apply {
+                            val h = size.height
+                            val w = screenWidth
+
+                            // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
+                            moveTo(0f, h * 0.2f)
+                            cubicTo(
+                                w * 0.5f, h * 0.2f,
+                                w * 0.8f, h * 0.8f,
+                                w * 2.0f, h * 0.8f // Bottom tip of the heart (Boundary of History/Report)
+                            )
+                            
+                            // Screen 2: Right lobe of heart (in Report)
+                            cubicTo(
+                                w * 2.8f, h * 0.8f,
+                                w * 2.5f, h * 0.1f,
+                                w * 2.0f, h * 0.4f // Center dip of heart
+                            )
+                            
+                            // Screen 2 to 3: Left lobe of heart (in History)
+                            cubicTo(
+                                w * 1.5f, h * 0.1f,
+                                w * 1.2f, h * 0.8f,
+                                w * 2.0f, h * 0.8f // Crosses back at the bottom tip
+                            )
+                            
+                            // Screen 3 to 4: Exit to Settings
+                            cubicTo(
+                                w * 2.5f, h * 0.8f,
+                                w * 3.5f, h * 0.2f,
+                                w * 4.0f, h * 0.6f
+                            )
+                        }
+
+                        if (screenWidth > 0f && size.height > 0f) {
+                            // Base shadow for depth
+                            drawPath(path, color = Color.Black.copy(alpha=0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 16.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                            
+                            val yarnBaseColor = Color(0xFFC2185B)
+                            val startX = screenWidth * 4f * lightProgressState.value
+                            val lightBrush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                colors = listOf(yarnBaseColor, Color(0xFFFF80AB), Color.White, Color(0xFFFF80AB), yarnBaseColor),
+                                startX = startX - screenWidth * 0.5f,
+                                endX = startX + screenWidth * 0.5f
+                            )
+                            
+                            drawPath(path, brush = lightBrush, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                        }
+                    }
+                }
+                
+
+                // TRACKLIST BACKGROUND
+                val tracklist = listOf(
+                    "Drop dead", "Stupid song", "Honeybee", "Maggots for brains", "U + Me = <3",
+                    "My Way", "Purple", "The Cure", "Begged", "What's Wrong with Me (feat. Robert Smith)",
+                    "Less", "Expectations", "Cigarette Smoke"
+                )
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                val conf = androidx.compose.ui.platform.LocalConfiguration.current
+                val screenWidthPx = remember(density, conf) { with(density) { conf.screenWidthDp.dp.toPx() } }
+                val screenHeightPx = remember(density, conf) { with(density) { conf.screenHeightDp.dp.toPx() } }
+                
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(0.6f)
+                ) {
+                    val pageOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                    val random = remember { kotlin.random.Random(42) }
+                    
+                    val customFontFamily = remember { 
+                        androidx.compose.ui.text.font.FontFamily(
+                            androidx.compose.ui.text.font.Font(com.bearbones.kumaflow.R.font.olivia_regular)
+                        )
+                    }
+
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { translationX = -pageOffset * screenWidthPx }
+                    ) {
+                        val positions = listOf(
+                            // Page 0
+                            Pair(0.05f, 0.15f), Pair(0.55f, 0.25f), Pair(0.15f, 0.45f),
+                            Pair(0.65f, 0.60f), Pair(0.10f, 0.75f), Pair(0.50f, 0.90f),
+                            // Page 1
+                            Pair(1.05f, 0.15f), Pair(1.55f, 0.25f), Pair(1.15f, 0.45f),
+                            Pair(1.65f, 0.60f), Pair(1.10f, 0.75f), Pair(1.50f, 0.90f),
+                            // Page 2
+                            Pair(2.05f, 0.15f), Pair(2.55f, 0.25f), Pair(2.15f, 0.45f),
+                            Pair(2.65f, 0.60f), Pair(2.10f, 0.75f), Pair(2.50f, 0.90f),
+                            // Page 3
+                            Pair(3.05f, 0.15f), Pair(3.55f, 0.25f), Pair(3.15f, 0.45f),
+                            Pair(3.65f, 0.60f), Pair(3.10f, 0.75f), Pair(3.50f, 0.90f)
+                        )
+                        val displaySongs = remember {
+                            val list = mutableListOf<String>()
+                            var i = 0
+                            while (list.size < positions.size) {
+                                list.add(tracklist[i % tracklist.size])
+                                i++
+                            }
+                            list
+                        }
+                        
+                        displaySongs.forEachIndexed { index, song ->
+                            val xPos = positions[index].first * screenWidthPx
+                            val yPos = positions[index].second * screenHeightPx
+                            
+                            val rot = remember {
+                                random.nextFloat() * 30f - 15f
+                            }
+                            
+                            Text(
+                                text = song,
+                                fontFamily = customFontFamily,
+                                fontSize = 28.sp,
+                                color = Color(0xFFC2185B),
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        translationX = xPos
+                                        translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
+                                        rotationZ = rot
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 when (page) {
                     0 -> HomeScreen(
@@ -439,7 +610,7 @@ fun MainScreen(
                         paddingValues = paddingValues,
                         onMonthChange = { m: Int, y: Int -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); selectedMonth = m; selectedYear = y },
                         onEdit = { t: TransactionWithSplits -> transactionToEdit = t; showBottomSheet = true },
-                        onDelete = { t: TransactionWithSplits -> scope.launch { dao.deleteTransaction(t.transaction); updateKumaWidget(context) } },
+                        onDelete = { t: TransactionWithSplits -> scope.launch { try { dao.deleteTransaction(t.transaction); updateKumaWidget(context) } catch (e: Exception) { Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show() } } },
 
                         onOpenWrapped = onOpenWrapped,
                         listState = homeListState,
@@ -452,9 +623,13 @@ fun MainScreen(
                         clearSelection = { selectedTxs = emptySet() },
                         onBulkDelete = { listToDelete: List<TransactionWithSplits> ->
                             scope.launch {
-                                listToDelete.forEach { dao.deleteTransaction(it.transaction) }
-                                updateKumaWidget(context)
-                                Toast.makeText(context, AppStr.txDeleted(listToDelete.size), Toast.LENGTH_SHORT).show()
+                                try {
+                                    listToDelete.forEach { dao.deleteTransaction(it.transaction) }
+                                    updateKumaWidget(context)
+                                    Toast.makeText(context, AppStr.txDeleted(listToDelete.size), Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Bulk Delete Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         },
                         onUpdateProfile = { updatedProfile -> scope.launch { dao.saveProfile(updatedProfile); forceUpdateTrigger++; updateKumaWidget(context) } },
@@ -468,15 +643,35 @@ fun MainScreen(
                                 updateKumaWidget(context)
                                 Toast.makeText(context, AppStr.txChangedTo(listToUpdate.size, newCat), Toast.LENGTH_SHORT).show()
                             }
+                        },
+                        onAddTransaction = { isIncome ->
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            transactionToEdit = null
+                            // Pass the intention to the bottom sheet if we ever support pre-selecting
+                            showBottomSheet = true
                         }
                     )
-                    1 -> ReportScreen(
+                    1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
+                        profile = userProfile,
+                        allTransactions = transactionListWithSplits,
+                        paddingValues = paddingValues,
+                        onEdit = { t: TransactionWithSplits -> transactionToEdit = t; showBottomSheet = true },
+                        onDelete = { t: TransactionWithSplits -> scope.launch { try { dao.deleteTransaction(t.transaction); updateKumaWidget(context) } catch (e: Exception) { Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show() } } },
+                        onToggleSelect = { id: Int ->
+                            val newSet = selectedTxs.toMutableSet()
+                            if (newSet.contains(id)) newSet.remove(id) else newSet.add(id)
+                            selectedTxs = newSet
+                        },
+                        selectedTxs = selectedTxs,
+                        isSelectionMode = isSelectionMode
+                    )
+                    2 -> ReportScreen(
                         profile = userProfile, monthlyTransactions = monthlyTransactionsWithSplits.map { it.transaction }, allTransactions = transactionListWithSplits.map { it.transaction }, income = totalIncome, expenses = totalExpenses, balance = totalBalance, selectedMonth = selectedMonth, selectedYear = selectedYear,
                         paddingValues = paddingValues,
                         onMonthChange = { m, y -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); selectedMonth = m; selectedYear = y },
                         onOpenWrapped = onOpenWrapped
                     )
-                    2 -> SettingsScreen(
+                    3 -> SettingsScreen(
                         currentProfile = userProfile, monthlyTransactionsWithSplits = monthlyTransactionsWithSplits, allTransactionsWithSplits = transactionListWithSplits, dao = dao, selectedMonth = selectedMonth, selectedYear = selectedYear,
                         paddingValues = paddingValues,
                         onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) }
@@ -532,11 +727,16 @@ fun MainScreen(
                         profile = userProfile, transactionToEdit = transactionToEdit, onDismiss = { showBottomSheet = false },
                         onSave = { txList ->
                             scope.launch {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                txList.forEach { (newTrans, splits) -> if (newTrans.id == 0) dao.insertFullTransaction(newTrans, splits) else dao.updateFullTransaction(newTrans, splits) }
-                                if ((totalTxCount + txList.size) % 10 == 0) showBackupReminder = true
-                                forceUpdateTrigger++; updateKumaWidget(context)
-                                Toast.makeText(context, AppStr.txSaved, Toast.LENGTH_SHORT).show()
+                                try {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    txList.forEach { (newTrans, splits) -> if (newTrans.id == 0) dao.insertFullTransaction(newTrans, splits) else dao.updateFullTransaction(newTrans, splits) }
+                                    com.bearbones.kumaflow.utils.StreakManager.checkAndUpdateStreak(dao)
+                                    if ((totalTxCount + txList.size) % 10 == 0) showBackupReminder = true
+                                    forceUpdateTrigger++; updateKumaWidget(context)
+                                    Toast.makeText(context, AppStr.txSaved, Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Save Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         },
                         onUpdateProfile = { updatedProfile -> scope.launch { dao.saveProfile(updatedProfile); forceUpdateTrigger++; updateKumaWidget(context) } }
@@ -583,7 +783,7 @@ fun TransactionBottomSheet(
 
     val calendar = remember { java.util.Calendar.getInstance() }
     var txDateStr by remember(baseTx) {
-        mutableStateOf(baseTx?.date ?: java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern(if(AppStr.isId) "dd MMM yyyy" else "MMM dd, yyyy", java.util.Locale.getDefault())))
+        mutableStateOf(baseTx?.date ?: java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID"))))
     }
     var txTimestamp by remember(baseTx) {
         mutableStateOf(baseTx?.timestamp ?: java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME))
@@ -595,8 +795,8 @@ fun TransactionBottomSheet(
             { _, year, month, dayOfMonth ->
                 val cal = java.util.Calendar.getInstance()
                 cal.set(year, month, dayOfMonth)
-                val locale = java.util.Locale.getDefault()
-                txDateStr = java.text.SimpleDateFormat(if(AppStr.isId) "dd MMM yyyy" else "MMM dd, yyyy", locale).format(cal.time)
+                val locale = java.util.Locale.forLanguageTag("id-ID")
+                txDateStr = java.time.LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0).format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, locale))
 
                 val now = java.time.LocalDateTime.now()
                 txTimestamp = java.time.LocalDateTime.of(year, month + 1, dayOfMonth, now.hour, now.minute).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -1048,7 +1248,7 @@ fun TransactionBottomSheet(
                     onSave(listOf(Pair(txOut, emptyList()), Pair(txIn, emptyList())))
                 } else {
                     val parentWalletStr = if(evaluatedSplits.size > 1) "${AppStr.multiWallet} (${evaluatedSplits.size})" else evaluatedSplits[0].wallet
-                    val newTx = KumaTransaction(id = baseTx?.id ?: 0, name = name, date = dateStr, amount = totalAmtFinal.toString(), isIncome = (txMode == 1), category = selectedCategory, wallet = parentWalletStr, timestamp = timeStr, message = message)
+                    val newTx = KumaTransaction(id = baseTx?.id ?: 0, name = name, date = dateStr, amount = totalAmtFinal.toString(), isIncome = (txMode == 1), category = selectedCategory, wallet = parentWalletStr, timestamp = timeStr, message = message, isEdited = (baseTx != null))
                     val dbSplits = evaluatedSplits.filter { it.amount.isNotBlank() && (it.amount.toLongOrNull() ?: 0L) > 0 }.map { TransactionSplit(transactionId = 0, splitWallet = it.wallet, splitAmount = it.amount.toLongOrNull() ?: 0L) }
 
                     onSave(listOf(Pair(newTx, dbSplits)))
@@ -1304,22 +1504,32 @@ fun drawHeaders(
     profile: UserProfile,
     titlePaint: Paint,
     headerPaint: Paint,
-    periodStr: String
+    periodStr: String,
+    logoBitmap: android.graphics.Bitmap?
 ) {
-    canvas.drawText("${AppStr.repPdf} ($pageNum)", 40f, 50f, titlePaint)
-    canvas.drawText("${AppStr.cur}: ${profile.currency} | Periode: $periodStr", 40f, 75f, Paint().apply { textSize = 12f })
-    canvas.drawLine(40f, 90f, 550f, 90f, paint)
-    canvas.drawText(AppStr.date, 40f, 110f, headerPaint)
-    canvas.drawText(AppStr.cat, 120f, 110f, headerPaint)
-    canvas.drawText("Dompet", 200f, 110f, headerPaint)
-    canvas.drawText(AppStr.nme, 280f, 110f, headerPaint)
-    canvas.drawText(AppStr.amt, 480f, 110f, headerPaint)
-    canvas.drawLine(40f, 120f, 550f, 120f, paint)
+    if (logoBitmap != null) {
+        val destRect = android.graphics.RectF(40f, 40f, 90f, 90f)
+        canvas.drawBitmap(logoBitmap, null, destRect, paint)
+        canvas.drawText("${AppStr.repPdf} ($pageNum)", 100f, 50f, titlePaint)
+        canvas.drawText("${AppStr.cur}: ${profile.currency} | Periode: $periodStr", 100f, 75f, Paint().apply { textSize = 12f })
+    } else {
+        canvas.drawText("${AppStr.repPdf} ($pageNum)", 40f, 50f, titlePaint)
+        canvas.drawText("${AppStr.cur}: ${profile.currency} | Periode: $periodStr", 40f, 75f, Paint().apply { textSize = 12f })
+    }
+    
+    canvas.drawLine(40f, 95f, 550f, 95f, paint)
+    canvas.drawText(AppStr.date, 40f, 115f, headerPaint)
+    canvas.drawText(AppStr.cat, 120f, 115f, headerPaint)
+    canvas.drawText(AppStr.walletShort, 200f, 115f, headerPaint)
+    canvas.drawText(AppStr.nme, 280f, 115f, headerPaint)
+    canvas.drawText(AppStr.amt, 480f, 115f, headerPaint)
+    canvas.drawLine(40f, 125f, 550f, 125f, paint)
 }
 
 fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProfile, month: Int, year: Int) {
+    val sortedData = data.sortedBy { it.id } // Sort oldest to newest
     val monthNames = if (AppStr.isId) listOf("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember") else listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-    val periodStr = "${monthNames[month - 1]} $year"
+    val periodStr = if (month in 1..12) "${monthNames[month - 1]} $year" else if (AppStr.isId) "Kustom/Filter" else "Custom/Filtered"
     val pdfDocument = PdfDocument()
     var pageNum = 1
     var page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
@@ -1329,19 +1539,35 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
     val headerPaint = Paint().apply { isFakeBoldText = true; textSize = 12f; color = android.graphics.Color.DKGRAY }
     val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; else -> "Rp" }
 
-    drawHeaders(page.canvas, paint, pageNum, profile, titlePaint, headerPaint, periodStr)
-    var yPos = 145f
+    var logoBitmap: android.graphics.Bitmap? = null
+    try {
+        val drawable = androidx.core.content.ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+        if (drawable != null) {
+            logoBitmap = android.graphics.Bitmap.createBitmap(drawable.intrinsicWidth.coerceAtLeast(1), drawable.intrinsicHeight.coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
+            val canvasBitmap = android.graphics.Canvas(logoBitmap)
+            drawable.setBounds(0, 0, canvasBitmap.width, canvasBitmap.height)
+            drawable.draw(canvasBitmap)
+        }
+    } catch (e: Exception) {}
 
-    data.forEach { item ->
+    drawHeaders(page.canvas, paint, pageNum, profile, titlePaint, headerPaint, periodStr, logoBitmap)
+    var yPos = 150f
+    
+    val formatter = java.text.NumberFormat.getInstance(java.util.Locale("id", "ID"))
+
+    sortedData.forEach { item ->
         if (yPos > 800f) {
             pdfDocument.finishPage(page)
             pageNum++
             page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
-            drawHeaders(page.canvas, paint, pageNum, profile, titlePaint, headerPaint, periodStr)
-            yPos = 145f
+            drawHeaders(page.canvas, paint, pageNum, profile, titlePaint, headerPaint, periodStr, logoBitmap)
+            yPos = 150f
         }
         val amountPrefix = if (item.isIncome) "+" else "-"
         val amountColor = if (item.isIncome) android.graphics.Color.parseColor("#1B5E20") else android.graphics.Color.parseColor("#B71C1C")
+        
+        val amtVal = item.amount.toLongOrNull() ?: 0L
+        val formattedAmt = formatter.format(amtVal)
 
         paint.color = android.graphics.Color.BLACK
         page.canvas.drawText(item.date.take(12), 40f, yPos, paint)
@@ -1350,11 +1576,11 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
         page.canvas.drawText(item.name.take(25), 280f, yPos, paint)
 
         paint.color = amountColor
-        page.canvas.drawText("$amountPrefix $curSym ${item.amount}", 480f, yPos, paint)
+        page.canvas.drawText("$amountPrefix $curSym $formattedAmt", 480f, yPos, paint)
         yPos += 25f
     }
 
-    if (yPos > 750f) {
+    if (yPos > 720f) {
         pdfDocument.finishPage(page)
         pageNum++
         page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
@@ -1364,14 +1590,25 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
     paint.color = android.graphics.Color.BLACK
     page.canvas.drawLine(40f, yPos, 550f, yPos, paint)
     yPos += 20f
-    val inc = data.filter { it.isIncome }.sumOf { it.amount.toLongOrNull() ?: 0L }
-    val exp = data.filter { !it.isIncome }.sumOf { it.amount.toLongOrNull() ?: 0L }
-    page.canvas.drawText("Pemasukan: $curSym $inc", 40f, yPos, titlePaint.apply { textSize = 12f; color = android.graphics.Color.parseColor("#1B5E20") })
+    val inc = sortedData.filter { it.isIncome }.sumOf { it.amount.toLongOrNull() ?: 0L }
+    val exp = sortedData.filter { !it.isIncome }.sumOf { it.amount.toLongOrNull() ?: 0L }
+    page.canvas.drawText("${AppStr.inc}: $curSym ${formatter.format(inc)}", 40f, yPos, titlePaint.apply { textSize = 12f; color = android.graphics.Color.parseColor("#1B5E20") })
     yPos += 20f
-    page.canvas.drawText("Pengeluaran: $curSym $exp", 40f, yPos, titlePaint.apply { textSize = 12f; color = android.graphics.Color.parseColor("#B71C1C") })
+    page.canvas.drawText("${AppStr.exp}: $curSym ${formatter.format(exp)}", 40f, yPos, titlePaint.apply { textSize = 12f; color = android.graphics.Color.parseColor("#B71C1C") })
+    
+    yPos += 30f
+    val sdf = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID"))
+    val printDateStr = if (AppStr.isId) "Dicetak pada: ${sdf.format(java.util.Date())}" else "Printed on: ${sdf.format(java.util.Date())}"
+    val footerTextPaint = Paint().apply { textSize = 10f; color = android.graphics.Color.WHITE; isFakeBoldText = true }
+    val textWidth = footerTextPaint.measureText(printDateStr)
+    val bgRect = android.graphics.RectF(40f, yPos - 12f, 40f + textWidth + 20f, yPos + 6f)
+    val bgPaint = Paint().apply { color = android.graphics.Color.parseColor("#1B5E20") }
+    page.canvas.drawRoundRect(bgRect, 10f, 10f, bgPaint)
+    page.canvas.drawText(printDateStr, 50f, yPos, footerTextPaint)
 
     pdfDocument.finishPage(page)
-    val file = File(context.cacheDir, "KumaFlow_Report_${month}_${year}.pdf")
+    val fileSuffix = if (month in 1..12) "${month}_${year}" else "Filtered"
+    val file = File(context.cacheDir, "KumaFlow_Report_$fileSuffix.pdf")
     try {
         pdfDocument.writeTo(FileOutputStream(file))
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
@@ -1382,17 +1619,18 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
         }
         context.startActivity(Intent.createChooser(intent, AppStr.sharePdf))
     } catch (_: Exception) {
-        Toast.makeText(context, AppStr.failPdf, Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(context, AppStr.failPdf, android.widget.Toast.LENGTH_SHORT).show()
     } finally {
         pdfDocument.close()
     }
 }
 
 fun generateCSV(context: Context, data: List<KumaTransaction>, profile: UserProfile, month: Int, year: Int) {
-    val file = File(context.cacheDir, "KumaFlow_Report_${month}_${year}.csv")
+    val fileSuffix = if (month in 1..12) "${month}_${year}" else "Filtered"
+    val file = File(context.cacheDir, "KumaFlow_Report_$fileSuffix.csv")
     try {
         file.bufferedWriter().use { out ->
-            out.write("${AppStr.date},${AppStr.cat},Wallet,${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
+            out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
             data.forEach { t ->
                 val type = if (t.isIncome) AppStr.inc else AppStr.exp
                 out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
@@ -1414,7 +1652,7 @@ fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserPr
     val file = File(context.cacheDir, "KumaFlow_Drive_${month}_${year}.csv")
     try {
         file.bufferedWriter().use { out ->
-            out.write("${AppStr.date},${AppStr.cat},Wallet,${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
+            out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
             data.forEach { t ->
                 val type = if (t.isIncome) AppStr.inc else AppStr.exp
                 out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
@@ -1441,7 +1679,7 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
     }
     try {
         val root = JSONObject()
-        root.put("backupVersion", 5)
+        root.put("backupVersion", 6)
 
         val pJson = JSONObject().apply {
             put("userName", profile.userName)
@@ -1460,6 +1698,12 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
             put("categoryTargets", profile.categoryTargets)
             put("isAmoledMode", profile.isAmoledMode)
             put("categoryIcons", profile.categoryIcons)
+            put("isLiquidGlass", profile.isLiquidGlass)
+            put("isPremiumGlassBlur", profile.isPremiumGlassBlur)
+            put("currentStreak", profile.currentStreak)
+            put("lastActiveDate", profile.lastActiveDate)
+            put("freezeCount", profile.freezeCount)
+            put("lastMilestoneNotified", profile.lastMilestoneNotified)
         }
         root.put("profile", pJson)
 
@@ -1474,6 +1718,7 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
                 put("wallet", obj.transaction.wallet)
                 put("timestamp", obj.transaction.timestamp)
                 put("message", obj.transaction.message)
+                put("isEdited", obj.transaction.isEdited)
             }
             if (obj.splits.isNotEmpty()) {
                 val splitArr = JSONArray()
@@ -1585,6 +1830,7 @@ fun CustomBottomNav(
 ) {
     val items = listOf(
         Pair(Icons.Rounded.Home, AppStr.home),
+        Pair(Icons.Rounded.History, AppStr.hist),
         Pair(Icons.Rounded.Equalizer, AppStr.rep),
         Pair(Icons.Rounded.Settings, AppStr.set)
     )
@@ -1599,8 +1845,8 @@ fun CustomBottomNav(
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    val segmentWidth = size.width / 3f
-                    val targetIndex = (change.position.x / segmentWidth).toInt().coerceIn(0, 2)
+                    val segmentWidth = size.width / 4f
+                    val targetIndex = (change.position.x / segmentWidth).toInt().coerceIn(0, 3)
                     if (targetIndex != pagerState.currentPage) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(targetIndex)
@@ -1609,8 +1855,8 @@ fun CustomBottomNav(
             }
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { offset ->
-                    val segmentWidth = size.width / 3f
-                    val targetIndex = (offset.x / segmentWidth).toInt().coerceIn(0, 2)
+                    val segmentWidth = size.width / 4f
+                    val targetIndex = (offset.x / segmentWidth).toInt().coerceIn(0, 3)
                     if (targetIndex != pagerState.currentPage) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(targetIndex)
@@ -1618,8 +1864,8 @@ fun CustomBottomNav(
                 })
             }
     ) {
-        val segmentWidth = maxWidth / 3
-        val exactPosition = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 2f)
+        val segmentWidth = maxWidth / 4
+        val exactPosition = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 3f)
         val indicatorOffset = segmentWidth * exactPosition
 
         // Sliding Pill Frame
@@ -1731,8 +1977,6 @@ fun TransactionItem(
     val trans = obj.transaction
     val haptic = LocalHapticFeedback.current
 
-    val blurRadius by androidx.compose.animation.core.animateDpAsState(targetValue = if (isPrivacyMode) 12.dp else 0.dp, label = "blur_tx_anim")
-
     val curSym = remember(profile.currency) {
         when(profile.currency) {
             "USD", "AUD", "CAD", "SGD" -> "$"
@@ -1783,7 +2027,7 @@ fun TransactionItem(
     }
 
     val dismissState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { it * 0.5f },
+        positionalThreshold = { it * 0.8f },
         confirmValueChange = { value ->
             if (isSelectionMode) return@rememberSwipeToDismissBoxState false
             when (value) {
@@ -1899,7 +2143,13 @@ fun TransactionItem(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(trans.name, color = AppText(), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(trans.name, color = AppText(), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, modifier = Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (trans.isEdited) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(if (AppStr.isId) "(Diedit)" else "(Edited)", color = AppText().copy(alpha = 0.4f), fontSize = 10.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                        }
+                    }
 
                     if (trans.message.isNotEmpty()) {
                         Text(trans.message, color = AppText().copy(alpha = 0.7f), fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp, bottom = 2.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1921,7 +2171,7 @@ fun TransactionItem(
                     color = AppText(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.widthIn(max = 120.dp).padding(start = 8.dp).blur(blurRadius),
+                    modifier = Modifier.widthIn(max = 120.dp).padding(start = 8.dp).alpha(if (isPrivacyMode) 0f else 1f),
                     minimumFallbackSize = 10.sp
                 )
             }
@@ -1930,12 +2180,18 @@ fun TransactionItem(
 }
 
 fun updateKumaWidget(context: Context) {
-    try {
-        val updateIntent = Intent(context, Class.forName("com.bearbones.kumaflow.KumaWidgetProvider")).apply {
-            action = "com.bearbones.kumaflow.UPDATE_WIDGET"
-        }
-        context.sendBroadcast(updateIntent)
-    } catch (_: Exception) {}
+    val updateIntent = Intent(context, com.bearbones.kumaflow.KumaWidgetProvider::class.java).apply {
+        action = "com.bearbones.kumaflow.UPDATE_WIDGET"
+    }
+    context.sendBroadcast(updateIntent)
+
+    val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
+    val streakWidgetIds = appWidgetManager.getAppWidgetIds(android.content.ComponentName(context, com.bearbones.kumaflow.KumaStreakWidgetProvider::class.java))
+    val streakUpdateIntent = Intent(context, com.bearbones.kumaflow.KumaStreakWidgetProvider::class.java).apply {
+        action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, streakWidgetIds)
+    }
+    context.sendBroadcast(streakUpdateIntent)
 }
 
 fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: com.bearbones.kumaflow.UserProfile?) {
@@ -1976,9 +2232,11 @@ fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: c
     val isGlass = userProfile.isLiquidGlass
     val userName = userProfile.userName
 
+    val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
+
     when {
-        userName.contains("🌈") || userName.contains("#pride", ignoreCase = true) -> setIcon(if (isGlass) prideGlassIcon else prideIcon)
-        userName.contains("🐻") || userName.contains("#bear", ignoreCase = true) -> setIcon(if (isGlass) bearGlassIcon else bearIcon)
+        isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> setIcon(if (isGlass) prideGlassIcon else prideIcon)
+        isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> setIcon(if (isGlass) bearGlassIcon else bearIcon)
         isGlass -> setIcon(kumaGlassIcon)
         else -> setIcon(normalIcon)
     }

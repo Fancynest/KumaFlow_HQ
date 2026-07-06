@@ -3,122 +3,75 @@
 
 package com.bearbones.kumaflow
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.app.TimePickerDialog
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import android.widget.TimePicker
 import android.widget.Toast
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.bearbones.kumaflow.glassCard
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectTapGestures
-import org.burnoutcrew.reorderable.*
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.graphicsLayer
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import com.airbnb.lottie.LottieProperty
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.fragment.app.FragmentActivity
-import androidx.room.*
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.zIndex
+import org.json.JSONObject
+import java.text.NumberFormat
+import kotlin.math.abs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
-import java.text.NumberFormat
-import java.time.LocalDateTime
+import com.airbnb.lottie.compose.*
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.abs
-import androidx.compose.ui.draw.blur
-import androidx.compose.animation.core.animateDpAsState
+import com.bearbones.kumaflow.ui.screens.StreakDetailsSheet
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.draw.shadow
+import org.burnoutcrew.reorderable.*
 
 // --- DATA CLASSES & OBJECTS ---
 @Composable
@@ -142,7 +95,8 @@ fun HomeScreen(
     clearSelection: () -> Unit,
     onBulkDelete: (List<TransactionWithSplits>) -> Unit,
     onBulkUpdateCategory: (List<TransactionWithSplits>, String) -> Unit,
-    onUpdateProfile: (UserProfile) -> Unit
+    onUpdateProfile: (UserProfile) -> Unit,
+    onAddTransaction: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val locale = java.util.Locale.forLanguageTag("id-ID")
@@ -160,9 +114,16 @@ fun HomeScreen(
         }
     }
 
+    val todayFormatted = remember(profile.dateFormat, locale) {
+        java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, locale))
+    }
+
     var searchQuery by remember { mutableStateOf("") }
     val filteredTx = transactionsWithSplits.filter {
-        it.transaction.name.contains(searchQuery, ignoreCase = true) || it.transaction.category.contains(searchQuery, ignoreCase = true) || it.transaction.message.contains(searchQuery, ignoreCase = true)
+        it.transaction.date == todayFormatted && 
+        (it.transaction.name.contains(searchQuery, ignoreCase = true) || 
+         it.transaction.category.contains(searchQuery, ignoreCase = true) || 
+         it.transaction.message.contains(searchQuery, ignoreCase = true))
     }
 
     val groupedTx = remember(filteredTx) { filteredTx.groupBy { it.transaction.date } }
@@ -200,7 +161,7 @@ fun HomeScreen(
                                         Text("KumaFlow Wrapped ✨", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         val monthName = cal.getDisplayName(java.util.Calendar.MONTH, java.util.Calendar.LONG, locale) ?: "Bulan Lalu"
-                                        Text("Rapor keuanganmu di bulan $monthName udah siap! Yuk intip pengeluaranmu.", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp, lineHeight = 16.sp)
+                                        Text(if (AppStr.isId) "Rapor keuanganmu di bulan $monthName udah siap! Yuk intip pengeluaranmu." else "Your financial report for $monthName is ready! Let's take a look at your expenses.", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp, lineHeight = 16.sp)
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Icon(Icons.Default.ArrowForwardIos, contentDescription = "Buka Wrapped", tint = Color.White, modifier = Modifier.size(20.dp))
@@ -209,59 +170,192 @@ fun HomeScreen(
                         }
                     }
 
-                    val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).trim()
-                    Text(if (AppStr.isId) "Halo, $displayName!" else "Hello, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
+                    val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim()
+                    val greeting = rememberSaveable {
+                        val calNow = java.util.Calendar.getInstance()
+                        val hour = calNow.get(java.util.Calendar.HOUR_OF_DAY)
+                        val dayOfYear = calNow.get(java.util.Calendar.DAY_OF_YEAR)
+                        
+                        val periodName = when (hour) {
+                            in 5..11 -> "Morning"
+                            in 12..17 -> "Afternoon"
+                            else -> "Night"
+                        }
+                        val periodKey = "$dayOfYear-$periodName"
+                        val lastGreetingPeriod = sharedPrefs.getString("last_greeting_period", "")
+                        
+                        val isFirstTimeInPeriod = (lastGreetingPeriod != periodKey)
+                        if (isFirstTimeInPeriod) {
+                            sharedPrefs.edit().putString("last_greeting_period", periodKey).apply()
+                        }
+                        
+                        val idList = listOf("Halo", "Hai", "Semangat terus", "Apa kabar", "Selamat datang kembali", "Yuk cek keuanganmu")
+                        val enList = listOf("Hello", "Hi", "Keep it up", "How are you", "Welcome back", "Let's track your money")
+                        
+                        if (isFirstTimeInPeriod) {
+                            when (periodName) {
+                                "Morning" -> if (AppStr.isId) "Selamat pagi" else "Good morning"
+                                "Afternoon" -> if (AppStr.isId) "Selamat siang" else "Good afternoon"
+                                else -> if (AppStr.isId) "Selamat malam" else "Good evening"
+                            }
+                        } else {
+                            val idx = (0 until idList.size).random()
+                            if (AppStr.isId) idList[idx] else enList[idx]
+                        }
+                    }
+                    var showStreakSheet by remember { mutableStateOf(false) }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("$greeting, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), modifier = Modifier.weight(1f))
+                        
+                        // Lottie Fire Streak
+                        val isStreakActiveToday = remember(profile.lastActiveDate) {
+                            profile.lastActiveDate == LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        }
+                        
+                        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.fire))
+                        val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever, isPlaying = isStreakActiveToday, speed = 0.5f)
+                        val dynamicProperties = rememberLottieDynamicProperties(
+                            rememberLottieDynamicProperty(
+                                property = LottieProperty.COLOR_FILTER,
+                                value = if (isStreakActiveToday) null else ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }),
+                                keyPath = arrayOf("**")
+                            )
+                        )
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(AppSurfaceVariant())
+                                .clickable { showStreakSheet = true }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("${profile.currentStreak}", fontWeight = FontWeight.Bold, color = AppText())
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Box(modifier = Modifier.size(24.dp)) {
+                                LottieAnimation(composition = composition, progress = { if (isStreakActiveToday) progress else 0.5f }, modifier = Modifier.fillMaxSize(), dynamicProperties = dynamicProperties)
+                            }
+                        }
+                    }
+                    
+                    if (showStreakSheet) {
+                        val activeDates = remember(profile.lastActiveDate, profile.currentStreak) {
+                            val dates = mutableListOf<LocalDate>()
+                            if (profile.lastActiveDate.isNotEmpty()) {
+                                try {
+                                    val lastDate = LocalDate.parse(profile.lastActiveDate, DateTimeFormatter.ISO_LOCAL_DATE)
+                                    for (i in 0 until profile.currentStreak) {
+                                        dates.add(lastDate.minusDays(i.toLong()))
+                                    }
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+                            }
+                            dates
+                        }
+                        
+                        ModalBottomSheet(
+                            onDismissRequest = { showStreakSheet = false },
+                            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            containerColor = AppSurface(),
+                            scrimColor = Color.Black.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                        ) {
+                            StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
+                        }
+                    }
+                    
                     Spacer(modifier = Modifier.height(16.dp))
                     MonthYearSelector(selectedMonth, selectedYear, onMonthChange)
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    val isPrideThemeActive = profile.themeMode == 3 || profile.themeMode == 4
+                    val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
+                    val isPrideThemeActive = isJune && (profile.themeMode == 3 || profile.themeMode == 4)
                     val prideGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
-                    val defaultSurfaceColor = AppSurface()
+                    val defaultSurfaceColor = AppSurfaceVariant()
 
-                    val boxModifier = if (isPrideThemeActive) {
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 250.dp)
-                            .border(1.dp, AppText().copy(alpha = 0.15f), RoundedCornerShape(32.dp))
-                            .clip(RoundedCornerShape(32.dp))
-                            .background(prideGradient)
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 250.dp)
-                            .glassCard(32.dp, defaultSurfaceColor, useHaze = true)
+                    // --- NEW DYNAMIC HEADER & FLOATING BALANCE ---
+                    val animatedBal by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(AppStr.curBal, color = AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Toggle Privacy",
+                                    tint = AppText().copy(alpha = 0.8f),
+                                    modifier = Modifier.clip(CircleShape).clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        isPrivacyMode = !isPrivacyMode
+                                    }.padding(4.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val balPref = if (balance < 0) "- " else ""
+                            AutoSizeText(
+                                text = "$balPref$curSym ${NumberFormat.getInstance(locale).format(animatedBal.toLong())}", 
+                                modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), 
+                                fontSize = 42.sp, 
+                                fontWeight = FontWeight.Black, 
+                                color = AppText(), 
+                                minimumFallbackSize = 24.sp
+                            )
+                        }
                     }
 
-                    Box(modifier = boxModifier) {
-                        Column(modifier = Modifier.padding(vertical = 32.dp).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-                            Column(modifier = Modifier.padding(horizontal = 32.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(AppStr.curBal, color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Icon(
-                                        imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = "Toggle Privacy",
-                                        tint = if (isPrideThemeActive) Color.White else AppText(),
-                                        modifier = Modifier.clip(CircleShape).clickable {
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            isPrivacyMode = !isPrivacyMode
-                                        }.padding(4.dp)
-                                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- NEW FINANCIAL HUB CARD ---
+                    Box(
+                        modifier = if (isPrideThemeActive) {
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(prideGradient)
+                        } else {
+                            Modifier.fillMaxWidth().glassCard(32.dp, defaultSurfaceColor, useHaze = true)
+                        }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)) {
+                            // Income & Expense Summary
+                            val animatedInc by androidx.compose.animation.core.animateFloatAsState(targetValue = income.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "inc")
+                            val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "exp")
+                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text("Total Income", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.ArrowUpward, null, tint = if(isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedInc.toLong())}", modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                    }
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                val balPref = if (balance < 0) "- " else ""
-                                AutoSizeText(text = "$balPref$curSym ${NumberFormat.getInstance(locale).format(abs(balance))}", modifier = Modifier.fillMaxWidth().blur(blurRadius), fontSize = 48.sp, fontWeight = FontWeight.Black, color = if (isPrideThemeActive) Color.White else AppText(), minimumFallbackSize = 24.sp)
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("Total Expenses", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedExp.toLong())}", modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(Icons.Default.ArrowDownward, null, tint = if(isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
+                                    }
+                                }
                             }
+
                             Spacer(modifier = Modifier.height(20.dp))
-                            // CRITICAL: walletOrder must be a SINGLE STABLE instance that is NEVER recreated.
-                            // Using remember WITHOUT keys ensures the same SnapshotStateList persists across recompositions.
-                            // reorderState.onMove captures this reference — if we recreate it, onMove operates on a stale object.
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = if (isPrideThemeActive) Color.White.copy(alpha=0.2f) else AppText().copy(alpha = 0.1f))
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Wallet Row
                             val walletOrder = remember {
                                 mutableStateListOf(*profile.wallets.split(",").filter { it.isNotBlank() }.toTypedArray())
                             }
-                            // Only re-sync when wallets are structurally changed (added/removed from Settings),
-                            // NOT when merely reordered (which produces the same set).
                             val currentWalletSet = remember(profile.wallets) {
                                 profile.wallets.split(",").filter { it.isNotBlank() }.toSet()
                             }
@@ -274,50 +368,53 @@ fun HomeScreen(
                             }
 
                             val reorderState = rememberReorderableLazyListState(
-                                onMove = { from, to ->
-                                    walletOrder.apply {
-                                        add(to.index, removeAt(from.index))
-                                    }
-                                },
-                                onDragEnd = { _, _ ->
-                                    onUpdateProfile(profile.copy(wallets = walletOrder.joinToString(",")))
-                                }
+                                onMove = { from, to -> walletOrder.apply { add(to.index, removeAt(from.index)) } },
+                                onDragEnd = { _, _ -> onUpdateProfile(profile.copy(wallets = walletOrder.joinToString(","))) }
                             )
 
                             LazyRow(
                                 state = reorderState.listState,
                                 modifier = Modifier.fillMaxWidth().reorderable(reorderState),
-                                contentPadding = PaddingValues(horizontal = 32.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                contentPadding = PaddingValues(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(walletOrder, { it }) { walletName ->
                                     ReorderableItem(reorderState, key = walletName) { isDragging ->
-                                        val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "drag_elev")
-                                        val cardScale by androidx.compose.animation.core.animateFloatAsState(if (isDragging) 1.08f else 1f, label = "drag_scale")
+                                        val cardScale by androidx.compose.animation.core.animateFloatAsState(if (isDragging) 1.05f else 1f, label = "drag_scale")
                                         val amt = walletBalances[walletName] ?: 0L
                                         val wBalPref = if (amt < 0) "- " else ""
                                         Column(
                                             modifier = Modifier
                                                 .zIndex(if (isDragging) 1f else 0f)
                                                 .scale(cardScale)
-                                                .shadow(elevation, RoundedCornerShape(16.dp))
                                                 .detectReorderAfterLongPress(reorderState)
-                                                .glassCard(16.dp, AppBg().copy(alpha = 0.2f))
-                                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                                                .background(if (isPrideThemeActive) Color.White.copy(alpha=0.15f) else AppBg().copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text(walletName, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.8f) else AppText().copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                            Text("$wBalPref$curSym ${NumberFormat.getInstance(locale).format(abs(amt))}", color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.blur(blurRadius), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                            val logoBitmap = com.bearbones.kumaflow.rememberWalletLogo(context = context, walletName = walletName)
+                                            if (logoBitmap != null) {
+                                                androidx.compose.foundation.Image(
+                                                    bitmap = logoBitmap,
+                                                    contentDescription = walletName,
+                                                    modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.White, CircleShape),
+                                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier.size(42.dp).background(if (isPrideThemeActive) Color.White.copy(alpha=0.3f) else AppPrimary().copy(alpha = 0.15f), CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(walletName.take(1).uppercase(), color = if (isPrideThemeActive) Color.White else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 20.sp)
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Text(walletName, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.9f) else AppText().copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("$wBalPref$curSym ${NumberFormat.getInstance(locale).format(abs(amt))}", color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
-                            }
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ArrowUpward, null, tint = if (isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(20.dp))
-                                AutoSizeText(text = "${AppStr.inc} $curSym ${NumberFormat.getInstance(locale).format(income)}", modifier = Modifier.weight(1f).padding(start = 4.dp).blur(blurRadius), color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 12.sp, fontWeight = FontWeight.Bold, minimumFallbackSize = 8.sp)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(Icons.Default.ArrowDownward, null, tint = if (isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(20.dp))
-                                AutoSizeText(text = "${AppStr.exp} $curSym ${NumberFormat.getInstance(locale).format(expenses)}", modifier = Modifier.weight(1f).padding(start = 4.dp).blur(blurRadius), color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 12.sp, fontWeight = FontWeight.Bold, minimumFallbackSize = 8.sp)
                             }
                         }
                     }
@@ -333,7 +430,7 @@ fun HomeScreen(
                     )
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(AppStr.recTx, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = AppText())
+                        Text(if(AppStr.isId) "Transaksi Hari Ini" else "Today's Transactions", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = AppText())
                         if (isSelectionMode) {
                             TextButton(onClick = { clearSelection() }) {
                                 Text(AppStr.cancelBulk, color = AppRed(), fontWeight = FontWeight.Bold)
@@ -360,23 +457,27 @@ fun HomeScreen(
                 }
             } else {
                 groupedTx.forEach { (date, txs) ->
-                    stickyHeader {
+                    stickyHeader(key = "home_header_$date") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(androidx.compose.ui.graphics.Color.Transparent)
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                .padding(horizontal = 24.dp, vertical = 12.dp)
                         ) {
-                            Text(
-                                text = date,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Black,
-                                color = AppPrimary()
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(AppPrimary()))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = date,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = AppText().copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
 
-                    item {
+                    item(key = "home_txgroup_$date") {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()

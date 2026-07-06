@@ -275,6 +275,40 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val context = LocalContext.current
+            
+            var updateInfo by remember { mutableStateOf<com.bearbones.kumaflow.utils.UpdateInfo?>(null) }
+            var showUpdateDialog by remember { mutableStateOf(false) }
+            var currentVersionName by remember { mutableStateOf("") }
+            
+            var downloadState by remember { mutableStateOf<com.bearbones.kumaflow.utils.DownloadState>(com.bearbones.kumaflow.utils.DownloadState.Idle) }
+            val coroutineScope = rememberCoroutineScope()
+            var downloadJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+            
+            LaunchedEffect(Unit) {
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                currentVersionName = packageInfo.versionName ?: ""
+                
+                val info = com.bearbones.kumaflow.utils.UpdateChecker.checkForUpdate()
+                if (info != null) {
+                    val currentVersionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        packageInfo.longVersionCode
+                    } else {
+                        packageInfo.versionCode.toLong()
+                    }
+                    if (info.versionCode > currentVersionCode) {
+                        val prefs = context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE)
+                        val lastSnooze = prefs.getLong("last_update_snooze", 0L)
+                        val snoozedVersionCode = prefs.getInt("snoozed_version_code", 0)
+                        val currentTime = System.currentTimeMillis()
+                        // Tampilkan jika versinya lebih baru dari yang di-snooze, ATAU sudah lewat 2 hari
+                        if (info.versionCode > snoozedVersionCode || currentTime - lastSnooze >= 2 * 24 * 60 * 60 * 1000L) {
+                            updateInfo = info
+                            showUpdateDialog = true
+                        }
+                    }
+                }
+            }
+
             val db = remember { KumaDatabase.getDatabase(context) }
             val dao = db.transactionDao()
             val userProfile by dao.getUserProfile().collectAsState(initial = null)
@@ -302,10 +336,15 @@ class MainActivity : FragmentActivity() {
                 if ((userProfile?.themeMode ?: 0) > 2) 0 else userProfile?.themeMode ?: 0
             }
 
-            val isDark = when(activeThemeMode) {
-                1, 3, 5 -> false
-                2, 4, 6 -> true
-                else -> systemDark
+            val isOREasterEgg = userProfile?.userName?.contains("#OR", ignoreCase = true) == true
+
+            val isDark = when {
+                isOREasterEgg -> false // Pure Light Mode
+                else -> when(activeThemeMode) {
+                    1, 3, 5 -> false
+                    2, 4, 6 -> true
+                    else -> systemDark
+                }
             }
 
             val hazeState = remember { dev.chrisbanes.haze.HazeState() }
@@ -317,6 +356,16 @@ class MainActivity : FragmentActivity() {
                 LocalHazeState provides hazeState
             ) {
                 val colorScheme = when {
+                    // NEW: #OR Easter Egg
+                    isOREasterEgg -> lightColorScheme(
+                        background = Color(0xFFFEE1F5), // Lavender blush
+                        surface = Color(0xFFF9BED4), // Cotton candy
+                        primary = Color(0xFFEF71C3), // Hot pink
+                        onPrimary = Color.White,
+                        onBackground = Color(0xFF5E3F6B), // Darkened Lilac for readable text
+                        onSurface = Color(0xFF5E3F6B)
+                    )
+
                     // 1. Easter Egg Pride & Bear
                     isPrideTriggered && activeThemeMode == 3 -> lightColorScheme(background = Color(0xFFFCE4EC), surface = Color(0xFFF8BBD0), primary = Color(0xFFD81B60), onPrimary = Color.White, onBackground = Color(0xFF212121), onSurface = Color(0xFF212121))
                     isPrideTriggered && activeThemeMode == 4 -> darkColorScheme(background = Color(0xFF121212), surface = Color(0xFF263238), primary = Color(0xFFAA00FF), onPrimary = Color.White, onBackground = Color.White, onSurface = Color.White)
@@ -344,7 +393,8 @@ class MainActivity : FragmentActivity() {
                     else -> lightColorScheme(background = Color(0xFFD9D2C5), surface = Color(0xFFC7BCAC), onBackground = Color(0xFF4A2F1D), onSurface = Color(0xFF4A2F1D), primary = Color(0xFF4A2F1D), onPrimary = Color.White)
                 }
 
-                MaterialTheme(colorScheme = colorScheme) {
+                val activeTypography = if (isOREasterEgg) com.bearbones.kumaflow.ui.theme.ORTypography else com.bearbones.kumaflow.ui.theme.Typography
+                MaterialTheme(colorScheme = colorScheme, typography = activeTypography) {
                     val homeListState = androidx.compose.foundation.lazy.rememberLazyListState()
                     var isOverlayOpen by remember { mutableStateOf(false) }
                     val isWrappedOpen = wrappedTarget != null
@@ -355,7 +405,7 @@ class MainActivity : FragmentActivity() {
 
                     Box(modifier = Modifier.fillMaxSize().background(AppBg())) {
                         Box(modifier = Modifier.fillMaxSize().let { if (LocalIsLiquidGlass.current) it.haze(state = LocalHazeState.current) else it }) {
-                            if (LocalIsLiquidGlass.current) {
+                            if (LocalIsLiquidGlass.current && !isOREasterEgg) {
                                 com.bearbones.kumaflow.ui.components.BokehBackground(
                                     isPaused = isPaused,
                                     scrollOffsetProvider = scrollOffsetProvider
@@ -380,6 +430,39 @@ class MainActivity : FragmentActivity() {
                                 )
 
                                 NewUserAnnouncementDialog()
+
+                                if (showUpdateDialog && updateInfo != null) {
+                                    com.bearbones.kumaflow.ui.screens.UpdateDialog(
+                                        updateInfo = updateInfo!!,
+                                        currentVersionName = currentVersionName,
+                                        downloadState = downloadState,
+                                        onDismiss = { 
+                                            showUpdateDialog = false 
+                                        },
+                                        onSnooze = {
+                                            val prefs = context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE)
+                                            prefs.edit()
+                                                .putLong("last_update_snooze", System.currentTimeMillis())
+                                                .putInt("snoozed_version_code", updateInfo?.versionCode ?: 0)
+                                                .apply()
+                                            showUpdateDialog = false 
+                                        },
+                                        onUpdate = {
+                                            downloadJob = coroutineScope.launch {
+                                                com.bearbones.kumaflow.utils.UpdateManager.downloadApk(context, updateInfo!!.apkUrl).collect { state ->
+                                                    downloadState = state
+                                                    if (state is com.bearbones.kumaflow.utils.DownloadState.Success) {
+                                                        com.bearbones.kumaflow.utils.UpdateManager.installApk(context, state.file)
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        onCancelDownload = {
+                                            downloadJob?.cancel()
+                                            downloadState = com.bearbones.kumaflow.utils.DownloadState.Idle
+                                        }
+                                    )
+                                }
 
                                 // ðŸ”¥ DYNAMIC WRAPPED LOGIC ðŸ”¥
                                 if (wrappedTarget != null && userProfile != null) {

@@ -1,11 +1,13 @@
 package com.bearbones.kumaflow
 
 import android.content.Context
+import androidx.compose.runtime.Immutable
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
+@Immutable
 @Entity(tableName = "transactions")
 data class KumaTransaction(
     @PrimaryKey(autoGenerate = true)
@@ -17,7 +19,8 @@ data class KumaTransaction(
     val category: String,
     val wallet: String,
     val timestamp: String,
-    val message: String = ""
+    val message: String = "",
+    val isEdited: Boolean = false
 )
 
 @Entity(
@@ -32,6 +35,7 @@ data class KumaTransaction(
     ],
     indices = [Index("transactionId")]
 )
+@Immutable
 data class TransactionSplit(
     @PrimaryKey(autoGenerate = true)
     val splitId: Int = 0,
@@ -40,6 +44,7 @@ data class TransactionSplit(
     val splitAmount: Long
 )
 
+@Immutable
 data class TransactionWithSplits(
     @Embedded
     val transaction: KumaTransaction,
@@ -50,6 +55,7 @@ data class TransactionWithSplits(
     val splits: List<TransactionSplit>
 )
 
+@Immutable
 @Entity(tableName = "user_profile")
 data class UserProfile(
     @PrimaryKey val id: Int = 0,
@@ -70,7 +76,11 @@ data class UserProfile(
     val isAmoledMode: Boolean = false,
     val categoryIcons: String = "{}",
     val isLiquidGlass: Boolean = false,
-    val isPremiumGlassBlur: Boolean = false
+    val isPremiumGlassBlur: Boolean = false,
+    val currentStreak: Int = 0,
+    val lastActiveDate: String = "",
+    val freezeCount: Int = 0,
+    val lastMilestoneNotified: Int = 0
 )
 
 @Dao
@@ -115,18 +125,38 @@ interface TransactionDao {
     @Query("SELECT * FROM user_profile WHERE id = 0")
     fun getUserProfile(): Flow<UserProfile?>
 
+    @Query("SELECT * FROM user_profile WHERE id = 0")
+    suspend fun getProfileSync(): UserProfile?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveProfile(profile: UserProfile)
 
     @Query("DELETE FROM transactions")
     suspend fun clearTransactions()
 
+    @Query("UPDATE transactions SET wallet = :newName WHERE wallet = :oldName")
+    suspend fun updateTransactionsWalletName(oldName: String, newName: String)
+
+    @Query("UPDATE transaction_splits SET splitWallet = :newName WHERE splitWallet = :oldName")
+    suspend fun updateSplitsWalletName(oldName: String, newName: String)
+
+    @Query("DELETE FROM transaction_splits")
+    suspend fun clearSplits()
+    
     @Transaction
-    suspend fun restoreDatabase(profile: UserProfile, transactions: List<KumaTransaction>, splits: List<TransactionSplit>) {
+    suspend fun updateWalletName(oldName: String, newName: String) {
+        updateTransactionsWalletName(oldName, newName)
+        updateSplitsWalletName(oldName, newName)
+    }
+
+    @Transaction
+    suspend fun restoreDatabase(profile: UserProfile, transactionsWithSplits: List<Pair<KumaTransaction, List<TransactionSplit>>>) {
         saveProfile(profile)
+        clearSplits()
         clearTransactions()
-        insertTransactions(transactions)
-        insertSplits(splits)
+        transactionsWithSplits.forEach { (tx, splits) ->
+            insertFullTransaction(tx.copy(id = 0), splits)
+        }
     }
 }
 
@@ -171,13 +201,28 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
     }
 }
 
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isEdited INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN currentStreak INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN lastActiveDate TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN freezeCount INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN lastMilestoneNotified INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
         UserProfile::class,
         TransactionSplit::class
     ],
-    version = 17,
+    version = 19,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -193,7 +238,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
                     .build()
                 INSTANCE = instance
                 instance

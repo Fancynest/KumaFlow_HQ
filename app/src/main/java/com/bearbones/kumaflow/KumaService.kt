@@ -89,7 +89,7 @@ class KumaService : Service() {
     }
 
     private fun showReminderNotification(context: Context) {
-        val channelId = "kumaflow_reminder_channel_v7"
+        val channelId = "kumaflow_reminder_channel_v8"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val soundUri = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/${R.raw.kumaflownotification}")
 
@@ -104,7 +104,7 @@ class KumaService : Service() {
                 "KumaFlow Reminder",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Pengingat untuk mencatat pengeluaran"
+                description = if(com.bearbones.kumaflow.AppStr.isId) "Pengingat untuk mencatat pengeluaran" else "Expense tracking reminder"
                 setSound(soundUri, audioAttributes)
                 enableVibration(true)
                 vibrationPattern = longArrayOf(1000, 1000, 1000, 1000, 1000)
@@ -112,19 +112,29 @@ class KumaService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val messages = listOf(
-            Pair("Satu bulan saldonya ke mana? 🥀", "Duit abis berlebihan itu nggak baik. Yuk catat pengeluaran hari ini."),
-            Pair("Takut tambah dewasa... dan miskin 😭", "Yuk absen dulu hari ini sebelum duitnya nguap nggak jelas."),
-            Pair("Sialnya ku kenal Paylater 💔", "Sisa rasa penyesalan doang kalau nggak dicatat dari sekarang."),
-            Pair("Lantas mengapa ku masih jajan? 🎧", "Mending evaluasi dulu pengeluaran kamu hari ini deh."),
-            Pair("Berapa harga kewarasan ini? 🥺", "Catat pengeluaran kamu sekarang yuk ah!"),
-            Pair("Kita usahakan backup itu... ⛈️", "Biar kalau HP error, catatan keuangan nggak ikut ngilang."),
-            Pair("Sedia aku sebelum hujan ☔", "Backup file KumaFlow menjagamu tak kehilangan Data."),
-            Pair("Tapi anehnya saldo cepat hilang", "Oh ternyata jajan kopi tiap malam."),
-            Pair("Soal hemat ternyata aku masih amatir 💸", "Saatnya evaluasi pengeluaran hari ini."),
-            Pair("Gengsi menyelimutiku 😔", "Padahal dompet lagi butuh bantuan."),
-            Pair("Tak lagi sama arah dompetnya 😭", "Keinginan banyak, dompet berkata tidak")
-        )
+        val messages = if (com.bearbones.kumaflow.AppStr.isId) {
+            listOf(
+                Pair("Satu bulan saldonya ke mana? 🥀", "Duit abis berlebihan itu nggak baik. Yuk catat pengeluaran hari ini."),
+                Pair("Hari ini jajan apa aja? 🤔", "Sekecil apapun itu, dicatat ya! Biar nggak kaget di akhir bulan."),
+                Pair("Lantas mengapa ku masih jajan? 🎧", "Mending evaluasi dulu pengeluaran kamu hari ini deh."),
+                Pair("Berapa harga kewarasan ini? 🥺", "Catat pengeluaran kamu sekarang yuk ah!"),
+                Pair("Jangan lupa diri bestie 🙏", "Ayo cek dompet kamu, masih sehat atau udah nangis?"),
+                Pair("Semoga saldo aman ya 🤲", "Udah nyatat pengeluaran hari ini? Yuk buka aplikasinya."),
+                Pair("Pengeluaran misterius? 👻", "Jangan biarkan duit menguap gitu aja, catat sekarang!"),
+                Pair("Soal hemat ternyata aku masih amatir 💸", "Saatnya evaluasi pengeluaran hari ini.")
+            )
+        } else {
+            listOf(
+                Pair("Where did this month's balance go? 🥀", "Overspending is bad. Let's record today's expenses."),
+                Pair("What did you buy today? 🤔", "Record every little thing! So you won't be surprised later."),
+                Pair("Why am I still spending? 🎧", "Better evaluate your expenses today."),
+                Pair("How much does sanity cost? 🥺", "Let's record your expenses now!"),
+                Pair("Don't forget yourself bestie 🙏", "Check your wallet, is it healthy or crying?"),
+                Pair("Hope the balance is safe 🤲", "Have you recorded today's expenses? Open the app."),
+                Pair("Mysterious expenses? 👻", "Don't let money evaporate, record it now!"),
+                Pair("Still an amateur at saving 💸", "Time to evaluate today's expenses.")
+            )
+        }
 
         val randomMsg = messages.random()
 

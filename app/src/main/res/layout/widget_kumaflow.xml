@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg_modern"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -58,9 +58,9 @@
             android:layout_weight="1"
             android:background="@drawable/widget_wallet_card_bg"
             android:orientation="vertical"
-            android:padding="12dp">
-            <TextView android:id="@+id/tv_w1_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BCA" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" />
-            <TextView android:id="@+id/tv_w1_bal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Rp 12.000k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" />
+            android:padding="8dp">
+            <TextView android:id="@+id/tv_w1_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="BCA" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_w1_bal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Rp 12.000k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -70,9 +70,9 @@
             android:layout_weight="1"
             android:background="@drawable/widget_wallet_card_bg"
             android:orientation="vertical"
-            android:padding="12dp">
-            <TextView android:id="@+id/tv_w2_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Blu" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" />
-            <TextView android:id="@+id/tv_w2_bal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Rp 8.500k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" />
+            android:padding="8dp">
+            <TextView android:id="@+id/tv_w2_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Blu" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_w2_bal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Rp 8.500k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -81,9 +81,9 @@
             android:layout_weight="1"
             android:background="@drawable/widget_wallet_card_bg"
             android:orientation="vertical"
-            android:padding="12dp">
-            <TextView android:id="@+id/tv_w3_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Gopay" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" />
-            <TextView android:id="@+id/tv_w3_bal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Rp 4.000k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" />
+            android:padding="8dp">
+            <TextView android:id="@+id/tv_w3_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Gopay" android:textColor="#B3FFFFFF" android:fontFamily="sans-serif-medium" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/tv_w3_bal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Rp 4.000k" android:textColor="#FFFFFF" android:fontFamily="sans-serif-black" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
     </LinearLayout>
 
@@ -110,13 +110,15 @@
                 android:textSize="10sp" />
             <TextView
                 android:id="@+id/tv_widget_income"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="Rp 15.000.000"
                 android:textColor="#FFFFFF"
                 android:fontFamily="sans-serif-medium"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -135,13 +137,15 @@
                 android:textSize="10sp" />
             <TextView
                 android:id="@+id/tv_widget_expense"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="Rp 3.500.000"
                 android:textColor="#FFFFFF"
                 android:fontFamily="sans-serif-medium"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -13,17 +13,18 @@ android {
         applicationId = "com.bearbones.kumaflow"
         minSdk = 27
         targetSdk = 35
-        versionCode = 25
-        versionName = "5.0.1"
+        versionCode = 43
+        versionName = "6.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
         }
@@ -40,6 +41,14 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.activity:activity:1.9.3")
+        force("androidx.activity:activity-ktx:1.9.3")
+        force("androidx.activity:activity-compose:1.9.3")
+    }
+}
+
 dependencies {
     // Pake libraries dari BOM agar stabil
     implementation(libs.androidx.core.ktx)
@@ -52,7 +61,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
     // ROOM DATABASE (Stable Version)
@@ -73,4 +81,5 @@ dependencies {
     implementation("dev.chrisbanes.haze:haze:1.1.1")
     implementation("dev.chrisbanes.haze:haze-materials:1.1.1")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.7")
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 }

@@ -117,6 +117,12 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 
 // --- DATA CLASSES & OBJECTS ---
+fun isNotificationServiceEnabled(context: Context): Boolean {
+    val pkgName = context.packageName
+    val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+    return flat?.contains(pkgName) == true
+}
+
 @Composable
 fun SettingsScreen(
     currentProfile: UserProfile,
@@ -132,6 +138,9 @@ fun SettingsScreen(
     val haptic = LocalHapticFeedback.current
     val mainActivity = context as? MainActivity
     val scope = rememberCoroutineScope()
+    val sharedPrefs = remember { context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE) }
+    var autoTrackerEnabled by remember { mutableStateOf(sharedPrefs.getBoolean("enable_auto_tracker", false)) }
+    var showOemWarningDialog by remember { mutableStateOf(false) }
 
     var showVersionDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
@@ -175,12 +184,17 @@ fun SettingsScreen(
                         wallets = pObj.optString("wallets", "Cash,Bank BCA,GoPay"),
                         categoryTargets = pObj.optString("categoryTargets", "{}"),
                         isAmoledMode = pObj.optBoolean("isAmoledMode", false),
-                        categoryIcons = pObj.optString("categoryIcons", "{}")
+                        categoryIcons = pObj.optString("categoryIcons", "{}"),
+                        isLiquidGlass = pObj.optBoolean("isLiquidGlass", false),
+                        isPremiumGlassBlur = pObj.optBoolean("isPremiumGlassBlur", false),
+                        currentStreak = pObj.optInt("currentStreak", 0),
+                        lastActiveDate = pObj.optString("lastActiveDate", ""),
+                        freezeCount = pObj.optInt("freezeCount", 0),
+                        lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0)
                     )
 
                     val txsArr = root.getJSONArray("transactions")
-                    val parsedTxs = mutableListOf<KumaTransaction>()
-                    val parsedSplits = mutableListOf<TransactionSplit>()
+                    val txsWithSplits = mutableListOf<Pair<KumaTransaction, List<TransactionSplit>>>()
 
                     for (i in 0 until txsArr.length()) {
                         val tObj = txsArr.getJSONObject(i)
@@ -189,11 +203,8 @@ fun SettingsScreen(
                             safeTimestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                         }
 
-                        // Use the original ID if present, otherwise auto-generate
-                        val txId = tObj.optInt("id", i + 1)
-
                         val baseTx = KumaTransaction(
-                            id = txId,
+                            id = 0,
                             name = tObj.optString("name", "Unknown"),
                             date = tObj.optString("date", ""),
                             amount = tObj.optString("amount", "0"),
@@ -201,28 +212,37 @@ fun SettingsScreen(
                             category = tObj.optString("category", "Others"),
                             wallet = tObj.optString("wallet", "Cash"),
                             timestamp = safeTimestamp,
-                            message = tObj.optString("message", "")
+                            message = tObj.optString("message", ""),
+                            isEdited = tObj.optBoolean("isEdited", false)
                         )
-                        parsedTxs.add(baseTx)
 
                         val splitsArr = tObj.optJSONArray("splits")
+                        val currentSplits = mutableListOf<TransactionSplit>()
                         if (splitsArr != null) {
                             for (j in 0 until splitsArr.length()) {
                                 val sObj = splitsArr.getJSONObject(j)
-                                parsedSplits.add(
+                                currentSplits.add(
                                     TransactionSplit(
-                                        transactionId = txId,
+                                        transactionId = 0,
                                         splitWallet = sObj.optString("w", "Cash"),
                                         splitAmount = sObj.optLong("a", 0L)
                                     )
                                 )
                             }
                         }
+                        
+                        // To keep descending order correct after SQLite auto generates IDs sequentially,
+                        // we must add it to the front (since the oldest transactions are at the end of the JSON array).
+                        // Wait, the JSON array is descending (newest first). 
+                        // If we insert newest first, the newest gets ID=1, oldest gets ID=100.
+                        // Since we ORDER BY timestamp DESC, ID doesn't dictate order, timestamp does.
+                        // So adding sequentially is fine.
+                        txsWithSplits.add(Pair(baseTx, currentSplits))
                     }
 
                     // Atomic block to prevent corruption if user leaves or crashes
                     kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
-                        dao.restoreDatabase(newProfile, parsedTxs, parsedSplits)
+                        dao.restoreDatabase(newProfile, txsWithSplits)
                     }
 
                     withContext(Dispatchers.Main) {
@@ -231,7 +251,7 @@ fun SettingsScreen(
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Error Restore: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "${AppStr.errRestore} ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 } finally {
                     withContext(Dispatchers.Main) {
@@ -469,6 +489,56 @@ fun SettingsScreen(
             }
 
             Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .glassCard(16.dp, AppSurfaceVariant())
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Default.NotificationsActive, contentDescription = null, tint = AppPrimary())
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Auto Notif Tracker",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Mencatat transaksi E-Wallet dari notifikasi (GoPay, DANA, BCA, dll).",
+                            fontSize = 10.sp,
+                            color = AppText().copy(alpha = 0.6f)
+                        )
+                    }
+                    Switch(
+                        checked = autoTrackerEnabled,
+                        onCheckedChange = { isChecked ->
+                            if (isChecked) {
+                                if (!isNotificationServiceEnabled(context)) {
+                                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                                    Toast.makeText(context, AppStr.reqNotifAcc, Toast.LENGTH_LONG).show()
+                                } else {
+                                    autoTrackerEnabled = true
+                                    sharedPrefs.edit().putBoolean("enable_auto_tracker", true).apply()
+                                    showOemWarningDialog = true
+                                }
+                            } else {
+                                autoTrackerEnabled = false
+                                sharedPrefs.edit().putBoolean("enable_auto_tracker", false).apply()
+                            }
+                        },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                }
+            }
+
+            Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -575,7 +645,8 @@ fun SettingsScreen(
                                         .glassCard(12.dp, AppSurfaceVariant()),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = getGlassTextFieldColors(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation()
                                 )
                             }
                         }
@@ -601,8 +672,45 @@ fun SettingsScreen(
             )
         }
 
+        if (showOemWarningDialog) {
+            AlertDialog(
+                onDismissRequest = { showOemWarningDialog = false },
+                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = { Text(AppStr.importantBattery, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Untuk HP Android tertentu (terutama Oppo/ColorOS, Xiaomi, Vivo), sistem akan membunuh fitur pelacak secara paksa di background.\n\n" +
+                        "Mohon pastikan:\n" +
+                        "1. Buka App Info KumaFlow.\n" +
+                        "2. Set Battery Usage ke 'Unrestricted' / 'Don't Optimize'.\n" +
+                        "3. Nyalakan izin 'Auto-Launch' atau 'Allow Background Activity'.\n\n" +
+                        "Tanpa ini, notifikasi tidak akan tercatat otomatis."
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        showOemWarningDialog = false
+                        try {
+                            context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                        } catch (e: Exception) {
+                            Toast.makeText(context, AppStr.errOpenBat, Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text(AppStr.openBatterySet)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showOemWarningDialog = false }) {
+                        Text(AppStr.laterBtn)
+                    }
+                }
+            )
+        }
+
         if (showWalletDialog) {
             var newWalletName by remember { mutableStateOf("") }
+            var editingWalletOldName by remember { mutableStateOf<String?>(null) }
             var activeWallets by remember { mutableStateOf(currentProfile.wallets.split(",").filter { it.isNotBlank() }) }
             AlertDialog(
                 onDismissRequest = {
@@ -624,42 +732,90 @@ fun SettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text("• $w", color = AppText(), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                    if (activeWallets.size > 1) {
+                                    Row {
                                         IconButton(
                                             onClick = {
-                                                val newList = activeWallets.filter { it != w }
-                                                activeWallets = newList
-                                                scope.launch { dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(","))) }
+                                                editingWalletOldName = w
+                                                newWalletName = w
                                             },
                                             modifier = Modifier.size(24.dp)
-                                        ) { Icon(Icons.Default.Close, null, tint = AppRed()) }
+                                        ) { Icon(Icons.Default.Edit, null, tint = AppPrimary()) }
+
+                                        if (activeWallets.size > 1) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            IconButton(
+                                                onClick = {
+                                                    val newList = activeWallets.filter { it != w }
+                                                    activeWallets = newList
+                                                    scope.launch { dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(","))) }
+                                                    com.bearbones.kumaflow.WalletLogoManager.deleteWalletLogo(context, w)
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) { Icon(Icons.Default.Delete, null, tint = AppRed()) }
+                                        }
                                     }
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
+                        if (editingWalletOldName != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
+                                Text("${AppStr.edit}: $editingWalletOldName", fontSize = 10.sp, color = AppPrimary(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            }
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
                                 value = newWalletName,
                                 onValueChange = { newWalletName = it },
-                                label = { Text(AppStr.addWallet) },
+                                label = { Text(if (editingWalletOldName != null) AppStr.edit else AppStr.addWallet) },
                                 modifier = Modifier.weight(1f).glassCard(12.dp, AppSurfaceVariant()),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
                                 colors = getGlassTextFieldColors()
                             )
+                            if (editingWalletOldName != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = {
+                                        editingWalletOldName = null
+                                        newWalletName = ""
+                                    },
+                                    modifier = Modifier.background(AppRed(), CircleShape)
+                                ) { Icon(Icons.Default.Close, null, tint = Color.White) }
+                            }
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
                                 onClick = {
-                                    if (newWalletName.isNotBlank() && !activeWallets.contains(newWalletName.trim())) {
-                                        val newList = activeWallets.toMutableList().apply { add(newWalletName.trim()) }
-                                        activeWallets = newList
-                                        scope.launch { dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(","))) }
-                                        newWalletName = ""
+                                    val safeNew = newWalletName.trim()
+                                    if (safeNew.isNotBlank()) {
+                                        if (editingWalletOldName != null) {
+                                            // Edit mode
+                                            val oldName = editingWalletOldName!!
+                                            if (safeNew != oldName && !activeWallets.contains(safeNew)) {
+                                                val newList = activeWallets.map { if (it == oldName) safeNew else it }
+                                                activeWallets = newList
+                                                scope.launch {
+                                                    dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(",")))
+                                                    dao.updateWalletName(oldName, safeNew)
+                                                }
+                                                // Handle logo rename basically by just keeping things as is, but we could delete the old one
+                                                com.bearbones.kumaflow.WalletLogoManager.deleteWalletLogo(context, oldName)
+                                            }
+                                            editingWalletOldName = null
+                                            newWalletName = ""
+                                        } else {
+                                            // Add mode
+                                            if (!activeWallets.contains(safeNew)) {
+                                                val newList = activeWallets.toMutableList().apply { add(safeNew) }
+                                                activeWallets = newList
+                                                scope.launch { dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(","))) }
+                                                newWalletName = ""
+                                            }
+                                        }
                                     }
                                 },
                                 modifier = Modifier.background(AppPrimary(), CircleShape)
-                            ) { Icon(Icons.Default.Add, null, tint = Color.White) }
+                            ) { Icon(if (editingWalletOldName != null) Icons.Default.Check else Icons.Default.Add, null, tint = Color.White) }
                         }
                     }
                 },
@@ -773,7 +929,7 @@ fun SettingsScreen(
                                                     }
                                                 },
                                                 modifier = Modifier.size(24.dp)
-                                            ) { Icon(Icons.Default.Close, null, tint = AppRed()) }
+                                            ) { Icon(Icons.Default.Delete, null, tint = AppRed()) }
                                         }
                                     }
                                 }
@@ -784,26 +940,77 @@ fun SettingsScreen(
 
                         Column(modifier = Modifier.fillMaxWidth()) {
                             if (editingCatOldName != null) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
-                                    Text("Editing: $editingCatOldName", fontSize = 10.sp, color = AppPrimary(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                Text("${AppStr.edit}: $editingCatOldName", fontSize = 10.sp, color = AppPrimary(), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = newCatName,
+                                        onValueChange = { newCatName = it },
+                                        label = { Text(AppStr.catName) },
+                                        modifier = Modifier.weight(1f).glassCard(12.dp, AppSurfaceVariant()),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = getGlassTextFieldColors()
+                                    )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Cancel", fontSize = 10.sp, color = AppRed(), fontWeight = FontWeight.Bold, modifier = Modifier.clickable {
+                                    Box(modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(AppRed()).clickable {
                                         editingCatOldName = null
                                         newCatName = ""
                                         selectedIconKey = "Kategori"
-                                    })
+                                    }, contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Close, null, tint = Color.White)
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Box(modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(AppPrimary()).clickable {
+                                        if (newCatName.isNotBlank()) {
+                                            val newCat = newCatName.trim()
+                                            val iconJson = try { org.json.JSONObject(currentProfile.categoryIcons) } catch (e: Exception) { org.json.JSONObject() }
+    
+                                            if (editingCatOldName != null && editingCatOldName != newCat) {
+                                                iconJson.remove(editingCatOldName)
+                                            }
+                                            iconJson.put(newCat, selectedIconKey)
+    
+                                            if (isIncomeTab) {
+                                                val newList = activeIncomeCats.toMutableList()
+                                                if (editingCatOldName != null) {
+                                                    val idx = newList.indexOf(editingCatOldName)
+                                                    if (idx != -1) newList[idx] = newCat
+                                                }
+                                                activeIncomeCats = newList
+                                                scope.launch { dao.saveProfile(currentProfile.copy(incomeCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
+                                            } else {
+                                                val newList = activeExpenseCats.toMutableList()
+                                                if (editingCatOldName != null) {
+                                                    val idx = newList.indexOf(editingCatOldName)
+                                                    if (idx != -1) newList[idx] = newCat
+                                                }
+                                                activeExpenseCats = newList
+                                                scope.launch { dao.saveProfile(currentProfile.copy(expenseCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
+                                            }
+                                            newCatName = ""
+                                            selectedIconKey = "Kategori"
+                                            editingCatOldName = null
+                                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                        }
+                                    }, contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.Check, null, tint = Color.White)
+                                    }
                                 }
+                            } else {
+                                OutlinedTextField(
+                                    value = newCatName,
+                                    onValueChange = { newCatName = it },
+                                    label = { Text(AppStr.catName) },
+                                    modifier = Modifier.fillMaxWidth().glassCard(12.dp, AppSurfaceVariant()),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = getGlassTextFieldColors()
+                                )
                             }
-
-                            OutlinedTextField(
-                                value = newCatName,
-                                onValueChange = { newCatName = it },
-                                label = { Text(AppStr.catName) },
-                                modifier = Modifier.fillMaxWidth().glassCard(12.dp, AppSurfaceVariant()),
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = getGlassTextFieldColors()
-                            )
+                            
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(AppStr.chooseCatIcon, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AppText())
                             Spacer(modifier = Modifier.height(8.dp))
@@ -821,7 +1028,7 @@ fun SettingsScreen(
                                             .background(if (selectedIconKey == key) AppPrimary() else Color.Transparent)
                                             .clickable {
                                                 selectedIconKey = key
-                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                                             }
                                             .padding(8.dp),
                                         contentAlignment = Alignment.Center
@@ -831,49 +1038,36 @@ fun SettingsScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Button(
-                                onClick = {
-                                    if (newCatName.isNotBlank()) {
-                                        val newCat = newCatName.trim()
-                                        val iconJson = try { JSONObject(currentProfile.categoryIcons) } catch (e: Exception) { JSONObject() }
-
-                                        if (editingCatOldName != null && editingCatOldName != newCat) {
-                                            iconJson.remove(editingCatOldName)
-                                        }
-                                        iconJson.put(newCat, selectedIconKey)
-
-                                        if (isIncomeTab) {
-                                            val newList = activeIncomeCats.toMutableList()
-                                            if (editingCatOldName != null) {
-                                                val idx = newList.indexOf(editingCatOldName)
-                                                if (idx != -1) newList[idx] = newCat
-                                            } else if (!newList.contains(newCat)) {
-                                                newList.add(newCat)
+                            if (editingCatOldName == null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        if (newCatName.isNotBlank()) {
+                                            val newCat = newCatName.trim()
+                                            val iconJson = try { org.json.JSONObject(currentProfile.categoryIcons) } catch (e: Exception) { org.json.JSONObject() }
+    
+                                            iconJson.put(newCat, selectedIconKey)
+    
+                                            if (isIncomeTab) {
+                                                val newList = activeIncomeCats.toMutableList()
+                                                if (!newList.contains(newCat)) newList.add(newCat)
+                                                activeIncomeCats = newList
+                                                scope.launch { dao.saveProfile(currentProfile.copy(incomeCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
+                                            } else {
+                                                val newList = activeExpenseCats.toMutableList()
+                                                if (!newList.contains(newCat)) newList.add(newCat)
+                                                activeExpenseCats = newList
+                                                scope.launch { dao.saveProfile(currentProfile.copy(expenseCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
                                             }
-                                            activeIncomeCats = newList
-                                            scope.launch { dao.saveProfile(currentProfile.copy(incomeCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
-                                        } else {
-                                            val newList = activeExpenseCats.toMutableList()
-                                            if (editingCatOldName != null) {
-                                                val idx = newList.indexOf(editingCatOldName)
-                                                if (idx != -1) newList[idx] = newCat
-                                            } else if (!newList.contains(newCat)) {
-                                                newList.add(newCat)
-                                            }
-                                            activeExpenseCats = newList
-                                            scope.launch { dao.saveProfile(currentProfile.copy(expenseCats = newList.joinToString(","), categoryIcons = iconJson.toString())) }
+                                            newCatName = ""
+                                            selectedIconKey = "Kategori"
+                                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                         }
-                                        newCatName = ""
-                                        selectedIconKey = "Kategori"
-                                        editingCatOldName = null
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth().height(45.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) { Text(if (editingCatOldName != null) AppStr.save else AppStr.addCat) }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(45.dp),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) { Text(AppStr.addCat) }
+                            }
                         }
                     }
                 },
@@ -974,7 +1168,8 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth().glassCard(12.dp, AppSurfaceVariant()),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = RoundedCornerShape(12.dp),
-                        colors = getGlassTextFieldColors()
+                        colors = getGlassTextFieldColors(),
+                        visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation()
                     )
                 },
                 confirmButton = {
@@ -1078,8 +1273,8 @@ fun SettingsScreen(
                             Column(modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 12.dp)) {
-                                Text("Kuma Glass UI", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
-                                Text("Enable premium liquid glass styling", fontSize = 10.sp, color = AppText().copy(alpha=0.6f))
+                                Text(AppStr.liquidGlass, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
+                                Text(AppStr.liquidGlassDesc, fontSize = 10.sp, color = AppText().copy(alpha=0.6f))
                             }
                             Switch(
                                 checked = currentProfile.isLiquidGlass,
@@ -1103,8 +1298,8 @@ fun SettingsScreen(
                                 Column(modifier = Modifier
                                     .weight(1f)
                                     .padding(start = 12.dp)) {
-                                    Text("Premium Glass Effect", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
-                                    Text("Turn off for better performance on low-end devices", fontSize = 10.sp, color = AppText().copy(alpha=0.6f))
+                                    Text(if(AppStr.isId) "Efek Kaca Premium" else "Premium Glass Effect", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
+                                    Text(if(AppStr.isId) "Matikan untuk performa lebih baik di HP kentang" else "Turn off for better performance on low-end devices", fontSize = 10.sp, color = AppText().copy(alpha=0.6f))
                                 }
                                 Switch(
                                     checked = currentProfile.isPremiumGlassBlur,
@@ -1136,7 +1331,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = pinInput,
                         onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) pinInput = it },
-                        label = { Text("PIN") },
+                        label = { Text(AppStr.pinLabel) },
                         modifier = Modifier.fillMaxWidth().glassCard(12.dp, AppSurfaceVariant()),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         shape = RoundedCornerShape(12.dp),
@@ -1169,7 +1364,7 @@ fun SettingsScreen(
                                 }
                             }
                         }
-                    ) { Text("OK") }
+                    ) { Text(AppStr.okBtn) }
                 }
             )
         }

@@ -1,66 +1,26 @@
-@file:Suppress("SpellCheckingInspection", "UNUSED_PARAMETER", "unused", "CanBeVal", "DEPRECATION", "ScheduleExactAlarm")
+@file:Suppress("SpellCheckingInspection", "UNUSED_PARAMETER", "unused", "CanBeVal", "DEPRECATION")
 @file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.bearbones.kumaflow
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.app.TimePickerDialog
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import android.widget.TimePicker
-import android.widget.Toast
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.bearbones.kumaflow.glassCard
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -71,50 +31,29 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.fragment.app.FragmentActivity
-import androidx.room.*
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
 import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.abs
-import androidx.compose.ui.draw.blur
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.border
 
-// --- DATA CLASSES & OBJECTS ---
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.border
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.translate
+
+
 @Composable
 fun ReportScreen(
     profile: UserProfile,
@@ -172,7 +111,7 @@ fun ReportScreen(
         OutlinedButton(
             onClick = {
                 if (isCurrentOrFutureMonth) {
-                    Toast.makeText(context, "Wrapped $currentSelectedMonthName $selectedYear is Coming Soon!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, AppStr.wrappedComingSoon(currentSelectedMonthName, selectedYear.toString()), Toast.LENGTH_SHORT).show()
                 } else {
                     onOpenWrapped(selectedMonth, selectedYear)
                 }
@@ -187,60 +126,93 @@ fun ReportScreen(
             Text(btnText, color = if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.5f) else AppPrimary(), fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        val isPrideThemeActive = profile.themeMode == 3 || profile.themeMode == 4
-        val prideGradient = Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
-        val defaultSurfaceColor = AppSurface()
-
-        val boxModifier = if (isPrideThemeActive) {
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 185.dp)
-                .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(32.dp))
-                .clip(RoundedCornerShape(32.dp))
-                .background(prideGradient)
-        } else {
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 185.dp)
-                .glassCard(32.dp, defaultSurfaceColor)
+        // SMART INSIGHTS GENERATION
+        val insightMessage = remember(income, expenses, expensePerCat) {
+            if (income == 0L && expenses == 0L) {
+                if (AppStr.isId) "Belum ada transaksi bulan ini. Yuk mulai catat!" else "No transactions this month. Start tracking!"
+            } else if (income > expenses * 1.5) {
+                if (AppStr.isId) "Pemasukanmu jauh lebih besar dari pengeluaran! Keren banget, pertahankan! 🚀" else "Your income is much larger than your expenses! Great job! 🚀"
+            } else if (expenses > income) {
+                if (AppStr.isId) "Hati-hati, pengeluaranmu bulan ini melebihi pemasukan. Waktunya ngerem jajan! 💸" else "Watch out, expenses exceeded income this month. Time to hold back! 💸"
+            } else if (expensePerCat.isNotEmpty()) {
+                val topCat = expensePerCat.first()
+                val pct = ((topCat.second.toFloat() / expenses.toFloat()) * 100).toInt()
+                if (AppStr.isId) "Pengeluaran terbesarmu bulan ini ada di ${topCat.first} ($pct%). Jangan sampai overbudget ya! 📊" else "Your biggest expense this month is ${topCat.first} ($pct%). Keep an eye on it! 📊"
+            } else {
+                if (AppStr.isId) "Keuanganmu stabil bulan ini. Mantap! ✨" else "Your finances are stable this month. Good job! ✨"
+            }
         }
 
-        Box(modifier = boxModifier) {
-            Column(modifier = Modifier.padding(24.dp).fillMaxSize()) {
-                Text(AppStr.sum, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = if (isPrideThemeActive) Color.White else AppText())
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(AppStr.net, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.8f) else AppText().copy(alpha = 0.8f))
-                val balPref = if (balance < 0) "- " else "+"
-                AutoSizeText(text = "$curSym $balPref${NumberFormat.getInstance(locale).format(abs(balance))}", modifier = Modifier.fillMaxWidth(), fontSize = 32.sp, fontWeight = FontWeight.Black, color = if (isPrideThemeActive) Color.White else AppText(), minimumFallbackSize = 18.sp)
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(modifier = Modifier.weight(1f).glassCard(16.dp, if (isPrideThemeActive) Color.White.copy(alpha = 0.1f) else AppSurfaceVariant()).padding(12.dp)) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ArrowUpward, null, tint = if (isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(AppStr.inc, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.8f) else AppText().copy(alpha = 0.8f))
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(income)}", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = if (isPrideThemeActive) Color.White else AppText(), minimumFallbackSize = 10.sp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .glassCard(24.dp, AppPrimary().copy(alpha = 0.15f), useHaze = true)
+                .border(1.dp, AppPrimary().copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AutoAwesome, null, tint = AppPrimary(), modifier = Modifier.size(28.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(AppStr.smartInsights, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = AppPrimary())
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(insightMessage, fontSize = 12.sp, color = AppText(), lineHeight = 16.sp)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val animatedBal by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
+        val animatedInc by androidx.compose.animation.core.animateFloatAsState(targetValue = income.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "inc")
+        val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "exp")
+        val balPref = if (balance < 0) "- " else "+"
+
+        // BALANCE CARD
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .glassCard(32.dp, AppSurfaceVariant())
+                .padding(24.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text(AppStr.net, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText().copy(alpha = 0.7f))
+                Spacer(modifier = Modifier.height(8.dp))
+                AutoSizeText(text = "$curSym $balPref${NumberFormat.getInstance(locale).format(animatedBal.toLong())}", modifier = Modifier.fillMaxWidth(), fontSize = 42.sp, fontWeight = FontWeight.Black, color = AppText(), minimumFallbackSize = 20.sp, textAlign = TextAlign.Center)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // INCOME EXPENSE ROW
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // INCOME
+            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppGreen().copy(alpha = 0.1f)).border(1.dp, AppGreen().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(28.dp).background(AppGreen().copy(alpha=0.2f), CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ArrowUpward, null, tint = AppGreen(), modifier = Modifier.size(16.dp))
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(AppStr.inc, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AppText().copy(alpha = 0.7f))
                     }
-                    Box(modifier = Modifier.weight(1f).glassCard(16.dp, if (isPrideThemeActive) Color.White.copy(alpha = 0.1f) else AppSurfaceVariant()).padding(12.dp)) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ArrowDownward, null, tint = if (isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(AppStr.exp, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.8f) else AppText().copy(alpha = 0.8f))
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(expenses)}", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = if (isPrideThemeActive) Color.White else AppText(), minimumFallbackSize = 10.sp)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedInc.toLong())}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), minimumFallbackSize = 12.sp)
+                }
+            }
+            // EXPENSE
+            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppRed().copy(alpha = 0.1f)).border(1.dp, AppRed().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(28.dp).background(AppRed().copy(alpha=0.2f), CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.ArrowDownward, null, tint = AppRed(), modifier = Modifier.size(16.dp))
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(AppStr.exp, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AppText().copy(alpha = 0.7f))
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedExp.toLong())}", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), minimumFallbackSize = 12.sp)
                 }
             }
         }
@@ -268,21 +240,73 @@ fun ReportScreen(
             colors = CardDefaults.cardColors(containerColor = Color.Transparent)
         ) {
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(modifier = Modifier.size(180.dp).padding(16.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(220.dp).padding(16.dp), contentAlignment = Alignment.Center) {
                     val bgArcCol = AppSurfaceVariant()
-                    Canvas(modifier = Modifier.fillMaxSize()) {
+                    var selectedCategory by remember { mutableStateOf<String?>(null) }
+                    val animatedSweep by androidx.compose.animation.core.animateFloatAsState(targetValue = 1f, animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "sweep")
+                    
+                    Canvas(modifier = Modifier.fillMaxSize().pointerInput(expensePerCat, expenses) {
+                        detectTapGestures { offset ->
+                            val center = Offset(size.width / 2f, size.height / 2f)
+                            val dx = offset.x - center.x
+                            val dy = offset.y - center.y
+                            val dist = Math.hypot(dx.toDouble(), dy.toDouble())
+                            // Inner radius approx size.width/2 - 35.dp, outer size.width/2
+                            if (dist > (size.width/2f - 80f) && dist < (size.width/2f + 20f)) {
+                                var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                                if (angle < 0) angle += 360f
+                                val tapAngle = (angle + 90f) % 360f
+                                
+                                var start = 0f
+                                var found = false
+                                for ((cat, amt) in expensePerCat) {
+                                    val sweep = (amt.toFloat() / expenses.toFloat()) * 360f
+                                    if (tapAngle >= start && tapAngle <= start + sweep) {
+                                        selectedCategory = if (selectedCategory == cat) null else cat
+                                        found = true
+                                        break
+                                    }
+                                    start += sweep
+                                }
+                                if (!found) selectedCategory = null
+                            } else {
+                                selectedCategory = null
+                            }
+                        }
+                    }) {
                         if (expenses == 0L) {
-                            drawArc(color = bgArcCol, startAngle = -90f, sweepAngle = 360f, useCenter = false, style = Stroke(25.dp.toPx()))
+                            drawArc(color = bgArcCol, startAngle = -90f, sweepAngle = 360f * animatedSweep, useCenter = false, style = Stroke(25.dp.toPx(), cap = StrokeCap.Butt))
                         } else {
                             var start = -90f
                             expensePerCat.forEach { (cat, amt) ->
-                                val sweep = (amt.toFloat() / expenses.toFloat()) * 360f
-                                drawArc(color = getCatColor(cat), startAngle = start, sweepAngle = sweep, useCenter = false, style = Stroke(25.dp.toPx()))
+                                val sweep = (amt.toFloat() / expenses.toFloat()) * 360f * animatedSweep
+                                val isSelected = (selectedCategory == cat)
+                                
+                                val middleAngle = start + (sweep / 2)
+                                val popOutOffset = if (isSelected) 10.dp.toPx() else 0f
+                                val popX = kotlin.math.cos(Math.toRadians(middleAngle.toDouble())).toFloat() * popOutOffset
+                                val popY = kotlin.math.sin(Math.toRadians(middleAngle.toDouble())).toFloat() * popOutOffset
+                                
+                                val strokeWidth = if (isSelected) 35.dp.toPx() else 25.dp.toPx()
+                                val sweepGap = if (expensePerCat.size > 1) 2f else 0f
+                                
+                                withTransform({
+                                    translate(popX, popY)
+                                }) {
+                                    drawArc(
+                                        color = getCatColor(cat),
+                                        startAngle = start,
+                                        sweepAngle = maxOf(0.1f, sweep - sweepGap),
+                                        useCenter = false,
+                                        style = Stroke(strokeWidth, cap = StrokeCap.Butt)
+                                    )
+                                }
                                 start += sweep
                             }
                         }
                     }
-                    AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(expenses)}", modifier = Modifier.padding(16.dp).fillMaxWidth(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), minimumFallbackSize = 12.sp, textAlign = TextAlign.Center)
+                    val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "expCenter")
+                    AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedExp.toLong())}", modifier = Modifier.padding(24.dp).fillMaxWidth(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), minimumFallbackSize = 12.sp, textAlign = TextAlign.Center)
                 }
 
                 if (expenses == 0L) {
@@ -345,7 +369,7 @@ fun ReportScreen(
                         if (expensePerCat.size > 5) {
                             TextButton(onClick = { showAllCategories = !showAllCategories }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(if (showAllCategories) "Show Less" else "Show More (${expensePerCat.size - 5})", color = AppPrimary(), fontWeight = FontWeight.Bold)
+                                    Text(if (showAllCategories) AppStr.showLess else "${AppStr.showMore} (${expensePerCat.size - 5})", color = AppPrimary(), fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Icon(if (showAllCategories) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null, tint = AppPrimary())
                                 }
@@ -419,15 +443,18 @@ fun ReportScreen(
                 val expPoints = expenseData.map { it / maxVal }
                 val hasData = incomeData.sum() > 0f || expenseData.sum() > 0f
 
+                val isDark = LocalIsDark.current
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
+                        val gridColVertical = if (isDark) Color.White.copy(alpha = 0.15f) else variantCol.copy(alpha = 0.5f)
+                        val gridColHorizontal = if (isDark) Color.White.copy(alpha = 0.1f) else variantCol.copy(alpha = 0.3f)
                         for (i in 0..4) {
                             val x = i * size.width / 4
-                            drawLine(color = variantCol.copy(alpha = 0.5f), start = Offset(x, 0f), end = Offset(x, size.height), strokeWidth = 1.dp.toPx())
+                            drawLine(color = gridColVertical, start = Offset(x, 0f), end = Offset(x, size.height), strokeWidth = 1.dp.toPx())
                         }
                         for (i in 0..5) {
                             val y = size.height - (i * size.height / 5)
-                            drawLine(color = variantCol.copy(alpha = 0.3f), start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
+                            drawLine(color = gridColHorizontal, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
                         }
                         if (hasData) {
                             drawTrendsArea(incPoints, greenCol)
