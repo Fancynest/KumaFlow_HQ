@@ -71,10 +71,20 @@ class KumaStreakWidgetProvider : AppWidgetProvider() {
             val todayStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
             val isActiveToday = profile.lastActiveDate == todayStr
             
-            if (isActiveToday) {
-                views.setImageViewResource(R.id.widget_streak_icon, R.drawable.ic_fire_active)
+            val iconRes = if (isActiveToday) R.drawable.ic_fire_active else R.drawable.ic_fire_inactive
+            val drawable = androidx.core.content.ContextCompat.getDrawable(context, iconRes)
+            if (drawable != null) {
+                val bitmap = android.graphics.Bitmap.createBitmap(
+                    drawable.intrinsicWidth.takeIf { it > 0 } ?: 144,
+                    drawable.intrinsicHeight.takeIf { it > 0 } ?: 144,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                val canvas = android.graphics.Canvas(bitmap)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                views.setImageViewBitmap(R.id.widget_streak_icon, bitmap)
             } else {
-                views.setImageViewResource(R.id.widget_streak_icon, R.drawable.ic_fire_inactive)
+                views.setImageViewResource(R.id.widget_streak_icon, iconRes)
             }
         }
         appWidgetManager.updateAppWidget(appWidgetId, views)
