@@ -2194,7 +2194,11 @@ fun updateKumaWidget(context: Context) {
     context.sendBroadcast(streakUpdateIntent)
 }
 
-fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: com.bearbones.kumaflow.UserProfile?) {
+fun checkAndApplyPrideEasterEgg(
+    context: android.content.Context, 
+    userProfile: com.bearbones.kumaflow.UserProfile?,
+    lifecycleOwner: androidx.lifecycle.LifecycleOwner? = null
+) {
     val pm = context.packageManager
     val pkg = context.packageName
 
@@ -2255,21 +2259,21 @@ fun checkAndApplyPrideEasterEgg(context: android.content.Context, userProfile: c
         return
     }
 
-    try {
-        androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
-            override fun onStop(owner: androidx.lifecycle.LifecycleOwner) {
-                super.onStop(owner)
-                try {
-                    applyIconChanges(targetIcon)
-                } catch (e: Exception) {
-                    e.printStackTrace()
+    // Delay the execution to onStop using the provided lifecycleOwner (the Activity) to prevent immediate crash loops.
+    if (lifecycleOwner != null) {
+        val observer = object : androidx.lifecycle.LifecycleEventObserver {
+            override fun onStateChanged(owner: androidx.lifecycle.LifecycleOwner, event: androidx.lifecycle.Lifecycle.Event) {
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                    try {
+                        applyIconChanges(targetIcon)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    owner.lifecycle.removeObserver(this)
                 }
-                owner.lifecycle.removeObserver(this)
             }
-        })
-    } catch (e: Exception) {
-        // Fallback in case ProcessLifecycleOwner is not available
-        applyIconChanges(targetIcon)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
     }
 }
 

@@ -318,8 +318,9 @@ class MainActivity : FragmentActivity() {
             // ðŸ”¥ NEW STATE TO CAPTURE CURRENT MONTH & YEAR ðŸ”¥
             var wrappedTarget by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
+            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
             LaunchedEffect(userProfile?.userName, userProfile?.isLiquidGlass) {
-                checkAndApplyPrideEasterEgg(context, userProfile)
+                checkAndApplyPrideEasterEgg(context, userProfile, lifecycleOwner)
             }
 
             var isAuthenticated by rememberSaveable { mutableStateOf(false) }
