@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.bearbones.kumaflow.AppPrimary
+import com.bearbones.kumaflow.AppStr
 import com.bearbones.kumaflow.AppSurface
 import com.bearbones.kumaflow.AppSurfaceVariant
 import com.bearbones.kumaflow.AppText
@@ -64,7 +65,7 @@ fun SplitBillSheet(
                 .padding(horizontal = 16.dp)
         ) {
             Text(
-                text = "Split Bill Calculator 💸",
+                text = AppStr.splitBillCalc,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppText(),
@@ -80,7 +81,7 @@ fun SplitBillSheet(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Bill", fontSize = 12.sp, color = AppText().copy(alpha = 0.7f))
+                    Text(AppStr.totalBill, fontSize = 12.sp, color = AppText().copy(alpha = 0.7f))
                     Text(
                         text = "Rp ${format.format(state.totalBill)}",
                         fontSize = 24.sp,
@@ -109,7 +110,7 @@ fun SplitBillSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Sama Rata",
+                        AppStr.modeEqual,
                         color = if (state.mode == SplitMode.SAMA_RATA) AppSurface() else AppText(),
                         fontWeight = FontWeight.Bold
                     )
@@ -137,7 +138,7 @@ fun SplitBillSheet(
                 OutlinedTextField(
                     value = state.numberOfPeople,
                     onValueChange = { viewModel.setNumberOfPeople(it) },
-                    label = { Text("Total People") },
+                    label = { Text(AppStr.totalPeople) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = getGlassTextFieldColors(),
                     modifier = Modifier.weight(1f)
@@ -147,7 +148,7 @@ fun SplitBillSheet(
                     OutlinedTextField(
                         value = state.taxPercentage,
                         onValueChange = { viewModel.setTaxPercentage(it) },
-                        label = { Text("Tax %") },
+                        label = { Text(AppStr.taxPct) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         colors = getGlassTextFieldColors(),
                         modifier = Modifier.weight(1f)
@@ -167,7 +168,7 @@ fun SplitBillSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Each Person Pays", fontSize = 14.sp, color = AppText().copy(alpha = 0.7f))
+                        Text(AppStr.eachPays, fontSize = 14.sp, color = AppText().copy(alpha = 0.7f))
                         Text(
                             text = "Rp ${format.format(finalAmount)}",
                             fontSize = 28.sp,
@@ -191,7 +192,7 @@ fun SplitBillSheet(
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Preview QRIS")
+                    Text(AppStr.previewQris)
                 }
             } else {
                 // Tahu Diri Mode
@@ -200,7 +201,7 @@ fun SplitBillSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Custom Items", fontWeight = FontWeight.Bold, color = AppText())
+                    Text(AppStr.customItems, fontWeight = FontWeight.Bold, color = AppText())
                     IconButton(onClick = { viewModel.addCustomItem() }) {
                         Icon(Icons.Default.Add, contentDescription = "Add", tint = AppPrimary())
                     }
@@ -218,14 +219,14 @@ fun SplitBillSheet(
                             OutlinedTextField(
                                 value = item.name,
                                 onValueChange = { viewModel.updateCustomItemName(item.id, it) },
-                                placeholder = { Text("Name") },
+                                placeholder = { Text(AppStr.name) },
                                 colors = getGlassTextFieldColors(),
                                 modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
                                 value = if (item.price == 0L) "" else item.price.toString(),
                                 onValueChange = { viewModel.updateCustomItemPrice(item.id, it) },
-                                placeholder = { Text("Price (Pre-tax)") },
+                                placeholder = { Text(AppStr.pricePreTax) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 colors = getGlassTextFieldColors(),
                                 modifier = Modifier.weight(1f)
@@ -245,7 +246,7 @@ fun SplitBillSheet(
                                 .glassCard(12.dp, AppSurfaceVariant())
                                 .padding(16.dp)
                         ) {
-                            Text("Results (After Tax & Rounding)", fontWeight = FontWeight.Bold, color = AppText(), modifier = Modifier.padding(bottom = 8.dp))
+                            Text(AppStr.resultAfterTax, fontWeight = FontWeight.Bold, color = AppText(), modifier = Modifier.padding(bottom = 8.dp))
                             
                             result.itemizedShares.forEach { (name, amount) ->
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -268,8 +269,8 @@ fun SplitBillSheet(
                             if (result.remainingPeopleCount > 0) {
                                 Divider(modifier = Modifier.padding(vertical = 8.dp))
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Sisanya (${result.remainingPeopleCount} org)", color = AppText())
-                                    Text("Rp ${format.format(result.remainingPerPerson)} /org", fontWeight = FontWeight.Bold, color = AppPrimary())
+                                    Text("${AppStr.remaining} (${result.remainingPeopleCount} ${AppStr.splitBillOrg})", color = AppText())
+                                    Text("Rp ${format.format(result.remainingPerPerson)} /${AppStr.splitBillOrg}", fontWeight = FontWeight.Bold, color = AppPrimary())
                                     IconButton(
                                         onClick = {
                                             val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(result.remainingPerPerson)}")
@@ -295,7 +296,7 @@ fun SplitBillSheet(
             onDismissRequest = { showPreviewDialog = false },
             modifier = Modifier.glassCard(24.dp, AppSurface()),
             containerColor = if (com.bearbones.kumaflow.LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
-            title = { Text("Preview QRIS", fontWeight = FontWeight.Bold) },
+            title = { Text(AppStr.previewQris, fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -317,7 +318,7 @@ fun SplitBillSheet(
                             modifier = Modifier.fillMaxWidth().aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
                         )
                     } else {
-                        Text("Gagal memuat QRIS", color = MaterialTheme.colorScheme.error)
+                        Text(AppStr.loadQrisFailed, color = MaterialTheme.colorScheme.error)
                     }
                 }
             },
@@ -331,11 +332,11 @@ fun SplitBillSheet(
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Share to WhatsApp")
+                    Text(AppStr.shareWa)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPreviewDialog = false }) { Text("Tutup") }
+                TextButton(onClick = { showPreviewDialog = false }) { Text(AppStr.close) }
             }
         )
     }
