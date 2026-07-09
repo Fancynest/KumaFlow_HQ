@@ -29,18 +29,21 @@ object ShareSplitBillUtils {
             val originalBitmap = BitmapFactory.decodeFile(file.absolutePath)
             if (originalBitmap == null) return null
 
-            var bitmapToUse = originalBitmap
+            var dynamicQrisBitmap: Bitmap? = null
+            var qrBounds: Rect? = null
 
             if (amount != null) {
                 try {
                     val fileUri = Uri.fromFile(file)
-                    val staticPayload = DynamicQrisUtils.decodeQRImage(context, fileUri)
-                    if (staticPayload != null) {
-                        val dynamicPayload = DynamicQrisUtils.generateDynamicQrisString(staticPayload, amount)
+                    val decodedQris = DynamicQrisUtils.decodeQRImage(context, fileUri)
+                    if (decodedQris != null) {
+                        qrBounds = decodedQris.bounds
+                        val dynamicPayload = DynamicQrisUtils.generateDynamicQrisString(decodedQris.payload, amount)
                         if (dynamicPayload != null) {
-                            val dynamicBitmap = DynamicQrisUtils.encodeDynamicQris(dynamicPayload, originalBitmap.width)
+                            val boxWidth = qrBounds.width()
+                            val dynamicBitmap = DynamicQrisUtils.encodeDynamicQris(dynamicPayload, boxWidth)
                             if (dynamicBitmap != null) {
-                                bitmapToUse = dynamicBitmap
+                                dynamicQrisBitmap = dynamicBitmap
                             } else {
                                 throw Exception("Failed to encode dynamic QRIS")
                             }
@@ -69,21 +72,26 @@ object ShareSplitBillUtils {
             val textBounds = Rect()
             paint.getTextBounds(text, 0, text.length, textBounds)
             val paddingY = textBounds.height() + 80
-            val newHeight = bitmapToUse.height + paddingY
+            val newHeight = originalBitmap.height + paddingY
             
             // Create a new bitmap that is slightly taller
-            val canvasBitmap = Bitmap.createBitmap(bitmapToUse.width, newHeight, Bitmap.Config.ARGB_8888)
+            val canvasBitmap = Bitmap.createBitmap(originalBitmap.width, newHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(canvasBitmap)
 
             // Draw white background
             canvas.drawColor(Color.WHITE)
 
-            // Draw the QR code at the top
-            canvas.drawBitmap(bitmapToUse, 0f, 0f, null)
+            // Draw the original QR code frame at the top
+            canvas.drawBitmap(originalBitmap, 0f, 0f, null)
+
+            // If we successfully generated the dynamic QR, overlay it over the old QR code bounds
+            if (dynamicQrisBitmap != null && qrBounds != null) {
+                canvas.drawBitmap(dynamicQrisBitmap, qrBounds.left.toFloat(), qrBounds.top.toFloat(), null)
+            }
 
             // Draw the text at the bottom
             val textX = canvasBitmap.width / 2f
-            val textY = bitmapToUse.height.toFloat() + (paddingY / 2f) + (textBounds.height() / 2f)
+            val textY = originalBitmap.height.toFloat() + (paddingY / 2f) + (textBounds.height() / 2f)
             canvas.drawText(text, textX, textY, paint)
 
             // Save to cache directory

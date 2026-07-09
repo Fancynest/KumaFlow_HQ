@@ -13,12 +13,14 @@ import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.InputStream
 
+data class DecodedQris(val payload: String, val bounds: android.graphics.Rect)
+
 object DynamicQrisUtils {
 
     /**
-     * Decodes a QR code image from a Uri into its raw string payload.
+     * Decodes a QR code image from a Uri into its raw string payload and bounding box.
      */
-    fun decodeQRImage(context: Context, uri: Uri): String? {
+    fun decodeQRImage(context: Context, uri: Uri): DecodedQris? {
         var inputStream: InputStream? = null
         try {
             inputStream = context.contentResolver.openInputStream(uri)
@@ -32,7 +34,39 @@ object DynamicQrisUtils {
 
             val reader = MultiFormatReader()
             val result = reader.decode(binaryBitmap)
-            return result.text
+            val points = result.resultPoints
+            var minX = Float.MAX_VALUE
+            var minY = Float.MAX_VALUE
+            var maxX = Float.MIN_VALUE
+            var maxY = Float.MIN_VALUE
+            
+            if (points != null && points.isNotEmpty()) {
+                for (p in points) {
+                    if (p.x < minX) minX = p.x
+                    if (p.y < minY) minY = p.y
+                    if (p.x > maxX) maxX = p.x
+                    if (p.y > maxY) maxY = p.y
+                }
+                
+                val width = maxX - minX
+                val height = maxY - minY
+                val paddingX = width * 0.15f
+                val paddingY = height * 0.15f
+                
+                var rectLeft = (minX - paddingX).toInt()
+                var rectTop = (minY - paddingY).toInt()
+                var rectRight = (maxX + paddingX).toInt()
+                var rectBottom = (maxY + paddingY).toInt()
+                
+                if (rectLeft < 0) rectLeft = 0
+                if (rectTop < 0) rectTop = 0
+                if (rectRight > bitmap.width) rectRight = bitmap.width
+                if (rectBottom > bitmap.height) rectBottom = bitmap.height
+                
+                val rect = android.graphics.Rect(rectLeft, rectTop, rectRight, rectBottom)
+                return DecodedQris(result.text, rect)
+            }
+            return DecodedQris(result.text, android.graphics.Rect(0, 0, bitmap.width, bitmap.height))
         } catch (e: NotFoundException) {
             // QR Code not found in image (e.g. blurry, cropped, glare)
             e.printStackTrace()

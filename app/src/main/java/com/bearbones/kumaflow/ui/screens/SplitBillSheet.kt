@@ -124,7 +124,7 @@ fun SplitBillSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Tahu Diri",
+                        AppStr.modeCustom,
                         color = if (state.mode == SplitMode.TAHU_DIRI) AppSurface() else AppText(),
                         fontWeight = FontWeight.Bold
                     )
