@@ -10,12 +10,16 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
 import androidx.core.content.FileProvider
+import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object ShareSplitBillUtils {
 
-    fun generateQRWithText(context: Context, qrisFilePath: String, text: String): Uri? {
+    fun generateQRWithText(context: Context, qrisFilePath: String, text: String, amount: Long? = null): Uri? {
         if (qrisFilePath.isEmpty()) return null
 
         val file = File(qrisFilePath)
@@ -24,6 +28,35 @@ object ShareSplitBillUtils {
         return try {
             val originalBitmap = BitmapFactory.decodeFile(file.absolutePath)
             if (originalBitmap == null) return null
+
+            var bitmapToUse = originalBitmap
+
+            if (amount != null) {
+                try {
+                    val fileUri = Uri.fromFile(file)
+                    val staticPayload = DynamicQrisUtils.decodeQRImage(context, fileUri)
+                    if (staticPayload != null) {
+                        val dynamicPayload = DynamicQrisUtils.generateDynamicQrisString(staticPayload, amount)
+                        if (dynamicPayload != null) {
+                            val dynamicBitmap = DynamicQrisUtils.encodeDynamicQris(dynamicPayload, originalBitmap.width)
+                            if (dynamicBitmap != null) {
+                                bitmapToUse = dynamicBitmap
+                            } else {
+                                throw Exception("Failed to encode dynamic QRIS")
+                            }
+                        } else {
+                            throw Exception("Failed to generate dynamic payload")
+                        }
+                    } else {
+                        throw Exception("Failed to decode static QRIS")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        Toast.makeText(context, "Gagal bikin QR dinamis, pakai QR statis bawaan.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
 
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
@@ -36,21 +69,21 @@ object ShareSplitBillUtils {
             val textBounds = Rect()
             paint.getTextBounds(text, 0, text.length, textBounds)
             val paddingY = textBounds.height() + 80
-            val newHeight = originalBitmap.height + paddingY
+            val newHeight = bitmapToUse.height + paddingY
             
             // Create a new bitmap that is slightly taller
-            val canvasBitmap = Bitmap.createBitmap(originalBitmap.width, newHeight, Bitmap.Config.ARGB_8888)
+            val canvasBitmap = Bitmap.createBitmap(bitmapToUse.width, newHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(canvasBitmap)
 
             // Draw white background
             canvas.drawColor(Color.WHITE)
 
-            // Draw the original QR code at the top
-            canvas.drawBitmap(originalBitmap, 0f, 0f, null)
+            // Draw the QR code at the top
+            canvas.drawBitmap(bitmapToUse, 0f, 0f, null)
 
             // Draw the text at the bottom
             val textX = canvasBitmap.width / 2f
-            val textY = originalBitmap.height.toFloat() + (paddingY / 2f) + (textBounds.height() / 2f)
+            val textY = bitmapToUse.height.toFloat() + (paddingY / 2f) + (textBounds.height() / 2f)
             canvas.drawText(text, textX, textY, paint)
 
             // Save to cache directory

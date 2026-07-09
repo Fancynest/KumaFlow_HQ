@@ -84,4 +84,7 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
     implementation("androidx.lifecycle:lifecycle-process:2.8.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
+    
+    // QR Code Processing
+    implementation("com.google.zxing:core:3.5.3")
 }

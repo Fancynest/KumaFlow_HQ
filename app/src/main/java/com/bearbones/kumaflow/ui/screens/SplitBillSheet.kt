@@ -182,7 +182,7 @@ fun SplitBillSheet(
                 
                 Button(
                     onClick = {
-                        val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(finalAmount)}")
+                        val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(finalAmount)}", finalAmount)
                         previewUri = uri
                         previewAmountStr = format.format(finalAmount)
                         showPreviewDialog = true
@@ -254,7 +254,7 @@ fun SplitBillSheet(
                                     Text("Rp ${format.format(amount)}", fontWeight = FontWeight.Bold, color = AppPrimary())
                                     IconButton(
                                         onClick = {
-                                            val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(amount)}")
+                                            val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(amount)}", amount)
                                             previewUri = uri
                                             previewAmountStr = format.format(amount)
                                             showPreviewDialog = true
@@ -273,7 +273,7 @@ fun SplitBillSheet(
                                     Text("Rp ${format.format(result.remainingPerPerson)} /${AppStr.splitBillOrg}", fontWeight = FontWeight.Bold, color = AppPrimary())
                                     IconButton(
                                         onClick = {
-                                            val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(result.remainingPerPerson)}")
+                                            val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(result.remainingPerPerson)}", result.remainingPerPerson)
                                             previewUri = uri
                                             previewAmountStr = format.format(result.remainingPerPerson)
                                             showPreviewDialog = true
