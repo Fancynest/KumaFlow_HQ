@@ -788,6 +788,8 @@ fun TransactionBottomSheet(
     var txTimestamp by remember(baseTx) {
         mutableStateOf(baseTx?.timestamp ?: java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME))
     }
+    
+    var showSplitBill by remember { mutableStateOf(false) }
 
     val datePickerDialog = remember {
         android.app.DatePickerDialog(
@@ -1235,6 +1237,22 @@ fun TransactionBottomSheet(
         val totalAmtFinal = if (txMode == 2) (evaluatedSplits[0].amount.toLongOrNull() ?: 0L) else evaluatedSplits.sumOf { it.amount.toLongOrNull() ?: 0L }
         val isAmountValid = totalAmtFinal > 0L
 
+        if (txMode == 0 && isAmountValid) {
+            Button(
+                onClick = { showSplitBill = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+                    .height(55.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.ReceiptLong, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Split Bill 💸", fontWeight = FontWeight.Bold)
+            }
+        }
+
         Button(
             onClick = {
                 val timeStr = txTimestamp
@@ -1373,6 +1391,26 @@ fun TransactionBottomSheet(
                     Text(AppStr.no, color = AppText())
                 }
             }
+        )
+    }
+
+    if (showSplitBill) {
+        val splitViewModel: com.bearbones.kumaflow.ui.screens.SplitBillViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+        
+        // Auto-fill total bill based on current transaction total
+        val evaluatedSplits = initialSplits.map { it.copy(amount = (evaluateMathExpression(it.amount) ?: 0L).toString()) }
+        val totalAmtFinal = evaluatedSplits.sumOf { it.amount.toLongOrNull() ?: 0L }
+        
+        LaunchedEffect(totalAmtFinal) {
+            splitViewModel.setTotalBill(totalAmtFinal)
+        }
+
+        com.bearbones.kumaflow.ui.screens.SplitBillSheet(
+            viewModel = splitViewModel,
+            qrisFilePath = profile.qrisFilePath,
+            bankName = profile.bankName,
+            bankAccount = profile.bankAccount,
+            onDismissRequest = { showSplitBill = false }
         )
     }
 }
@@ -2235,10 +2273,8 @@ fun checkAndApplyPrideEasterEgg(
         }
     }
 
-    if (userProfile == null || userProfile.userName.isEmpty()) {
-        if (pm.getComponentEnabledSetting(normalIcon) != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-            applyIconChanges(normalIcon)
-        }
+    if (userProfile == null) {
+        // Data is still loading from the database, do nothing yet!
         return
     }
 
@@ -2248,6 +2284,7 @@ fun checkAndApplyPrideEasterEgg(
     val isOR = userName.contains("#OR", ignoreCase = true)
 
     val targetIcon = when {
+        userName.isEmpty() -> normalIcon
         isOR -> if (isGlass) orGlassIcon else orIcon
         isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
         isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon

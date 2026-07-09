@@ -150,6 +150,7 @@ fun SettingsScreen(
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showTargetDialog by remember { mutableStateOf(false) }
     var showCatBudgetDialog by remember { mutableStateOf(false) }
+    var showQrisDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showWalletDialog by remember { mutableStateOf(false) }
@@ -308,7 +309,8 @@ fun SettingsScreen(
                         AppStr.manageWallet to Icons.Default.AccountBalanceWallet,
                         AppStr.manageCat to Icons.Default.DashboardCustomize,
                         AppStr.tar to Icons.Default.Adjust,
-                        AppStr.catBudget to Icons.Default.PieChart
+                        AppStr.catBudget to Icons.Default.PieChart,
+                        AppStr.splitBillCfg to Icons.Default.QrCodeScanner
                     ),
                     onClick = { label ->
                         when(label) {
@@ -317,6 +319,7 @@ fun SettingsScreen(
                             AppStr.tar -> showTargetDialog = true
                             AppStr.manageCat -> showCategoryDialog = true
                             AppStr.catBudget -> showCatBudgetDialog = true
+                            AppStr.splitBillCfg -> showQrisDialog = true
                         }
                     }
                 )
@@ -1396,6 +1399,95 @@ fun SettingsScreen(
                 confirmButton = { TextButton(onClick = { showPrivacyDialog = false }) { Text(AppStr.gotIt) } },
                 
                 
+            )
+        }
+
+        if (showQrisDialog) {
+            var qrisUri by remember { mutableStateOf<Uri?>(null) }
+            var bankName by remember { mutableStateOf(currentProfile.bankName) }
+            var bankAcc by remember { mutableStateOf(currentProfile.bankAccount) }
+
+            val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+                if (uri != null) {
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val inputStream = context.contentResolver.openInputStream(uri)
+                            val file = File(context.filesDir, "qris_image.jpg")
+                            val outputStream = FileOutputStream(file)
+                            inputStream?.copyTo(outputStream)
+                            inputStream?.close()
+                            outputStream.close()
+                            val newProf = currentProfile.copy(qrisFilePath = file.absolutePath)
+                            dao.saveProfile(newProf)
+                            withContext(Dispatchers.Main) {
+                                onForceUpdate()
+                                qrisUri = Uri.fromFile(file)
+                                Toast.makeText(context, "QRIS Image Saved", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
+
+            AlertDialog(
+                onDismissRequest = { showQrisDialog = false },
+                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = { Text(AppStr.splitBillCfg, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        Text(AppStr.qrisImg, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                        Button(
+                            onClick = { launcher.launch("image/*") },
+                            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Image, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (currentProfile.qrisFilePath.isNotEmpty()) "Change QRIS Image" else "Upload QRIS Image")
+                        }
+                        if (currentProfile.qrisFilePath.isNotEmpty()) {
+                            Text("QRIS File: ...${currentProfile.qrisFilePath.takeLast(15)}", fontSize = 10.sp, color = AppText().copy(alpha = 0.5f))
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(AppStr.bankName, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                        OutlinedTextField(
+                            value = bankName,
+                            onValueChange = { bankName = it },
+                            placeholder = { Text("e.g. BCA") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = getGlassTextFieldColors()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(AppStr.bankAcc, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                        OutlinedTextField(
+                            value = bankAcc,
+                            onValueChange = { bankAcc = it },
+                            placeholder = { Text("e.g. 1234567890") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = getGlassTextFieldColors()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        scope.launch {
+                            val newProf = currentProfile.copy(bankName = bankName, bankAccount = bankAcc)
+                            dao.saveProfile(newProf)
+                            onForceUpdate()
+                            showQrisDialog = false
+                        }
+                    }) { Text(AppStr.save) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showQrisDialog = false }) { Text(AppStr.cancelBtn) }
+                }
             )
         }
 

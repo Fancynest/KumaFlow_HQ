@@ -80,7 +80,10 @@ data class UserProfile(
     val currentStreak: Int = 0,
     val lastActiveDate: String = "",
     val freezeCount: Int = 0,
-    val lastMilestoneNotified: Int = 0
+    val lastMilestoneNotified: Int = 0,
+    val qrisFilePath: String = "",
+    val bankName: String = "",
+    val bankAccount: String = ""
 )
 
 @Dao
@@ -216,13 +219,21 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN qrisFilePath TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN bankName TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN bankAccount TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
         UserProfile::class,
         TransactionSplit::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -238,7 +249,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
                     .build()
                 INSTANCE = instance
                 instance

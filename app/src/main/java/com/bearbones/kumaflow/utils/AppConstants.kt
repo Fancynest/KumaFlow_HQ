@@ -18,6 +18,13 @@ object AppStr {
     val noTx get() = if(isId) "Belum ada transaksi." else "No transactions found."
     val rep get() = if(isId) "Laporan" else "Report"
     val sum get() = if(isId) "Ringkasan" else "Summary"
+
+    // Split Bill
+    val splitBillCfg get() = if(isId) "Pengaturan Split Bill & QRIS" else "Split Bill & QRIS Settings"
+    val qrisImg get() = if(isId) "Gambar QRIS" else "QRIS Image"
+    val bankName get() = if(isId) "Nama Bank" else "Bank Name"
+    val bankAcc get() = if(isId) "Nomor Rekening" else "Account Number"
+    val selectImg get() = if(isId) "Pilih Gambar" else "Select Image"
     val net get() = if(isId) "Tabungan Bersih" else "Net Savings"
     val targetProg get() = if(isId) "Progres Target Bulanan" else "Monthly Target Progress"
     val spendBreak get() = if(isId) "Rincian Pengeluaran" else "Spending Breakdown"
