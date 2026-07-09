@@ -73,7 +73,7 @@ object ShareSplitBillUtils {
     }
 
     fun shareToWhatsApp(context: Context, imageUri: Uri?, finalAmountStr: String, bankName: String, bankAccount: String) {
-        val autoTextString = "Halo! Ini rincian split bill via KumaFlow ya.\nBagian kamu (include tax) totalnya jadi *Rp $finalAmountStr*.\n\nBoleh minta tolong ditransfer ke:\n🏦 $bankName\n💳 $bankAccount\n\natau scan QR yang dilampirkan ya. Thank you! ✨"
+        val autoTextString = "Tolong transfer *Rp $finalAmountStr* ke rekening ini ya:\n🏦 $bankName\n💳 $bankAccount\n\nAtau bisa langsung scan QRIS di lampiran. Thanks! ✨"
 
         val intent = Intent(Intent.ACTION_SEND).apply {
             if (imageUri != null) {
