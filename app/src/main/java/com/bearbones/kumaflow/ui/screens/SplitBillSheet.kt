@@ -18,11 +18,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.bearbones.kumaflow.AppPrimary
 import com.bearbones.kumaflow.AppSurface
 import com.bearbones.kumaflow.AppSurfaceVariant
@@ -44,6 +47,10 @@ fun SplitBillSheet(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val format = NumberFormat.getNumberInstance(Locale.getDefault())
+
+    var showPreviewDialog by remember { mutableStateOf(false) }
+    var previewUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var previewAmountStr by remember { mutableStateOf("") }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -175,14 +182,16 @@ fun SplitBillSheet(
                 Button(
                     onClick = {
                         val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(finalAmount)}")
-                        ShareSplitBillUtils.shareToWhatsApp(context, uri, format.format(finalAmount), bankName, bankAccount)
+                        previewUri = uri
+                        previewAmountStr = format.format(finalAmount)
+                        showPreviewDialog = true
                     },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Share to WhatsApp")
+                    Text("Preview QRIS")
                 }
             } else {
                 // Tahu Diri Mode
@@ -245,7 +254,9 @@ fun SplitBillSheet(
                                     IconButton(
                                         onClick = {
                                             val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(amount)}")
-                                            ShareSplitBillUtils.shareToWhatsApp(context, uri, format.format(amount), bankName, bankAccount)
+                                            previewUri = uri
+                                            previewAmountStr = format.format(amount)
+                                            showPreviewDialog = true
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
@@ -262,7 +273,9 @@ fun SplitBillSheet(
                                     IconButton(
                                         onClick = {
                                             val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(result.remainingPerPerson)}")
-                                            ShareSplitBillUtils.shareToWhatsApp(context, uri, format.format(result.remainingPerPerson), bankName, bankAccount)
+                                            previewUri = uri
+                                            previewAmountStr = format.format(result.remainingPerPerson)
+                                            showPreviewDialog = true
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
@@ -275,5 +288,55 @@ fun SplitBillSheet(
                 }
             }
         }
+    }
+
+    if (showPreviewDialog) {
+        AlertDialog(
+            onDismissRequest = { showPreviewDialog = false },
+            modifier = Modifier.glassCard(24.dp, AppSurface()),
+            containerColor = if (com.bearbones.kumaflow.LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+            title = { Text("Preview QRIS", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val bitmap = remember(previewUri) {
+                        previewUri?.let { uri ->
+                            try {
+                                context.contentResolver.openInputStream(uri)?.use { stream ->
+                                    android.graphics.BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                                }
+                            } catch (e: Exception) { null }
+                        }
+                    }
+                    if (bitmap != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = bitmap,
+                            contentDescription = "QRIS Preview",
+                            modifier = Modifier.fillMaxWidth().aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                        )
+                    } else {
+                        Text("Gagal memuat QRIS", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        ShareSplitBillUtils.shareToWhatsApp(context, previewUri, previewAmountStr, bankName, bankAccount)
+                        showPreviewDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share to WhatsApp")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPreviewDialog = false }) { Text("Tutup") }
+            }
+        )
     }
 }
