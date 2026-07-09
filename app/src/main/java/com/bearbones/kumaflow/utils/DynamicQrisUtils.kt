@@ -1,0 +1,128 @@
+package com.bearbones.kumaflow.utils
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.NotFoundException
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeWriter
+import java.io.InputStream
+
+object DynamicQrisUtils {
+
+    /**
+     * Decodes a QR code image from a Uri into its raw string payload.
+     */
+    fun decodeQRImage(context: Context, uri: Uri): String? {
+        var inputStream: InputStream? = null
+        try {
+            inputStream = context.contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+
+            val intArray = IntArray(bitmap.width * bitmap.height)
+            bitmap.getPixels(intArray, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+
+            val source = RGBLuminanceSource(bitmap.width, bitmap.height, intArray)
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+
+            val reader = MultiFormatReader()
+            val result = reader.decode(binaryBitmap)
+            return result.text
+        } catch (e: NotFoundException) {
+            // QR Code not found in image (e.g. blurry, cropped, glare)
+            e.printStackTrace()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            inputStream?.close()
+        }
+        return null
+    }
+
+    /**
+     * Calculates the CRC16 CCITT-FALSE of the given payload.
+     * Polynomial: 0x1021
+     * Initial Value: 0xFFFF
+     */
+    fun calculateCRC16(payload: String): String {
+        var crc = 0xFFFF
+        for (i in payload.indices) {
+            val c = payload[i].code
+            crc = crc xor (c shl 8)
+            for (j in 0 until 8) {
+                if ((crc and 0x8000) != 0) {
+                    crc = (crc shl 1) xor 0x1021
+                } else {
+                    crc = crc shl 1
+                }
+            }
+        }
+        return String.format("%04X", crc and 0xFFFF)
+    }
+
+    /**
+     * Converts a Static QRIS payload to a Dynamic QRIS payload by injecting the amount.
+     */
+    fun generateDynamicQrisString(staticPayload: String, amount: Long): String? {
+        if (!staticPayload.startsWith("000201")) return null
+
+        var payload = staticPayload
+
+        // 1. Change Point of Initiation Method (Tag 01) from "11" (Static) to "12" (Dynamic)
+        if (payload.contains("010211")) {
+            payload = payload.replaceFirst("010211", "010212")
+        }
+
+        // 2. Find the CRC tag (Tag 63)
+        // EMVCo QR codes must end with the CRC tag: "6304" followed by 4 characters of the CRC
+        val crcIndex = payload.lastIndexOf("6304")
+        if (crcIndex == -1) return null
+
+        // 3. Extract everything before the CRC
+        val payloadWithoutCrc = payload.substring(0, crcIndex)
+
+        // 4. Inject the Transaction Amount (Tag 54)
+        var newPayloadPrefix = payloadWithoutCrc
+        val amountStr = amount.toString()
+        val lengthStr = String.format("%02d", amountStr.length)
+        val amountTag = "54$lengthStr$amountStr"
+
+        newPayloadPrefix += amountTag
+
+        // 5. Append the CRC tag header
+        newPayloadPrefix += "6304"
+
+        // 6. Calculate the new CRC
+        val newCrc = calculateCRC16(newPayloadPrefix)
+
+        // 7. Return the final string
+        return newPayloadPrefix + newCrc
+    }
+
+    /**
+     * Generates a Bitmap QR code from the given payload string.
+     */
+    fun encodeDynamicQris(payload: String, size: Int = 512): Bitmap? {
+        try {
+            val writer = QRCodeWriter()
+            val bitMatrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size)
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                }
+            }
+            return bitmap
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+}
