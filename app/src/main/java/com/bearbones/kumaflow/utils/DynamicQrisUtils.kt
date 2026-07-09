@@ -9,6 +9,7 @@ import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.NotFoundException
 import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.EncodeHintType
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeWriter
 import java.io.InputStream
@@ -50,8 +51,8 @@ object DynamicQrisUtils {
                 
                 val width = maxX - minX
                 val height = maxY - minY
-                val paddingX = width * 0.15f
-                val paddingY = height * 0.15f
+                val paddingX = width * 0.08f
+                val paddingY = height * 0.08f
                 
                 var rectLeft = (minX - paddingX).toInt()
                 var rectTop = (minY - paddingY).toInt()
@@ -144,7 +145,8 @@ object DynamicQrisUtils {
     fun encodeDynamicQris(payload: String, size: Int = 512): Bitmap? {
         try {
             val writer = QRCodeWriter()
-            val bitMatrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size)
+            val hints = mapOf(EncodeHintType.MARGIN to 0)
+            val bitMatrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size, hints)
             val width = bitMatrix.width
             val height = bitMatrix.height
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
