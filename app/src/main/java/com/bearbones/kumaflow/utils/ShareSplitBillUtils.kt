@@ -73,7 +73,7 @@ object ShareSplitBillUtils {
     }
 
     fun shareToWhatsApp(context: Context, imageUri: Uri?, finalAmountStr: String, bankName: String, bankAccount: String) {
-        val autoTextString = "Tolong transfer *Rp $finalAmountStr* ke rekening ini ya:\n🏦 $bankName\n💳 $bankAccount\n\nAtau bisa langsung scan QRIS di lampiran. Thanks! ✨"
+        val autoTextString = "Tolong scan QRIS di lampiran untuk transfer *Rp $finalAmountStr* ya.\n\nAtau bisa juga ke rekening ini:\n🏦 $bankName\n💳 $bankAccount\n\nThanks! ✨"
 
         val intent = Intent(Intent.ACTION_SEND).apply {
             if (imageUri != null) {
