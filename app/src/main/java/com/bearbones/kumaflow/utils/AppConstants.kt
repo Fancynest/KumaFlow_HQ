@@ -57,7 +57,7 @@ object AppStr {
     val tar get() = if(isId) "Target Global" else "Global Target"
     val catBudget get() = if(isId) "Budget Kategori" else "Category Budget"
 
-    const val VERSION = "v6.2.2"
+    const val VERSION = "v6.3.0"
     val dat get() = if(isId) "Data" else "Data"
     val expPdf get() = if(isId) "Ekspor ke PDF" else "Export to PDF"
     val expCsv get() = if(isId) "Ekspor ke CSV" else "Export to CSV"
@@ -179,7 +179,7 @@ object AppStr {
     
     fun txDeleted(count: Int) = if(isId) "$count transaksi dihapus" else "$count transactions deleted"
     fun txChangedTo(count: Int, cat: String) = if(isId) "$count transaksi diubah ke $cat" else "$count transactions changed to $cat"
-    val versionInfo get() = if(isId) "Versi: $VERSION\nBuild: Beta\nTipe: Standalone Local" else "Version: $VERSION\nBuild: Stable\nType: Standalone Local"
+    val versionInfo get() = if(isId) "Versi: $VERSION\nBuild: Beta\nTipe: Standalone Local" else "Version: $VERSION\nBuild: Core Edition\nType: Standalone Local"
     val updAvail get() = if(isId) "Pembaruan Tersedia" else "Update Available"
     val newVerRdy get() = if(isId) "Versi baru sudah siap" else "New version is ready"
     val currVer get() = if(isId) "Saat ini" else "Current"

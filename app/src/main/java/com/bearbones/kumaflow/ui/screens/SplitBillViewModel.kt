@@ -90,7 +90,9 @@ class SplitBillViewModel : ViewModel() {
         val s = _state.value
         val people = s.numberOfPeople.toIntOrNull() ?: 1
         if (people <= 0) return 0L
-        return roundUpToHundreds(s.totalBill.toDouble() / people)
+        val taxPct = s.taxPercentage.toDoubleOrNull() ?: 0.0
+        val finalBill = s.totalBill * (1 + (taxPct / 100.0))
+        return roundUpToHundreds(finalBill / people)
     }
 
     data class TahuDiriResult(
@@ -115,7 +117,8 @@ class SplitBillViewModel : ViewModel() {
         }
 
         val totalCustomPrice = itemized.sumOf { it.second }
-        val remainingBill = s.totalBill - totalCustomPrice
+        val finalTotalBill = s.totalBill * (1 + (taxPct / 100.0))
+        val remainingBill = finalTotalBill.toLong() - totalCustomPrice
 
         val remainingPeopleCount = maxOf(0, totalPeople - s.customItems.size)
         
