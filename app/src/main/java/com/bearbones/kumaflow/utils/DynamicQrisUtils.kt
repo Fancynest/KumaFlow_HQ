@@ -129,13 +129,51 @@ object DynamicQrisUtils {
 
         newPayloadPrefix += amountTag
 
-        // 5. Append the CRC tag header
+        // 5. Inject Bill Number (Tag 62 Sub-tag 01)
+        val billNumberId = "01"
+        val billNumberValue = "KMA" + (System.currentTimeMillis() % 100000000L).toString()
+        val billNumberLength = String.format("%02d", billNumberValue.length)
+        val billNumberTag = billNumberId + billNumberLength + billNumberValue
+
+        var index = 0
+        var tag62StartIndex = -1
+        var tag62EndIndex = -1
+        var tag62Value = ""
+        
+        while (index < newPayloadPrefix.length - 4) {
+            val tag = newPayloadPrefix.substring(index, index + 2)
+            val tagLengthStr = newPayloadPrefix.substring(index + 2, index + 4)
+            val length = tagLengthStr.toIntOrNull() ?: break
+            
+            if (tag == "62") {
+                tag62StartIndex = index
+                tag62EndIndex = index + 4 + length
+                if (tag62EndIndex <= newPayloadPrefix.length) {
+                    tag62Value = newPayloadPrefix.substring(index + 4, tag62EndIndex)
+                }
+                break
+            }
+            index += 4 + length
+        }
+
+        if (tag62StartIndex != -1 && tag62Value.isNotEmpty()) {
+            val newTag62Value = tag62Value + billNumberTag
+            val newTag62Length = String.format("%02d", newTag62Value.length)
+            val newTag62 = "62" + newTag62Length + newTag62Value
+            newPayloadPrefix = newPayloadPrefix.substring(0, tag62StartIndex) + newTag62 + newPayloadPrefix.substring(tag62EndIndex)
+        } else {
+            val newTag62Length = String.format("%02d", billNumberTag.length)
+            val newTag62 = "62" + newTag62Length + billNumberTag
+            newPayloadPrefix += newTag62
+        }
+
+        // 6. Append the CRC tag header
         newPayloadPrefix += "6304"
 
-        // 6. Calculate the new CRC
+        // 7. Calculate the new CRC
         val newCrc = calculateCRC16(newPayloadPrefix)
 
-        // 7. Return the final string
+        // 8. Return the final string
         return newPayloadPrefix + newCrc
     }
 
