@@ -299,11 +299,15 @@ class MainActivity : FragmentActivity() {
                         val prefs = context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE)
                         val lastSnooze = prefs.getLong("last_update_snooze", 0L)
                         val snoozedVersionCode = prefs.getInt("snoozed_version_code", 0)
+                        val ignoredVersionCode = prefs.getInt("ignored_update_version_code", 0)
                         val currentTime = System.currentTimeMillis()
-                        // Tampilkan jika versinya lebih baru dari yang di-snooze, ATAU sudah lewat 2 hari
-                        if (info.versionCode > snoozedVersionCode || currentTime - lastSnooze >= 2 * 24 * 60 * 60 * 1000L) {
-                            updateInfo = info
-                            showUpdateDialog = true
+                        
+                        if (info.versionCode > ignoredVersionCode) {
+                            // Tampilkan jika versinya lebih baru dari yang di-snooze, ATAU sudah lewat 2 hari
+                            if (info.versionCode > snoozedVersionCode || currentTime - lastSnooze >= 2 * 24 * 60 * 60 * 1000L) {
+                                updateInfo = info
+                                showUpdateDialog = true
+                            }
                         }
                     }
                 }
@@ -449,6 +453,9 @@ class MainActivity : FragmentActivity() {
                                             showUpdateDialog = false 
                                         },
                                         onUpdate = {
+                                            val prefs = context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE)
+                                            prefs.edit().putInt("ignored_update_version_code", updateInfo?.versionCode ?: 0).apply()
+
                                             downloadJob = coroutineScope.launch {
                                                 com.bearbones.kumaflow.utils.UpdateManager.downloadApk(context, updateInfo!!.apkUrl).collect { state ->
                                                     downloadState = state
