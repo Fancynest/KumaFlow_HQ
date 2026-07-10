@@ -649,6 +649,34 @@ fun MainScreen(
                             transactionToEdit = null
                             // Pass the intention to the bottom sheet if we ever support pre-selecting
                             showBottomSheet = true
+                        },
+                        onReconcile = { walletName, delta ->
+                            scope.launch {
+                                try {
+                                    val isIncome = delta > 0
+                                    val amountStr = kotlin.math.abs(delta).toString()
+                                    val timeStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                    val dateStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern(userProfile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                                    
+                                    val adjustmentTx = KumaTransaction(
+                                        name = if (isIncome) "Koreksi Plus - Kelebihan Saldo" else "Koreksi Minus - Lupa Catat",
+                                        date = dateStr,
+                                        amount = amountStr,
+                                        isIncome = isIncome,
+                                        category = "Balancing",
+                                        wallet = walletName,
+                                        timestamp = timeStr,
+                                        message = "Auto-Reconciliation"
+                                    )
+                                    
+                                    dao.insertFullTransaction(adjustmentTx, emptyList())
+                                    forceUpdateTrigger++
+                                    updateKumaWidget(context)
+                                    Toast.makeText(context, if(AppStr.isId) "Saldo $walletName berhasil disesuaikan!" else "$walletName balance adjusted successfully!", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Reconciliation Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
                     )
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(

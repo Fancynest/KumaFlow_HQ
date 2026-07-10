@@ -96,6 +96,7 @@ fun HomeScreen(
     onBulkDelete: (List<TransactionWithSplits>) -> Unit,
     onBulkUpdateCategory: (List<TransactionWithSplits>, String) -> Unit,
     onUpdateProfile: (UserProfile) -> Unit,
+    onReconcile: (String, Long) -> Unit = { _, _ -> },
     onAddTransaction: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -140,6 +141,8 @@ fun HomeScreen(
     val isSelectionMode = selectedTxs.isNotEmpty()
     var showBulkCatDialog by remember { mutableStateOf(false) }
     var expandedDates by rememberSaveable { mutableStateOf(setOf<String>()) }
+    var showReconcileDialog by remember { mutableStateOf(false) }
+    var reconcileWalletName by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -388,6 +391,10 @@ fun HomeScreen(
                                                 .zIndex(if (isDragging) 1f else 0f)
                                                 .scale(cardScale)
                                                 .detectReorderAfterLongPress(reorderState)
+                                                .clickable { 
+                                                    reconcileWalletName = walletName
+                                                    showReconcileDialog = true
+                                                }
                                                 .background(if (isPrideThemeActive) Color.White.copy(alpha=0.15f) else AppBg().copy(alpha = 0.35f), RoundedCornerShape(20.dp))
                                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
@@ -619,6 +626,99 @@ fun HomeScreen(
                 },
                 containerColor = AppSurface()
             )
+        }
+        
+        if (showReconcileDialog) {
+            val systemBalance = walletBalances[reconcileWalletName] ?: 0L
+            var realBalanceInput by remember { mutableStateOf("") }
+            
+            ModalBottomSheet(
+                onDismissRequest = { showReconcileDialog = false },
+                containerColor = AppSurface(),
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = if(AppStr.isId) "Sesuaikan Saldo $reconcileWalletName" else "Adjust $reconcileWalletName Balance",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        color = AppText()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if(AppStr.isId) "Saldo saat ini di KumaFlow: $curSym ${NumberFormat.getInstance(locale).format(systemBalance)}" else "Current system balance: $curSym ${NumberFormat.getInstance(locale).format(systemBalance)}",
+                        fontSize = 14.sp,
+                        color = AppText().copy(alpha = 0.7f)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    OutlinedTextField(
+                        value = realBalanceInput,
+                        onValueChange = { 
+                            val digitsOnly = it.filter { char -> char.isDigit() }
+                            realBalanceInput = digitsOnly
+                        },
+                        label = { Text(if(AppStr.isId) "Saldo Sebenarnya" else "Actual Balance") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .glassCard(16.dp, AppSurfaceVariant(), useHaze = true),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = getGlassTextFieldColors(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        singleLine = true,
+                        visualTransformation = ThousandSeparatorTransformation()
+                    )
+                    
+                    val actualBal = realBalanceInput.toLongOrNull() ?: systemBalance
+                    val delta = actualBal - systemBalance
+                    
+                    if (realBalanceInput.isNotEmpty() && delta != 0L) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val isIncome = delta > 0
+                        val deltaColor = if (isIncome) AppGreen() else AppRed()
+                        val sign = if (isIncome) "+" else "-"
+                        
+                        Text(
+                            text = if(AppStr.isId) "Selisih: $sign $curSym ${NumberFormat.getInstance(locale).format(abs(delta))} (${if(isIncome) "Pemasukan" else "Pengeluaran"})" else "Delta: $sign $curSym ${NumberFormat.getInstance(locale).format(abs(delta))} (${if(isIncome) "Income" else "Expense"})",
+                            color = deltaColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    Button(
+                        onClick = {
+                            if (delta != 0L) {
+                                onReconcile(reconcileWalletName, delta)
+                            }
+                            showReconcileDialog = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .shadow(12.dp, RoundedCornerShape(24.dp), ambientColor = AppPrimary(), spotColor = AppPrimary()),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
+                        enabled = realBalanceInput.isNotEmpty() && delta != 0L
+                    ) {
+                        Text(
+                            text = if(AppStr.isId) "Sesuaikan Otomatis" else "Auto-Adjust Balance",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
         }
     }
 }
