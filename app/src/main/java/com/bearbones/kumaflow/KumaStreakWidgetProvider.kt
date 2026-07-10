@@ -66,7 +66,18 @@ class KumaStreakWidgetProvider : AppWidgetProvider() {
         val db = KumaDatabase.getDatabase(context)
         val profile = db.transactionDao().getProfileSync()
         if (profile != null) {
-            views.setTextViewText(R.id.widget_streak_count, "🔥 ${profile.currentStreak}")
+            val todayStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+            val isActiveToday = profile.lastActiveDate == todayStr
+            
+            views.setTextViewText(R.id.widget_streak_count, "${profile.currentStreak}")
+            
+            if (isActiveToday) {
+                views.setImageViewResource(R.id.widget_fire_icon, R.drawable.ic_fire_active)
+                views.setTextColor(R.id.widget_streak_count, android.graphics.Color.parseColor("#FFB300"))
+            } else {
+                views.setImageViewResource(R.id.widget_fire_icon, R.drawable.ic_fire_inactive)
+                views.setTextColor(R.id.widget_streak_count, android.graphics.Color.GRAY)
+            }
         }
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
