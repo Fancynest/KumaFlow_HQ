@@ -1571,7 +1571,7 @@ fun drawHeaders(
 }
 
 fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProfile, month: Int, year: Int) {
-    val sortedData = data.sortedBy { it.id } // Sort oldest to newest
+    val sortedData = data.sortedBy { it.timestamp } // Sort oldest to newest chronologically
     val monthNames = if (AppStr.isId) listOf("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember") else listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
     val periodStr = if (month in 1..12) "${monthNames[month - 1]} $year" else if (AppStr.isId) "Kustom/Filter" else "Custom/Filtered"
     val pdfDocument = PdfDocument()
@@ -1675,7 +1675,7 @@ fun generateCSV(context: Context, data: List<KumaTransaction>, profile: UserProf
     try {
         file.bufferedWriter().use { out ->
             out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
-            data.forEach { t ->
+            data.sortedBy { it.timestamp }.forEach { t ->
                 val type = if (t.isIncome) AppStr.inc else AppStr.exp
                 out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
             }
@@ -1697,7 +1697,7 @@ fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserPr
     try {
         file.bufferedWriter().use { out ->
             out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
-            data.forEach { t ->
+            data.sortedBy { it.timestamp }.forEach { t ->
                 val type = if (t.isIncome) AppStr.inc else AppStr.exp
                 out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
             }
