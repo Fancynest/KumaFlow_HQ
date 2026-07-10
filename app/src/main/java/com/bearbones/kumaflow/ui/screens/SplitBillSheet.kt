@@ -63,6 +63,7 @@ fun SplitBillSheet(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
+                .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
             Text(
                 text = AppStr.splitBillCalc,

@@ -35,6 +35,10 @@ class SplitBillViewModel : ViewModel() {
         _state.update { it.copy(totalBill = amount) }
     }
 
+    fun resetState() {
+        _state.value = SplitBillState()
+    }
+
     fun setNumberOfPeople(countStr: String) {
         // Only allow numbers
         if (countStr.all { it.isDigit() }) {

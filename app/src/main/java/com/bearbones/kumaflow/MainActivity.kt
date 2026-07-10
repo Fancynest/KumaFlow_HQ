@@ -1402,6 +1402,11 @@ fun TransactionBottomSheet(
         val evaluatedSplits = initialSplits.map { it.copy(amount = (evaluateMathExpression(it.amount) ?: 0L).toString()) }
         val totalAmtFinal = evaluatedSplits.sumOf { it.amount.toLongOrNull() ?: 0L }
         
+        LaunchedEffect(Unit) {
+            splitViewModel.resetState()
+            splitViewModel.setTotalBill(totalAmtFinal)
+        }
+
         LaunchedEffect(totalAmtFinal) {
             splitViewModel.setTotalBill(totalAmtFinal)
         }
