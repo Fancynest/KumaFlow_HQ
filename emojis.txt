@@ -1,0 +1,38 @@
+KumaService.kt:117: Pair("Satu bulan saldonya ke mana? 🥀", "Duit abis berlebihan itu nggak baik. Yuk catat pengeluaran hari ini."),
+KumaService.kt:118: Pair("Hari ini jajan apa aja? 🤔", "Sekecil apapun itu, dicatat ya! Biar nggak kaget di akhir bulan."),
+KumaService.kt:119: Pair("Lantas mengapa ku masih jajan? 🎧", "Mending evaluasi dulu pengeluaran kamu hari ini deh."),
+KumaService.kt:120: Pair("Berapa harga kewarasan ini? 🥺", "Catat pengeluaran kamu sekarang yuk ah!"),
+KumaService.kt:121: Pair("Jangan lupa diri bestie 🙏", "Ayo cek dompet kamu, masih sehat atau udah nangis?"),
+KumaService.kt:122: Pair("Semoga saldo aman ya 🤲", "Udah nyatat pengeluaran hari ini? Yuk buka aplikasinya."),
+KumaService.kt:123: Pair("Pengeluaran misterius? 👻", "Jangan biarkan duit menguap gitu aja, catat sekarang!"),
+KumaService.kt:124: Pair("Soal hemat ternyata aku masih amatir 💸", "Saatnya evaluasi pengeluaran hari ini.")
+KumaService.kt:128: Pair("Where did this month's balance go? 🥀", "Overspending is bad. Let's record today's expenses."),
+KumaService.kt:129: Pair("What did you buy today? 🤔", "Record every little thing! So you won't be surprised later."),
+KumaService.kt:130: Pair("Why am I still spending? 🎧", "Better evaluate your expenses today."),
+KumaService.kt:131: Pair("How much does sanity cost? 🥺", "Let's record your expenses now!"),
+KumaService.kt:132: Pair("Don't forget yourself bestie 🙏", "Check your wallet, is it healthy or crying?"),
+KumaService.kt:133: Pair("Hope the balance is safe 🤲", "Have you recorded today's expenses? Open the app."),
+KumaService.kt:134: Pair("Mysterious expenses? 👻", "Don't let money evaporate, record it now!"),
+KumaService.kt:135: Pair("Still an amateur at saving 💸", "Time to evaluate today's expenses.")
+KumaStreakWidgetProvider.kt:69: views.setTextViewText(R.id.widget_streak_count, "🔥 ${profile.currentStreak}")
+MainActivity.kt:1253: Text("Split Bill 💸", fontWeight = FontWeight.Bold)
+MainActivity.kt:2290: isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
+MainActivity.kt:2291: isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon
+NewUserDialog.kt:39: text = "📢 Info Penting Pengingat",
+NewUserDialog.kt:49: Text(text = "🛡️ Pelindung Sistem", fontWeight = FontWeight.Bold)
+NewUserDialog.kt:53: Text(text = "🛑 Jangan Dihapus (Di-swipe)", fontWeight = FontWeight.Bold)
+NewUserDialog.kt:57: Text(text = "🔋 Hemat Baterai", fontWeight = FontWeight.Bold)
+WrappedScreen.kt:89: // 🔥 BUG FIX: Reset the active timer upon page transition
+WrappedScreen.kt:94: // 🔥 BUG FIX: Decouple the screen transition animation from the pause effect
+ReportScreen.kt:136: if (AppStr.isId) "Pemasukanmu jauh lebih besar dari pengeluaran! Keren banget, pertahankan! 🚀" else "Your income is much larger than your expenses! Great job! 🚀"
+ReportScreen.kt:138: if (AppStr.isId) "Hati-hati, pengeluaranmu bulan ini melebihi pemasukan. Waktunya ngerem jajan! 💸" else "Watch out, expenses exceeded income this month. Time to hold back! 💸"
+ReportScreen.kt:142: if (AppStr.isId) "Pengeluaran terbesarmu bulan ini ada di ${topCat.first} ($pct%). Jangan sampai overbudget ya! 📊" else "Your biggest expense this month is ${topCat.first} ($pct%). Keep an eye on it! 📊"
+SettingsScreen.kt:1126: "IDR" to "🇮🇩", "USD" to "🇺🇸", "EUR" to "🇪🇺", "JPY" to "🇯🇵",
+SettingsScreen.kt:1127: "GBP" to "🇬🇧", "AUD" to "🇦🇺", "CAD" to "🇨🇦", "CHF" to "🇨🇭",
+SettingsScreen.kt:1128: "CNY" to "🇨🇳", "SGD" to "🇸🇬"
+AppConstants.kt:24: val splitBillCalc get() = if(isId) "Kalkulator Split Bill 💸" else "Split Bill Calculator 💸"
+AppConstants.kt:156: val optSuccess get() = if(isId) "Storage berhasil dioptimasi! 🧹" else "Storage optimized! 🧹"
+ShareSplitBillUtils.kt:122: append("Tolong scan QRIS di lampiran untuk transfer *Rp $finalAmountStr* ya.\n\nAtau bisa juga ke rekening ini:\n🏦 $bankName\n💳 $bankAccount\n\nThanks! ✨")
+ShareSplitBillUtils.kt:126: append("Tolong transfer *Rp $finalAmountStr* ke rekening ini ya:\n🏦 $bankName\n💳 $bankAccount\n\nThanks! ✨")
+ShareStreakUtils.kt:47: canvas.drawText("🔥", width / 2f, 750f, textPaint)
+widget_streak.xml:29: android:text="🔥 0"

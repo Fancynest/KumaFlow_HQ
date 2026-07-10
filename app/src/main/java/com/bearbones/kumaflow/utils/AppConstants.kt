@@ -21,7 +21,8 @@ object AppStr {
 
     // Split Bill
     val splitBillCfg get() = if(isId) "Pengaturan Split Bill & QRIS" else "Split Bill & QRIS Settings"
-    val splitBillCalc get() = if(isId) "Kalkulator Split Bill 💸" else "Split Bill Calculator 💸"
+    val splitBill get() = if(isId) "Split Bill" else "Split Bill"
+    val splitBillCalc get() = if(isId) "Kalkulator Split Bill" else "Split Bill Calculator"
     val splitBillOrg get() = if(isId) "org" else "pax"
     val name get() = if(isId) "Nama" else "Name"
     val qrisImg get() = if(isId) "Gambar QRIS" else "QRIS Image"
@@ -148,12 +149,12 @@ object AppStr {
     val catName get() = if(isId) "Nama Kategori" else "Category Name"
     val chooseIcon get() = if(isId) "Pilih Ikon:" else "Choose Icon:"
     val chooseCatIcon get() = if(isId) "Pilih Ikon Kategori:" else "Choose Category Icon:"
-    val backupReminderTitle get() = if(isId) "Oit, Backup Dulu! \uD83D\uDC3B\uD83D\uDCBE" else "Hey, Backup Time! \uD83D\uDC3B\uD83D\uDCBE"
-    val backupReminderMsg get() = if(isId) "Data kamu udah makin banyak nih. Mending backup dulu filenya biar nggak hilang kalo HP kamu kenapa-kenapa. \uD83D\uDC3B" else "You have a lot of data now. Better backup your file so you don't lose it if something happens to your phone. \uD83D\uDC3B"
+    val backupReminderTitle get() = if(isId) "Pengingat Pencadangan Data" else "Data Backup Reminder"
+    val backupReminderMsg get() = if(isId) "Data Anda semakin bertambah. Lakukan pencadangan berkala untuk mencegah kehilangan data." else "Your data is growing. Please backup regularly to prevent data loss."
     val backupNow get() = if(isId) "Backup Sekarang" else "Backup Now"
-    val later get() = if(isId) "Nanti Aja" else "Later"
+    val later get() = if(isId) "Nanti Saja" else "Later"
     val optDb get() = if(isId) "Optimasi Database" else "Optimize Database"
-    val optSuccess get() = if(isId) "Storage berhasil dioptimasi! 🧹" else "Storage optimized! 🧹"
+    val optSuccess get() = if(isId) "Penyimpanan berhasil dioptimasi." else "Storage optimized."
     val optFail get() = if(isId) "Gagal optimasi: " else "Optimization failed: "
     val cancelBulk get() = if(isId) "Batal Massal" else "Cancel Selection"
     val changeCat get() = if(isId) "Ubah Kategori" else "Change Category"
@@ -163,6 +164,25 @@ object AppStr {
     val activeFreeze get() = if(isId) "Pembeku Aktif" else "Active Freezes"
     val progToNextFreeze get() = if(isId) "Progres ke Pembeku Baru" else "Progress to Next Freeze"
     val shareMilestone get() = if(isId) "Bagikan Pencapaian" else "Share Milestone"
+
+    // NewUserDialog
+    val infoReminder get() = if(isId) "Informasi Pengingat Sistem" else "System Reminder Information"
+    val infoReminderDesc get() = if(isId) "Agar KumaFlow dapat mengingatkan pencatatan, notifikasi \"KumaFlow Aktif\" akan muncul di layar." else "To ensure KumaFlow reminds you to record expenses, a \"KumaFlow Active\" notification will remain visible."
+    val sysProtector get() = if(isId) "Pelindung Sistem" else "System Protector"
+    val sysProtectorDesc get() = if(isId) "Sistem siaga agar alarm tidak dimatikan paksa oleh sistem operasi perangkat." else "Standby mode to prevent the operating system from force-closing the alarm."
+    val doNotDismiss get() = if(isId) "Jangan Dihapus" else "Do Not Dismiss"
+    val doNotDismissDesc get() = if(isId) "Mohon biarkan notifikasi ini. Jika dihapus, pengingat berisiko berhenti berfungsi." else "Please keep this notification active. Dismissing it may cause reminders to fail."
+    val battEfficiency get() = if(isId) "Efisiensi Baterai" else "Battery Efficiency"
+    val battEfficiencyDesc get() = if(isId) "Sistem ini dioptimalkan dan tidak akan menguras daya baterai perangkat Anda." else "This system is highly optimized and will not drain your device's battery."
+    val understandCont get() = if(isId) "Mengerti & Lanjutkan" else "Understand & Continue"
+
+    // ReportScreen
+    val repGreat get() = if(isId) "Pemasukan Anda lebih besar dari pengeluaran. Pertahankan performa keuangan ini." else "Your income is larger than your expenses. Keep up this good financial performance."
+    val repWarn get() = if(isId) "Peringatan: Pengeluaran bulan ini melebihi pemasukan. Mohon kurangi pengeluaran sekunder." else "Warning: Your expenses exceed your income this month. Please reduce secondary spending."
+    val repTop get() = if(isId) "Pengeluaran terbesar Anda bulan ini adalah pada kategori %1\$s (%2\$d%%). Harap perhatikan batas anggaran Anda." else "Your largest expense this month is %1\$s (%2\$d%%). Please mind your budget limit."
+    val repNoData get() = if(isId) "Belum ada transaksi bulan ini. Silakan mulai pencatatan." else "No transactions this month. Please start tracking."
+    val repStable get() = if(isId) "Keuangan Anda stabil bulan ini. Kinerja yang baik." else "Your finances are stable this month. Good performance."
+
     val importantBattery get() = if(isId) "PENTING: Pengaturan Baterai & Auto-Launch" else "IMPORTANT: Battery & Auto-Launch Settings"
     val openBatterySet get() = if(isId) "Buka Pengaturan Baterai" else "Open Battery Settings"
     val errRestore get() = if(isId) "Error Restore:" else "Restore Error:"

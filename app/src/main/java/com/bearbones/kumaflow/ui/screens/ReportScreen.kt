@@ -131,17 +131,17 @@ fun ReportScreen(
         // SMART INSIGHTS GENERATION
         val insightMessage = remember(income, expenses, expensePerCat) {
             if (income == 0L && expenses == 0L) {
-                if (AppStr.isId) "Belum ada transaksi bulan ini. Yuk mulai catat!" else "No transactions this month. Start tracking!"
+                AppStr.repNoData
             } else if (income > expenses * 1.5) {
-                if (AppStr.isId) "Pemasukanmu jauh lebih besar dari pengeluaran! Keren banget, pertahankan! 🚀" else "Your income is much larger than your expenses! Great job! 🚀"
+                AppStr.repGreat
             } else if (expenses > income) {
-                if (AppStr.isId) "Hati-hati, pengeluaranmu bulan ini melebihi pemasukan. Waktunya ngerem jajan! 💸" else "Watch out, expenses exceeded income this month. Time to hold back! 💸"
+                AppStr.repWarn
             } else if (expensePerCat.isNotEmpty()) {
                 val topCat = expensePerCat.first()
                 val pct = ((topCat.second.toFloat() / expenses.toFloat()) * 100).toInt()
-                if (AppStr.isId) "Pengeluaran terbesarmu bulan ini ada di ${topCat.first} ($pct%). Jangan sampai overbudget ya! 📊" else "Your biggest expense this month is ${topCat.first} ($pct%). Keep an eye on it! 📊"
+                String.format(AppStr.repTop, topCat.first, pct)
             } else {
-                if (AppStr.isId) "Keuanganmu stabil bulan ini. Mantap! ✨" else "Your finances are stable this month. Good job! ✨"
+                AppStr.repStable
             }
         }
 

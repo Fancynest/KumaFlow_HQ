@@ -36,26 +36,26 @@ fun NewUserAnnouncementDialog() {
             },
             title = {
                 Text(
-                    text = "📢 Info Penting Pengingat",
+                    text = AppStr.infoReminder,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
             },
             text = {
                 Column {
-                    Text(text = if(AppStr.isId) "Biar KumaFlow bisa selalu ngingetin kamu nyatat pengeluaran, kamu akan melihat notifikasi \"KumaFlow Aktif\" di atas layar." else "To remind you to track expenses, you will see a \"KumaFlow Active\" notification at the top of the screen.")
+                    Text(text = AppStr.infoReminderDesc)
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(text = "🛡️ Pelindung Sistem", fontWeight = FontWeight.Bold)
-                    Text(text = "Tanda KumaFlow sedang standby agar alarm tidak dimatikan paksa oleh HP.")
+                    Text(text = AppStr.sysProtector, fontWeight = FontWeight.Bold)
+                    Text(text = AppStr.sysProtectorDesc)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(text = "🛑 Jangan Dihapus (Di-swipe)", fontWeight = FontWeight.Bold)
-                    Text(text = "Tolong biarkan notifikasi ini. Jika dihapus, pengingat berisiko mati.")
+                    Text(text = AppStr.doNotDismiss, fontWeight = FontWeight.Bold)
+                    Text(text = AppStr.doNotDismissDesc)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(text = "🔋 Hemat Baterai", fontWeight = FontWeight.Bold)
-                    Text(text = "Sistem ini sangat ringan dan aman untuk baterai HP kamu.")
+                    Text(text = AppStr.battEfficiency, fontWeight = FontWeight.Bold)
+                    Text(text = AppStr.battEfficiencyDesc)
                 }
             },
             confirmButton = {
@@ -67,7 +67,7 @@ fun NewUserAnnouncementDialog() {
                         showDialog = false
                     }
                 ) {
-                    Text(if(AppStr.isId) "Paham & Lanjutkan" else "Understand & Continue")
+                    Text(AppStr.understandCont)
                 }
             }
         )

@@ -119,13 +119,29 @@ object ShareSplitBillUtils {
 
         val autoTextString = buildString {
             if (hasQris && hasBank) {
-                append("Tolong scan QRIS di lampiran untuk transfer *Rp $finalAmountStr* ya.\n\nAtau bisa juga ke rekening ini:\n🏦 $bankName\n💳 $bankAccount\n\nThanks! ✨")
+                if (com.bearbones.kumaflow.AppStr.isId) {
+                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan pindai QRIS terlampir atau transfer ke rekening berikut:\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
+                } else {
+                    append("Here are the billing details for *Rp $finalAmountStr*. Please scan the attached QRIS or transfer to the following account:\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
+                }
             } else if (hasQris) {
-                append("Tolong scan QRIS di lampiran untuk transfer *Rp $finalAmountStr* ya.\n\nThanks! ✨")
+                if (com.bearbones.kumaflow.AppStr.isId) {
+                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan pindai QRIS terlampir.\n\nTerima kasih.")
+                } else {
+                    append("Here are the billing details for *Rp $finalAmountStr*. Please scan the attached QRIS.\n\nThank you.")
+                }
             } else if (hasBank) {
-                append("Tolong transfer *Rp $finalAmountStr* ke rekening ini ya:\n🏦 $bankName\n💳 $bankAccount\n\nThanks! ✨")
+                if (com.bearbones.kumaflow.AppStr.isId) {
+                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan transfer ke rekening berikut:\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
+                } else {
+                    append("Here are the billing details for *Rp $finalAmountStr*. Please transfer to the following account:\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
+                }
             } else {
-                append("Halo! Ini rincian split bill via KumaFlow ya.\nBagian kamu totalnya jadi *Rp $finalAmountStr*.\n\nThanks! ✨")
+                if (com.bearbones.kumaflow.AppStr.isId) {
+                    append("Berikut rincian penagihan melalui KumaFlow. Total tagihan Anda adalah *Rp $finalAmountStr*.\n\nTerima kasih.")
+                } else {
+                    append("Here are the billing details via KumaFlow. Your total is *Rp $finalAmountStr*.\n\nThank you.")
+                }
             }
         }
 

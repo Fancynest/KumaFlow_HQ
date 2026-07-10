@@ -1250,7 +1250,7 @@ fun TransactionBottomSheet(
             ) {
                 Icon(Icons.Default.ReceiptLong, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Split Bill 💸", fontWeight = FontWeight.Bold)
+                Text(AppStr.splitBill, fontWeight = FontWeight.Bold)
             }
         }
 
