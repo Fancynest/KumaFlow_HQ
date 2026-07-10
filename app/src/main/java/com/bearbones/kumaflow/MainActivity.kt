@@ -654,6 +654,7 @@ fun MainScreen(
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
                         profile = userProfile,
                         allTransactions = transactionListWithSplits,
+                        dao = dao,
                         paddingValues = paddingValues,
                         onEdit = { t: TransactionWithSplits -> transactionToEdit = t; showBottomSheet = true },
                         onDelete = { t: TransactionWithSplits -> scope.launch { try { dao.deleteTransaction(t.transaction); updateKumaWidget(context) } catch (e: Exception) { Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show() } } },

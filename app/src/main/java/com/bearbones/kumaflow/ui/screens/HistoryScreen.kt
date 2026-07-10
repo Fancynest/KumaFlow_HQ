@@ -47,6 +47,7 @@ import org.json.JSONObject
 fun HistoryScreen(
     profile: UserProfile,
     allTransactions: List<TransactionWithSplits>,
+    dao: com.bearbones.kumaflow.TransactionDao,
     paddingValues: PaddingValues,
     onEdit: (TransactionWithSplits) -> Unit,
     onDelete: (TransactionWithSplits) -> Unit,
@@ -97,10 +98,23 @@ fun HistoryScreen(
 
     var showM3DatePicker by remember { mutableStateOf(false) }
 
+    // SEARCH STATE
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<TransactionWithSplits>>(emptyList()) }
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            dao.searchTransactions("$searchQuery*").collect { searchResults = it }
+        } else {
+            searchResults = emptyList()
+        }
+    }
+    
+    val baseTxList = if (searchQuery.isNotBlank()) searchResults else allTransactions
+
     // DERIVED FILTERED TRANSACTIONS
-    val filteredTx by remember(allTransactions, selectedDateFilter, customStartDate, customEndDate, selectedCategories, selectedWallets) {
+    val filteredTx by remember(baseTxList, selectedDateFilter, customStartDate, customEndDate, selectedCategories, selectedWallets) {
         derivedStateOf {
-            allTransactions.filter { txObj ->
+            baseTxList.filter { txObj ->
                 val tx = txObj.transaction
                 var match = true
 
@@ -178,6 +192,19 @@ fun HistoryScreen(
                 
             }
             
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // SEARCH BAR
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text(if (isId) "Cari transaksi..." else "Search transactions...") },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Filter Chips Row

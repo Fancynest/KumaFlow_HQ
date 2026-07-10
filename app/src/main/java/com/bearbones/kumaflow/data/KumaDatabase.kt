@@ -7,6 +7,17 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
+@Entity(tableName = "transactions_fts")
+@Fts4(contentEntity = KumaTransaction::class)
+data class TransactionFTS(
+    @ColumnInfo(name = "rowid")
+    @PrimaryKey
+    val rowId: Int,
+    val name: String,
+    val category: String,
+    val message: String
+)
+
 @Immutable
 @Entity(tableName = "transactions")
 data class KumaTransaction(
@@ -91,6 +102,14 @@ interface TransactionDao {
     @Transaction
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getAllTransactionsWithSplits(): Flow<List<TransactionWithSplits>>
+
+    @Transaction
+    @Query("""
+        SELECT t.* FROM transactions t 
+        JOIN transactions_fts fts ON (t.id = fts.rowid) 
+        WHERE transactions_fts MATCH :query
+    """)
+    fun searchTransactions(query: String): Flow<List<TransactionWithSplits>>
 
     @Insert
     suspend fun insertTransaction(transaction: KumaTransaction): Long
@@ -227,13 +246,21 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     }
 }
 
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` USING FTS4(`name` TEXT, `category` TEXT, `message` TEXT, content=`transactions`)")
+        db.execSQL("INSERT INTO `transactions_fts` (`transactions_fts`, `rowid`, `name`, `category`, `message`) SELECT 'rebuild', `id`, `name`, `category`, `message` FROM `transactions`")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
         UserProfile::class,
-        TransactionSplit::class
+        TransactionSplit::class,
+        TransactionFTS::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -249,7 +276,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
                     .build()
                 INSTANCE = instance
                 instance

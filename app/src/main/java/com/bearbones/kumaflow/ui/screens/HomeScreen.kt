@@ -421,6 +421,14 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
+                    // --- CONTRIBUTION HEATMAP ---
+                    com.bearbones.kumaflow.ui.components.ContributionHeatmap(
+                        allTransactions = transactionsWithSplits,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     OutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = AppText().copy(alpha = 0.5f)) },
