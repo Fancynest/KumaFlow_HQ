@@ -72,10 +72,10 @@ class KumaStreakWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_streak_count, "${profile.currentStreak}")
             
             if (isActiveToday) {
-                views.setImageViewResource(R.id.widget_fire_icon, R.drawable.ic_fire_active)
+                views.setFloat(R.id.widget_fire_icon, "setAlpha", 1.0f)
                 views.setTextColor(R.id.widget_streak_count, android.graphics.Color.parseColor("#FFB300"))
             } else {
-                views.setImageViewResource(R.id.widget_fire_icon, R.drawable.ic_fire_inactive)
+                views.setFloat(R.id.widget_fire_icon, "setAlpha", 0.4f)
                 views.setTextColor(R.id.widget_streak_count, android.graphics.Color.GRAY)
             }
         }
