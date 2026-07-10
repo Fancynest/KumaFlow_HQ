@@ -57,7 +57,7 @@ fun SplitBillSheet(
         onDismissRequest = onDismissRequest,
         containerColor = AppSurface(),
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        modifier = Modifier.fillMaxHeight(0.9f)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
             modifier = Modifier

@@ -705,7 +705,12 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .shadow(12.dp, RoundedCornerShape(24.dp), ambientColor = AppPrimary(), spotColor = AppPrimary()),
+                            .then(
+                                if (realBalanceInput.isNotEmpty() && delta != 0L)
+                                    Modifier.shadow(12.dp, RoundedCornerShape(24.dp), ambientColor = AppPrimary(), spotColor = AppPrimary())
+                                else
+                                    Modifier
+                            ),
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
                         enabled = realBalanceInput.isNotEmpty() && delta != 0L
