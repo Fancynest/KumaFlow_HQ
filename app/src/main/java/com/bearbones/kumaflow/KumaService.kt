@@ -139,7 +139,8 @@ class KumaService : Service() {
         )
 
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_kuma_notif) // Fallback to R.mipmap.ic_launcher if the custom notification icon fails
+            .setSmallIcon(R.drawable.ic_kuma_notif)
+            .setLargeIcon(android.graphics.BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
             .setContentTitle(randomMsg.first)
             .setContentText(randomMsg.second)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -169,7 +170,8 @@ class KumaService : Service() {
         val notification: Notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("KumaFlow Aktif")
             .setContentText("Menjaga pengingat agar tetap berjalan...")
-            .setSmallIcon(R.drawable.ic_kuma_notif) // Fallback to R.mipmap.ic_launcher if the custom notification icon fails
+            .setSmallIcon(R.drawable.ic_kuma_notif)
+            .setLargeIcon(android.graphics.BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
             .setGroup("SERVICE_GROUP")
