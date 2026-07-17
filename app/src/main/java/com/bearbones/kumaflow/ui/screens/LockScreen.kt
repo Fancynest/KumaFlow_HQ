@@ -28,6 +28,12 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -112,6 +118,64 @@ import dev.chrisbanes.haze.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.star
+import androidx.graphics.shapes.CornerRounding
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import com.bearbones.kumaflow.utils.bouncyScale
+import com.bearbones.kumaflow.utils.PolygonShape
+import androidx.graphics.shapes.circle
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.graphics.shapes.Morph
+import com.bearbones.kumaflow.utils.MorphPolygonShape
+
+@Composable
+fun MorphingPinIndicator(
+    isFilled: Boolean,
+    targetShape: RoundedPolygon,
+    modifier: Modifier = Modifier
+) {
+    val progress by animateFloatAsState(
+        targetValue = if (isFilled) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "pinMorph"
+    )
+    
+    val morph = remember(targetShape) {
+        Morph(RoundedPolygon.circle(), targetShape)
+    }
+    val currentShape = remember(progress) { MorphPolygonShape(morph, progress) }
+    
+    val color = if (isFilled) AppText() else AppSurfaceVariant()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isFilled) 1f else 0.8f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "pinScale"
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                shape = currentShape
+                clip = true
+            }
+            .background(color)
+    )
+}
+
 
 // --- DATA CLASSES & OBJECTS ---
 @Composable
@@ -148,63 +212,169 @@ fun LockScreen(correctPin: String, activity: FragmentActivity, onSuccess: () -> 
             color = AppText()
         )
         Spacer(modifier = Modifier.height(32.dp))
+        val pinShapes = remember {
+            listOf(
+                RoundedPolygon(12, rounding = CornerRounding(radius = 0.5f)),                  // Circle-ish
+                RoundedPolygon(4, rounding = CornerRounding(radius = 0.4f)),                   // Squircle
+                RoundedPolygon(3, rounding = CornerRounding(radius = 0.3f)),                   // Rounded Triangle
+                RoundedPolygon.star(4, innerRadius = 0.7f, rounding = CornerRounding(radius = 0.2f)),  // Soft Star
+                RoundedPolygon(5, rounding = CornerRounding(radius = 0.3f)),                   // Pentagon
+                RoundedPolygon(6, rounding = CornerRounding(radius = 0.2f))                    // Hexagon
+            )
+        }
+
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             repeat(6) { index ->
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(
-                            if (index < inputPin.length) AppText() else AppSurfaceVariant(),
-                            CircleShape
-                        )
+                MorphingPinIndicator(
+                    isFilled = index < inputPin.length,
+                    targetShape = pinShapes[index],
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
         Spacer(modifier = Modifier.height(48.dp))
 
         val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "Finger", "0", "Del")
-        keys.chunked(3).forEach { row ->
+        keys.chunked(3).forEachIndexed { rowIndex, row ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
-                row.forEach { label ->
-                    Box(
-                        modifier = Modifier
-                            .size(70.dp)
-                            .glassCard(35.dp, AppSurface(), useHaze = true)
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                when (label) {
-                                    "Del" -> if (inputPin.isNotEmpty()) inputPin = inputPin.dropLast(1)
-                                    "Finger" -> showBiometricPrompt(activity, onSuccess, {})
-                                    else -> {
-                                        if (inputPin.length < 6) {
-                                            inputPin += label
-                                        }
-                                        if (inputPin.length == 6) {
-                                            if (inputPin == correctPin) {
-                                                onSuccess()
-                                            } else {
-                                                inputPin = ""
-                                                Toast.makeText(context, AppStr.wrongPin, Toast.LENGTH_SHORT).show()
-                                            }
+                row.forEachIndexed { colIndex, label ->
+                    val index = rowIndex * 3 + colIndex
+                    MorphingKeypadButton(
+                        label = label,
+                        onClick = {
+                            when (label) {
+                                "Del" -> if (inputPin.isNotEmpty()) inputPin = inputPin.dropLast(1)
+                                "Finger" -> showBiometricPrompt(activity, onSuccess, {})
+                                else -> {
+                                    if (inputPin.length < 6) {
+                                        inputPin += label
+                                    }
+                                    if (inputPin.length == 6) {
+                                        if (inputPin == correctPin) {
+                                            onSuccess()
+                                        } else {
+                                            inputPin = ""
+                                            Toast.makeText(context, AppStr.wrongPin, Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (label) {
-                            "Finger" -> Icon(Icons.Default.Fingerprint, contentDescription = null, tint = AppText())
-                            "Del" -> Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = null, tint = AppText())
-                            else -> Text(label, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = AppText())
+                            }
                         }
-                    }
+                    )
                 }
             }
         }
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun MorphingKeypadButton(
+    label: String,
+    onClick: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val width by animateDpAsState(
+        targetValue = if (isPressed) 90.dp else 70.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "width"
+    )
+    val height by animateDpAsState(
+        targetValue = if (isPressed) 55.dp else 70.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "height"
+    )
+
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    val buttonShape = if (isBrutal) RoundedCornerShape(8.dp) else RoundedCornerShape(percent = 50)
+    
+    val fallbackColor = if (isBrutal) AppPrimary() else AppSurface()
+    val contentColor = if (isBrutal) AppBg() else AppText()
+    
+    val isLiquidGlass = com.bearbones.kumaflow.LocalIsLiquidGlass.current
+    val isPremiumGlassBlur = com.bearbones.kumaflow.LocalIsPremiumGlassBlur.current
+    val isDark = com.bearbones.kumaflow.LocalIsDark.current
+    val hazeState = com.bearbones.kumaflow.LocalHazeState.current
+
+    val glassColor = if (isDark) {
+        Color(0xFF2C2C2E).copy(alpha = 0.5f)
+    } else {
+        Color.White.copy(alpha = 0.6f)
+    }
+
+    val shineGradient = remember {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.15f),
+                Color.Transparent,
+                Color.Transparent,
+                Color.White.copy(alpha = 0.05f)
+            ),
+            start = Offset.Zero,
+            end = Offset.Infinite
+        )
+    }
+    
+    val borderGradient = remember {
+        Brush.linearGradient(
+            colors = listOf(Color.White.copy(alpha = 0.3f), Color.White.copy(alpha = 0.05f))
+        )
+    }
+
+    val baseModifier = if (isBrutal) {
+        Modifier
+            .clip(buttonShape)
+            .background(fallbackColor)
+            .border(3.dp, AppText(), buttonShape)
+    } else if (isLiquidGlass) {
+        val tintAlpha = if (isPremiumGlassBlur) 0.2f else 0.1f
+        val adjustedColor = glassColor.copy(alpha = (glassColor.alpha + tintAlpha).coerceAtMost(1f))
+        Modifier
+            .clip(buttonShape)
+            .hazeChild(
+                state = hazeState,
+                shape = buttonShape,
+                style = dev.chrisbanes.haze.HazeStyle(
+                    blurRadius = if (isPremiumGlassBlur) 24.dp else 8.dp,
+                    backgroundColor = Color.Transparent,
+                    tint = dev.chrisbanes.haze.HazeTint(adjustedColor),
+                    noiseFactor = if (isPremiumGlassBlur) 0.15f else 0.1f
+                )
+            )
+            .background(shineGradient)
+            .border(1.dp, borderGradient, buttonShape)
+    } else {
+        Modifier
+            .clip(buttonShape)
+            .background(fallbackColor)
+            .border(1.dp, if (isDark) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f), buttonShape)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(width = width, height = height)
+            .then(baseModifier)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        when (label) {
+            "Finger" -> Icon(Icons.Default.Fingerprint, contentDescription = null, tint = contentColor)
+            "Del" -> Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = null, tint = contentColor)
+            else -> Text(label, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = contentColor)
+        }
     }
 }
 
@@ -336,9 +506,14 @@ class MainActivity : FragmentActivity() {
             val isJune = currentMonth == java.util.Calendar.JUNE
             val isPrideTriggered = userProfile?.userName?.contains("#pride", ignoreCase = true) == true
             val isBearTriggered = userProfile?.userName?.contains("#bear", ignoreCase = true) == true
+            val isBrutalTriggered = userProfile?.userName?.contains("#brutal", ignoreCase = true) == true
 
-            val activeThemeMode = if (isJune) userProfile?.themeMode ?: 0 else {
-                if ((userProfile?.themeMode ?: 0) > 2) 0 else userProfile?.themeMode ?: 0
+            val rawThemeMode = userProfile?.themeMode ?: 0
+            val activeThemeMode = when {
+                rawThemeMode in 3..6 && isJune -> rawThemeMode
+                rawThemeMode in 7..8 && isBrutalTriggered -> rawThemeMode
+                rawThemeMode > 2 -> 0
+                else -> rawThemeMode
             }
 
             val isOREasterEgg = userProfile?.userName?.contains("#OR", ignoreCase = true) == true
@@ -346,8 +521,8 @@ class MainActivity : FragmentActivity() {
             val isDark = when {
                 isOREasterEgg -> false // Pure Light Mode
                 else -> when(activeThemeMode) {
-                    1, 3, 5 -> false
-                    2, 4, 6 -> true
+                    1, 3, 5, 7 -> false
+                    2, 4, 6, 8 -> true
                     else -> systemDark
                 }
             }
@@ -358,7 +533,8 @@ class MainActivity : FragmentActivity() {
                 LocalIsAmoled provides isAmoled,
                 LocalIsLiquidGlass provides (userProfile?.isLiquidGlass == true),
                 LocalIsPremiumGlassBlur provides (userProfile?.isPremiumGlassBlur == true),
-                LocalHazeState provides hazeState
+                LocalHazeState provides hazeState,
+                com.bearbones.kumaflow.ui.theme.LocalIsBrutal provides (isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8))
             ) {
                 val colorScheme = when {
                     // NEW: #OR Easter Egg
@@ -376,6 +552,10 @@ class MainActivity : FragmentActivity() {
                     isPrideTriggered && activeThemeMode == 4 -> darkColorScheme(background = Color(0xFF121212), surface = Color(0xFF263238), primary = Color(0xFFAA00FF), onPrimary = Color.White, onBackground = Color.White, onSurface = Color.White)
                     isBearTriggered && activeThemeMode == 5 -> lightColorScheme(background = Color(0xFFFFF3E0), surface = Color(0xFFFFE0B2), primary = Color(0xFFBF360C), onPrimary = Color.White, onBackground = Color(0xFF3E2723), onSurface = Color(0xFF3E2723))
                     isBearTriggered && activeThemeMode == 6 -> darkColorScheme(background = Color(0xFF3E2723), surface = Color(0xFF4E342E), primary = Color(0xFFFFCA28), onPrimary = Color.Black, onBackground = Color(0xFFEFEBE9), onSurface = Color(0xFFEFEBE9))
+                    
+                    // 2. Brutal
+                    isBrutalTriggered && activeThemeMode == 7 -> lightColorScheme(background = com.bearbones.kumaflow.ui.theme.BrutalYellow, surface = com.bearbones.kumaflow.ui.theme.BrutalWhite, primary = com.bearbones.kumaflow.ui.theme.BrutalBlack, onPrimary = com.bearbones.kumaflow.ui.theme.BrutalWhite, onBackground = com.bearbones.kumaflow.ui.theme.BrutalBlack, onSurface = com.bearbones.kumaflow.ui.theme.BrutalBlack)
+                    isBrutalTriggered && activeThemeMode == 8 -> darkColorScheme(background = com.bearbones.kumaflow.ui.theme.BrutalBlack, surface = com.bearbones.kumaflow.ui.theme.BrutalBlack, primary = com.bearbones.kumaflow.ui.theme.BrutalGreen, onPrimary = com.bearbones.kumaflow.ui.theme.BrutalBlack, onBackground = com.bearbones.kumaflow.ui.theme.BrutalWhite, onSurface = com.bearbones.kumaflow.ui.theme.BrutalWhite)
 
                     // ðŸ”¥ NEW LOGIC: DYNAMIC COLOR + AMOLED FUSION! ðŸ”¥
                     activeThemeMode == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -398,8 +578,13 @@ class MainActivity : FragmentActivity() {
                     else -> lightColorScheme(background = Color(0xFFD9D2C5), surface = Color(0xFFC7BCAC), onBackground = Color(0xFF4A2F1D), onSurface = Color(0xFF4A2F1D), primary = Color(0xFF4A2F1D), onPrimary = Color.White)
                 }
 
-                val activeTypography = if (isOREasterEgg) com.bearbones.kumaflow.ui.theme.ORTypography else com.bearbones.kumaflow.ui.theme.Typography
-                MaterialTheme(colorScheme = colorScheme, typography = activeTypography) {
+                val activeTypography = when {
+                    isOREasterEgg -> com.bearbones.kumaflow.ui.theme.ORTypography
+                    isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8) -> com.bearbones.kumaflow.ui.theme.BrutalTypography
+                    else -> com.bearbones.kumaflow.ui.theme.Typography
+                }
+
+                MaterialTheme(colorScheme = colorScheme, typography = activeTypography, shapes = MaterialTheme.shapes) {
                     val homeListState = androidx.compose.foundation.lazy.rememberLazyListState()
                     var isOverlayOpen by remember { mutableStateOf(false) }
                     val isWrappedOpen = wrappedTarget != null

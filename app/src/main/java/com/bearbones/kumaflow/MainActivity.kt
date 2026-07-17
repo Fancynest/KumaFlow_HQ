@@ -26,11 +26,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
+import com.bearbones.kumaflow.utils.m3Shapes
+import com.bearbones.kumaflow.utils.PolygonShape
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.drawBehind
+
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -122,6 +129,19 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.bearbones.kumaflow.utils.bouncyScale
+import com.bearbones.kumaflow.utils.MorphPolygonShape
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.star
+import androidx.graphics.shapes.circle
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.graphics.shapes.CornerRounding
 
 // --- DATA CLASSES & OBJECTS ---
 
@@ -191,12 +211,69 @@ fun Modifier.glassmorphic(
 }
 
 @Composable
+fun Modifier.neobrutalism(
+    isBrutal: Boolean = true,
+    cornerRadius: androidx.compose.ui.unit.Dp = 16.dp,
+    borderWidth: androidx.compose.ui.unit.Dp = 3.dp,
+    offset: androidx.compose.ui.unit.Dp = 4.dp,
+    shadowColor: Color = if (LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalGreen else Color.Black,
+    borderColor: Color = if (LocalIsDark.current) Color.White else Color.Black,
+    backgroundColor: Color = Color.Unspecified
+): Modifier {
+    if (!isBrutal) return this
+
+    return this
+        .drawBehind {
+            val cardPath = androidx.compose.ui.graphics.Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = 0f,
+                        top = 0f,
+                        right = size.width,
+                        bottom = size.height,
+                        cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
+                    )
+                )
+            }
+            clipPath(
+                path = cardPath,
+                clipOp = androidx.compose.ui.graphics.ClipOp.Difference
+            ) {
+                drawRoundRect(
+                    color = shadowColor,
+                    topLeft = Offset(offset.toPx(), offset.toPx()),
+                    size = size,
+                    cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
+                )
+            }
+            if (backgroundColor != Color.Unspecified) {
+                drawRoundRect(
+                    color = backgroundColor,
+                    size = size,
+                    cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
+                )
+            }
+        }
+        .border(width = borderWidth, color = borderColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius))
+}
+
+@Composable
 fun Modifier.glassCard(
     radius: androidx.compose.ui.unit.Dp = 16.dp,
     fallbackColor: Color,
     useHaze: Boolean = false,
     forceColor: Boolean = false
 ): Modifier {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    if (isBrutal) {
+        return this.neobrutalism(
+            isBrutal = true,
+            cornerRadius = radius,
+            backgroundColor = fallbackColor,
+            shadowColor = if (LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalGreen else Color.Black
+        )
+    }
+
     val glassColor = if (forceColor) {
         fallbackColor
     } else if (LocalIsDark.current) {
@@ -376,6 +453,7 @@ fun MainScreen(
     val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
 
     var showMilestone by remember { mutableStateOf(userProfile.currentStreak > 0 && userProfile.currentStreak % 30 == 0 && userProfile.currentStreak > userProfile.lastMilestoneNotified) }
+    var showRouletteSheet by remember { mutableStateOf(false) }
     
     if (showMilestone) {
         com.bearbones.kumaflow.ui.screens.MilestonePopUp(
@@ -393,12 +471,20 @@ fun MainScreen(
         )
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
     LaunchedEffect(showBottomSheet) { onOverlayStateChange(showBottomSheet) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     var showBackupReminder by remember { mutableStateOf(false) }
     val totalTxCount = transactionListWithSplits.size
+
+    // FAB shape state - changes when sheet closes, but only visible when pressed
+    var targetFabShapeIndex by remember { mutableIntStateOf(if (m3Shapes.size > 1) (1..m3Shapes.lastIndex).random() else 0) }
+    LaunchedEffect(showBottomSheet) {
+        if (!showBottomSheet && m3Shapes.size > 1) {
+            targetFabShapeIndex = (1..m3Shapes.lastIndex).random()
+        }
+    }
 
     androidx.activity.compose.BackHandler(enabled = showBottomSheet || pagerState.currentPage != 0 || isSelectionMode) {
         if (showBottomSheet) {
@@ -411,28 +497,85 @@ fun MainScreen(
         }
     }
 
+    if (showRouletteSheet) {
+        com.bearbones.kumaflow.ui.screens.RouletteBottomSheet(
+            walletBalances = walletBalances,
+            physicalWallets = userProfile.wallets.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+            categories = (userProfile.expenseCats.split(",") + userProfile.incomeCats.split(",")).map { it.trim() }.filter { it.isNotEmpty() }.distinct(),
+            onDismiss = { showRouletteSheet = false },
+            onSaveTransaction = { txList ->
+                scope.launch {
+                    txList.forEach { (tx, splits) ->
+                        dao.insertFullTransaction(tx, splits)
+                    }
+                    forceUpdateTrigger++
+                    updateKumaWidget(context)
+                }
+                showRouletteSheet = false
+            }
+        )
+    }
+
     Scaffold(
-                containerColor = Color.Transparent,
+        containerColor = Color.Transparent,
         floatingActionButton = {
-            val showFab = selectedItemIndex == 0 && isFabVisible && !isSelectionMode && !showBottomSheet
+            val isSelectionModeActive = isSelectionMode || showBottomSheet
+            val showFab = selectedItemIndex == 0 && isFabVisible && !isSelectionModeActive
+            
             androidx.compose.animation.AnimatedVisibility(
                 visible = showFab,
                 enter = androidx.compose.animation.scaleIn(),
                 exit = androidx.compose.animation.scaleOut()
             ) {
-                FloatingActionButton(
-                    onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); transactionToEdit = null; showBottomSheet = true },
-                    containerColor = if (LocalIsLiquidGlass.current) Color.Transparent else AppPrimary(),
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
-                        pressedElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
-                        focusedElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp,
-                        hoveredElevation = if (LocalIsLiquidGlass.current) 0.dp else 6.dp
+                val fabInteractionSource = remember { MutableInteractionSource() }
+                val isPressed by fabInteractionSource.collectIsPressedAsState()
+                
+                val progress by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isPressed) 1f else 0f,
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
                     ),
-                    contentColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier.size(70.dp).let { if (LocalIsLiquidGlass.current) it.clip(CircleShape).background(if (LocalIsDark.current) Color.Black.copy(alpha=0.4f) else Color.White.copy(alpha=0.4f), CircleShape).border(1.dp, Color.White.copy(0.3f), CircleShape) else it }
-                ) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(40.dp)) }
+                    label = "fabMorph"
+                )
+                
+                val morph = remember(targetFabShapeIndex) { 
+                    androidx.graphics.shapes.Morph(androidx.graphics.shapes.RoundedPolygon.circle(), m3Shapes[targetFabShapeIndex]) 
+                }
+                val fabShape = remember(progress) { MorphPolygonShape(morph, progress) }
+                
+                val bgColor = if (LocalIsLiquidGlass.current) Color.Black.copy(alpha=0.4f) else AppPrimary()
+                val fgColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White
+                val isLiquidGlass = LocalIsLiquidGlass.current
+                
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(70.dp)
+                        .bouncyScale(fabInteractionSource)
+                        .graphicsLayer {
+                            shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                            shape = fabShape
+                            clip = true
+                        }
+                        .background(bgColor)
+                        .border(
+                            width = if (isLiquidGlass) 1.dp else 0.dp,
+                            color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                            shape = fabShape
+                        )
+                        .clickable(
+                            interactionSource = fabInteractionSource,
+                            indication = null,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                transactionToEdit = null
+                                showBottomSheet = true
+                            }
+                        )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(32.dp), tint = fgColor)
+                }
             }
         },
         bottomBar = {
@@ -650,6 +793,7 @@ fun MainScreen(
                             // Pass the intention to the bottom sheet if we ever support pre-selecting
                             showBottomSheet = true
                         },
+                        onOpenRoulette = { showRouletteSheet = true },
                         onReconcile = { walletName, delta ->
                             scope.launch {
                                 try {
@@ -970,7 +1114,7 @@ fun TransactionBottomSheet(
                 readOnly = true,
                 label = { Text(AppStr.date) },
                 trailingIcon = {
-                    Icon(Icons.Default.CalendarToday, contentDescription = null, tint = AppPrimary())
+                    KumaExpressiveIcon(Icons.Default.CalendarToday, contentDescription = null, tint = AppPrimary(), size = 24.dp)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = false,
@@ -1224,7 +1368,7 @@ fun TransactionBottomSheet(
                             onClick = { initialSplits.removeAt(index) },
                             modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(Icons.Default.RemoveCircleOutline, null, tint = AppRed())
+                            KumaExpressiveIcon(Icons.Default.RemoveCircleOutline, null, tint = AppRed(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 24.dp, iconPadding = 2.dp)
                         }
                     }
                 }
@@ -1242,7 +1386,7 @@ fun TransactionBottomSheet(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Add, null, tint = AppPrimary())
+                KumaExpressiveIcon(Icons.Default.Add, null, tint = AppPrimary(), containerColor = AppPrimary().copy(alpha = 0.1f))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(AppStr.addOtherWallet, color = AppPrimary(), fontWeight = FontWeight.Bold)
             }
@@ -1276,7 +1420,7 @@ fun TransactionBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.ReceiptLong, contentDescription = null)
+                KumaExpressiveIcon(Icons.Default.ReceiptLong, contentDescription = null, containerColor = AppText().copy(alpha = 0.05f))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(AppStr.splitBill, fontWeight = FontWeight.Bold)
             }
@@ -1386,7 +1530,7 @@ fun TransactionBottomSheet(
                                     .padding(8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(icon, contentDescription = key, tint = if (selectedIconKey == key) Color.White else AppText(), modifier = Modifier.size(20.dp))
+                                KumaExpressiveIcon(icon, contentDescription = key, tint = if (selectedIconKey == key) Color.White else AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 30.dp, iconPadding = 5.dp)
                             }
                         }
                     }
@@ -1476,7 +1620,7 @@ fun MonthYearSelector(currentMonth: Int, currentYear: Int, onMonthChange: (Int, 
                 onMonthChange(m, y)
             }
         ) {
-            Icon(Icons.Default.ChevronLeft, null, tint = AppText())
+            KumaExpressiveIcon(Icons.Default.ChevronLeft, null, tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
         }
 
         Text(
@@ -1498,7 +1642,7 @@ fun MonthYearSelector(currentMonth: Int, currentYear: Int, onMonthChange: (Int, 
                 onMonthChange(m, y)
             }
         ) {
-            Icon(Icons.Default.ChevronRight, null, tint = AppText())
+            KumaExpressiveIcon(Icons.Default.ChevronRight, null, tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
         }
     }
 }
@@ -1858,12 +2002,14 @@ fun SettingsGroupCard(
                         .padding(vertical = 14.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AppPrimary().copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(icon, null, tint = AppPrimary(), modifier = Modifier.size(18.dp))
-                    }
+                    KumaExpressiveIcon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppPrimary(),
+                        containerColor = AppPrimary().copy(alpha = 0.1f),
+                        size = 32.dp,
+                        iconPadding = 7.dp
+                    )
                     Text(
                         label,
                         modifier = Modifier
@@ -1882,7 +2028,7 @@ fun SettingsGroupCard(
                             modifier = Modifier.scale(0.8f)
                         )
                     } else {
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = AppText().copy(alpha = 0.3f))
+                        KumaExpressiveIcon(Icons.Default.ChevronRight, contentDescription = null, tint = AppText().copy(alpha = 0.3f), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                     }
                 }
                 if (index < items.size - 1) {
@@ -1910,6 +2056,7 @@ fun CustomBottomNav(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
             .height(75.dp)
             .glassCard(32.dp, AppSurface(), useHaze = true)
@@ -1962,11 +2109,13 @@ fun CustomBottomNav(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f).padding(vertical = 4.dp)
                 ) {
-                    Icon(
-                        pair.first,
-                        null,
+                    KumaExpressiveIcon(
+                        imageVector = pair.first,
+                        contentDescription = null,
                         tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                        modifier = Modifier.size(28.dp)
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        size = 28.dp,
+                        iconPadding = 2.dp
                     )
                     Text(
                         pair.second,
@@ -1992,12 +2141,14 @@ fun IncomeExpensePill(label: String, amount: String, color: Color, isUp: Boolean
                 .padding(horizontal = 8.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                if (isUp) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                null,
-                tint = color,
-                modifier = Modifier.size(12.dp)
-            )
+            KumaExpressiveIcon(
+                        imageVector = if (isUp) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                        contentDescription = null,
+                        tint = color,
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        size = 12.dp,
+                        iconPadding = 0.dp
+                    )
             Text(
                 " $label",
                 color = color,
@@ -2048,6 +2199,7 @@ fun TransactionItem(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val trans = obj.transaction
     val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
 
     val curSym = remember(profile.currency) {
         when(profile.currency) {
@@ -2122,6 +2274,7 @@ fun TransactionItem(
         state = dismissState,
         enableDismissFromStartToEnd = !isSelectionMode,
         enableDismissFromEndToStart = !isSelectionMode,
+        modifier = Modifier.clip(RoundedCornerShape(20.dp)),
         backgroundContent = {
             val color = when (dismissState.dismissDirection) {
                 SwipeToDismissBoxValue.StartToEnd -> Color(0xFF1976D2).copy(alpha = 0.85f)
@@ -2142,8 +2295,7 @@ fun TransactionItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(20.dp))
-                    .glassCard(20.dp, color, forceColor = true)
+                    .background(color)
                     .padding(horizontal = 24.dp),
                 contentAlignment = alignment
             ) {
@@ -2162,12 +2314,15 @@ fun TransactionItem(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(if (isSelected) AppPrimary().copy(alpha = 0.2f) else Color.Transparent)
+                .bouncyScale(interactionSource)
                 .border(
                     width = if (isSelected) 2.dp else 0.dp,
                     color = if (isSelected) AppPrimary() else Color.Transparent,
                     shape = RoundedCornerShape(20.dp)
                 )
                 .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = androidx.compose.foundation.LocalIndication.current,
                     onClick = {
                         if (isSelectionMode) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -2203,14 +2358,14 @@ fun TransactionItem(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                 } else {
-                    Box(
-                        modifier = Modifier
-                            .size(45.dp)
-                            .background(AppPrimary().copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(icon, null, tint = AppPrimary(), modifier = Modifier.size(24.dp))
-                    }
+                    KumaExpressiveIcon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppPrimary(),
+                        containerColor = AppPrimary().copy(alpha = 0.2f),
+                        size = 45.dp,
+                        iconPadding = 10.dp
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                 }
 
@@ -2282,8 +2437,9 @@ fun checkAndApplyPrideEasterEgg(
     val kumaGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasKumaGlass")
     val orIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasOR")
     val orGlassIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasORGlass")
+    val brutalIcon = android.content.ComponentName(context, "$pkg.MainActivityAliasBrutal")
 
-    val allIcons = listOf(normalIcon, prideIcon, bearIcon, prideGlassIcon, bearGlassIcon, kumaGlassIcon, orIcon, orGlassIcon)
+    val allIcons = listOf(normalIcon, prideIcon, bearIcon, prideGlassIcon, bearGlassIcon, kumaGlassIcon, orIcon, orGlassIcon, brutalIcon)
 
     fun applyIconChanges(targetIcon: android.content.ComponentName) {
         // Enable the target icon FIRST to prevent the app from being killed before the new icon is registered
@@ -2316,9 +2472,11 @@ fun checkAndApplyPrideEasterEgg(
     val userName = userProfile.userName
     val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
     val isOR = userName.contains("#OR", ignoreCase = true)
+    val isBrutalEasterEgg = userName.contains("kumabrutal", ignoreCase = true) || userName.contains("#brutal", ignoreCase = true)
 
     val targetIcon = when {
         userName.isEmpty() -> normalIcon
+        isBrutalEasterEgg -> brutalIcon
         isOR -> if (isGlass) orGlassIcon else orIcon
         isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
         isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon

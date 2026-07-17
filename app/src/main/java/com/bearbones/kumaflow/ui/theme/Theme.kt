@@ -81,3 +81,5 @@ fun KumaFlowTheme(
         content = content
     )
 }
+
+val LocalIsBrutal = androidx.compose.runtime.compositionLocalOf { false }

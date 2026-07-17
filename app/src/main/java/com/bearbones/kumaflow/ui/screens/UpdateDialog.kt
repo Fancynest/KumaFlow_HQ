@@ -23,6 +23,19 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bearbones.kumaflow.utils.DownloadState
 import com.bearbones.kumaflow.utils.UpdateInfo
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import kotlin.math.sin
 import java.util.Locale
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -206,13 +219,12 @@ fun UpdateDialog(
                                     animationSpec = androidx.compose.animation.core.tween(durationMillis = 300, easing = androidx.compose.animation.core.LinearEasing),
                                     label = "progressAnim"
                                 )
-                                LinearProgressIndicator(
-                                    progress = { animatedProgress },
-                                    modifier = Modifier.fillMaxWidth().height(6.dp),
+                                SquigglyProgressIndicator(
+                                    progress = animatedProgress,
+                                    modifier = Modifier.fillMaxWidth().height(12.dp),
                                     color = Color(0xFF00ACC1),
                                     trackColor = Color(0xFF2A3138),
-                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                    gapSize = 0.dp
+                                    strokeWidth = 6.dp
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Row(
@@ -265,6 +277,69 @@ fun UpdateDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SquigglyProgressIndicator(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    color: Color,
+    trackColor: Color,
+    strokeWidth: androidx.compose.ui.unit.Dp = 6.dp
+) {
+    val phase by rememberInfiniteTransition(label = "squigglyPhase").animateFloat(
+        initialValue = 0f,
+        targetValue = 2f * Math.PI.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phaseAnim"
+    )
+
+    Canvas(modifier = modifier) {
+        val strokePx = strokeWidth.toPx()
+        val filledWidth = size.width * progress
+        val centerY = size.height / 2f
+        
+        // Draw Track (unfilled)
+        if (progress < 1f) {
+            drawLine(
+                color = trackColor,
+                start = Offset(filledWidth, centerY),
+                end = Offset(size.width, centerY),
+                strokeWidth = strokePx,
+                cap = StrokeCap.Round
+            )
+        }
+
+        // Draw Squiggly line (filled)
+        if (progress > 0f) {
+            val path = Path()
+            val waveLength = 40.dp.toPx()
+            
+            // Amplitude scales down to 0 as progress goes from 0.95 to 1.0
+            val amplitudeScale = if (progress < 0.95f) 1f else (1f - progress) / 0.05f
+            val baseAmplitude = (size.height - strokePx) / 2f
+            val amplitude = baseAmplitude * amplitudeScale
+
+            val segments = (filledWidth / waveLength * 15).toInt().coerceAtLeast(15)
+            
+            path.moveTo(0f, centerY)
+            for (i in 0..segments) {
+                val x = (i.toFloat() / segments) * filledWidth
+                val w = 2 * Math.PI.toFloat() / waveLength
+                val y = centerY + sin((x * w - phase).toDouble()).toFloat() * amplitude
+                path.lineTo(x, y)
+            }
+            
+            drawPath(
+                path = path,
+                color = color,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
         }
     }
 }

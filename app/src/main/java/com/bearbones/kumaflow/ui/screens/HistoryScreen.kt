@@ -87,13 +87,13 @@ fun HistoryScreen(
     var expandedDates by rememberSaveable { mutableStateOf(setOf<String>()) }
 
     // BOTTOM SHEET STATES
-    val dateSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val dateSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showDateSheet by remember { mutableStateOf(false) }
 
-    val catSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val catSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showCatSheet by remember { mutableStateOf(false) }
 
-    val walletSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val walletSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showWalletSheet by remember { mutableStateOf(false) }
 
     var showM3DatePicker by remember { mutableStateOf(false) }
@@ -195,7 +195,7 @@ fun HistoryScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // SEARCH BAR
-            OutlinedTextField(
+            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 label = { Text(if (isId) "Cari transaksi..." else "Search transactions...") },
@@ -426,14 +426,13 @@ fun HistoryScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
+                                    .glassCard(16.dp, if (isSelected) AppPrimary().copy(alpha = 0.2f) else AppSurfaceVariant())
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         val newSet = selectedCategories.toMutableSet()
                                         if (isSelected) newSet.remove(cat) else newSet.add(cat)
                                         selectedCategories = newSet
                                     }
-                                    .background(if (isSelected) AppPrimary().copy(alpha=0.2f) else AppSurfaceVariant(), RoundedCornerShape(16.dp))
-                                    .border(1.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(16.dp))
                                     .padding(8.dp)
                             ) {
                                 val catCol = getCatColor(cat)
@@ -459,7 +458,7 @@ fun HistoryScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = { showCatSheet = false },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
@@ -529,7 +528,7 @@ fun HistoryScreen(
                         HorizontalDivider(color = AppText().copy(alpha = 0.1f))
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = { showWalletSheet = false },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
@@ -616,6 +615,7 @@ fun FilterChipCustom(text: String, isActive: Boolean, modifier: Modifier = Modif
         modifier = modifier
             .background(if (isActive) AppPrimary().copy(alpha = 0.2f) else AppSurfaceVariant(), RoundedCornerShape(16.dp))
             .border(1.dp, if (isActive) AppPrimary() else AppText().copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -626,3 +626,4 @@ fun FilterChipCustom(text: String, isActive: Boolean, modifier: Modifier = Modif
         Icon(Icons.Default.KeyboardArrowDown, null, tint = if (isActive) AppPrimary() else AppText(), modifier = Modifier.size(14.dp))
     }
 }
+

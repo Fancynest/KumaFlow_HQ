@@ -16,3 +16,11 @@ val CreamyText = Color(0xFFFEE6B1)  // Cream-colored text for Dark Mode
 // Transaction Indicators
 val BearGreen = Color(0xFF00C853)   // Income
 val BearRed = Color(0xFFFF3D00)     // Expenses
+
+// Neobrutalism Palette
+val BrutalYellow = Color(0xFFFFD500)
+val BrutalPink = Color(0xFFFF3366)
+val BrutalCyan = Color(0xFF00E5FF)
+val BrutalGreen = Color(0xFF00FF66)
+val BrutalBlack = Color(0xFF000000)
+val BrutalWhite = Color(0xFFFFFFFF)

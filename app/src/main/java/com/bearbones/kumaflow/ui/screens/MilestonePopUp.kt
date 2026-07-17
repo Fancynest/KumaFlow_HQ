@@ -118,7 +118,7 @@ fun MilestonePopUp(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = onShare,
                         modifier = Modifier
                             .fillMaxWidth()

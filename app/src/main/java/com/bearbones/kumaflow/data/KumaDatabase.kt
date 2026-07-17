@@ -105,6 +105,15 @@ interface TransactionDao {
 
     @Transaction
     @Query("""
+        SELECT * FROM transactions 
+        WHERE wallet = :walletName AND isIncome = 0 AND CAST(amount AS INTEGER) <= :maxBudget 
+        GROUP BY name 
+        ORDER BY timestamp DESC LIMIT 8
+    """)
+    fun getRecentExpensesForRoulette(walletName: String, maxBudget: Long): Flow<List<KumaTransaction>>
+
+    @Transaction
+    @Query("""
         SELECT t.* FROM transactions t 
         JOIN transactions_fts fts ON (t.id = fts.rowid) 
         WHERE transactions_fts MATCH :query
@@ -253,6 +262,47 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `virtual_wallets` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `name` TEXT NOT NULL, 
+                `allocatedBalance` REAL NOT NULL, 
+                `colorHex` TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("ALTER TABLE transactions ADD COLUMN virtualWalletId INTEGER DEFAULT NULL")
+    }
+}
+
+val MIGRATION_22_23 = object : Migration(22, 23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS `virtual_wallets`")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `new_transactions` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `name` TEXT NOT NULL, 
+                `date` TEXT NOT NULL, 
+                `amount` TEXT NOT NULL, 
+                `isIncome` INTEGER NOT NULL, 
+                `category` TEXT NOT NULL, 
+                `wallet` TEXT NOT NULL, 
+                `timestamp` TEXT NOT NULL, 
+                `message` TEXT NOT NULL, 
+                `isEdited` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("INSERT INTO new_transactions SELECT id, name, date, amount, isIncome, category, wallet, timestamp, message, isEdited FROM transactions")
+        db.execSQL("DROP TABLE transactions")
+        db.execSQL("ALTER TABLE new_transactions RENAME TO transactions")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -260,7 +310,7 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
         TransactionSplit::class,
         TransactionFTS::class
     ],
-    version = 21,
+    version = 23,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -276,7 +326,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
                     .build()
                 INSTANCE = instance
                 instance

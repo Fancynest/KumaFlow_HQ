@@ -10,8 +10,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -102,7 +105,7 @@ fun StreakDetailsSheet(
         Spacer(modifier = Modifier.height(4.dp))
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.AcUnit, contentDescription = "Freeze", tint = Color(0xFF4FC3F7), modifier = Modifier.size(18.dp))
+            KumaExpressiveIcon(Icons.Default.AcUnit, contentDescription = "Freeze", tint = Color(0xFF4FC3F7), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 20.dp, iconPadding = 2.dp)
             Spacer(modifier = Modifier.width(4.dp))
             Text("${AppStr.activeFreeze}: ${profile.freezeCount} / 2", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
         }
@@ -134,7 +137,7 @@ fun StreakDetailsSheet(
         
         if (!isActiveToday) {
             val scope = rememberCoroutineScope()
-            Button(
+            com.bearbones.kumaflow.ui.components.KumaButton(
                 onClick = {
                     scope.launch {
                         val dao = com.bearbones.kumaflow.KumaDatabase.getDatabase(context).transactionDao()
@@ -162,23 +165,23 @@ fun StreakDetailsSheet(
         Spacer(modifier = Modifier.height(32.dp))
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Button(
+            com.bearbones.kumaflow.ui.components.KumaButton(
                 onClick = { ShareStreakUtils.shareStreak(context, profile, saveOnly = true) },
                 modifier = Modifier.weight(1f).height(56.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppSurface().copy(alpha=0.5f))
             ) {
-                Icon(Icons.Default.Download, contentDescription = null, tint = AppText())
+                KumaExpressiveIcon(Icons.Default.Download, contentDescription = null, tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(if (com.bearbones.kumaflow.AppStr.isId) "Simpan" else "Save", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-            Button(
+            com.bearbones.kumaflow.ui.components.KumaButton(
                 onClick = { ShareStreakUtils.shareStreak(context, profile, saveOnly = false) },
                 modifier = Modifier.weight(1f).height(56.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
             ) {
-                Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
+                KumaExpressiveIcon(Icons.Default.Share, contentDescription = null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(if (com.bearbones.kumaflow.AppStr.isId) "Bagikan" else "Share", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
@@ -216,7 +219,7 @@ fun SimpleCalendar(activeDates: List<LocalDate>) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = AppText())
+                KumaExpressiveIcon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             }
             Text(
                 text = "${currentMonth.month.name.take(3)} ${currentMonth.year}",
@@ -225,7 +228,7 @@ fun SimpleCalendar(activeDates: List<LocalDate>) {
                 textAlign = TextAlign.Center
             )
             IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = AppText())
+                KumaExpressiveIcon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))

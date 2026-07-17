@@ -8,11 +8,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Text
+import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,7 +59,7 @@ fun SplitBillSheet(
         onDismissRequest = onDismissRequest,
         containerColor = AppSurface(),
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     ) {
         Column(
             modifier = Modifier
@@ -136,7 +138,7 @@ fun SplitBillSheet(
 
             // Common Inputs
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                     value = state.numberOfPeople,
                     onValueChange = { viewModel.setNumberOfPeople(it) },
                     label = { Text(AppStr.totalPeople) },
@@ -146,7 +148,7 @@ fun SplitBillSheet(
                 )
 
                 if (state.mode == SplitMode.TAHU_DIRI) {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = state.taxPercentage,
                         onValueChange = { viewModel.setTaxPercentage(it) },
                         label = { Text(AppStr.taxPct) },
@@ -181,7 +183,7 @@ fun SplitBillSheet(
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
-                Button(
+                com.bearbones.kumaflow.ui.components.KumaButton(
                     onClick = {
                         val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(finalAmount)}", finalAmount)
                         previewUri = uri
@@ -191,7 +193,7 @@ fun SplitBillSheet(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null)
+                    KumaExpressiveIcon(Icons.Default.Share, contentDescription = null, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(AppStr.previewQris)
                 }
@@ -204,7 +206,7 @@ fun SplitBillSheet(
                 ) {
                     Text(AppStr.customItems, fontWeight = FontWeight.Bold, color = AppText())
                     IconButton(onClick = { viewModel.addCustomItem() }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = AppPrimary())
+                        KumaExpressiveIcon(Icons.Default.Add, contentDescription = "Add", tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                     }
                 }
 
@@ -217,14 +219,14 @@ fun SplitBillSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedTextField(
+                            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                 value = item.name,
                                 onValueChange = { viewModel.updateCustomItemName(item.id, it) },
                                 placeholder = { Text(AppStr.name) },
                                 colors = getGlassTextFieldColors(),
                                 modifier = Modifier.weight(1f)
                             )
-                            OutlinedTextField(
+                            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                 value = if (item.price == 0L) "" else item.price.toString(),
                                 onValueChange = { viewModel.updateCustomItemPrice(item.id, it) },
                                 placeholder = { Text(AppStr.pricePreTax) },
@@ -233,7 +235,7 @@ fun SplitBillSheet(
                                 modifier = Modifier.weight(1f)
                             )
                             IconButton(onClick = { viewModel.removeCustomItem(item.id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                                KumaExpressiveIcon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                             }
                         }
                     }
@@ -262,7 +264,7 @@ fun SplitBillSheet(
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(Icons.Default.Share, contentDescription = "Share", modifier = Modifier.size(16.dp), tint = AppPrimary())
+                                        KumaExpressiveIcon(Icons.Default.Share, contentDescription = "Share", size = 20.dp, iconPadding = 2.dp, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                     }
                                 }
                             }
@@ -281,7 +283,7 @@ fun SplitBillSheet(
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
-                                        Icon(Icons.Default.Share, contentDescription = "Share", modifier = Modifier.size(16.dp), tint = AppPrimary())
+                                        KumaExpressiveIcon(Icons.Default.Share, contentDescription = "Share", size = 20.dp, iconPadding = 2.dp, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                     }
                                 }
                             }
@@ -324,14 +326,14 @@ fun SplitBillSheet(
                 }
             },
             confirmButton = {
-                Button(
+                com.bearbones.kumaflow.ui.components.KumaButton(
                     onClick = {
                         ShareSplitBillUtils.shareToWhatsApp(context, previewUri, previewAmountStr, bankName, bankAccount)
                         showPreviewDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null)
+                    KumaExpressiveIcon(Icons.Default.Share, contentDescription = null, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(AppStr.shareWa)
                 }
@@ -342,3 +344,4 @@ fun SplitBillSheet(
         )
     }
 }
+

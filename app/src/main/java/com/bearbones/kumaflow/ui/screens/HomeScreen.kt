@@ -96,6 +96,7 @@ fun HomeScreen(
     onBulkDelete: (List<TransactionWithSplits>) -> Unit,
     onBulkUpdateCategory: (List<TransactionWithSplits>, String) -> Unit,
     onUpdateProfile: (UserProfile) -> Unit,
+    onOpenRoulette: () -> Unit,
     onReconcile: (String, Long) -> Unit = { _, _ -> },
     onAddTransaction: (Boolean) -> Unit = {}
 ) {
@@ -108,6 +109,8 @@ fun HomeScreen(
     var isPrivacyMode by rememberSaveable { mutableStateOf(false) }
     val blurRadius by androidx.compose.animation.core.animateDpAsState(targetValue = if (isPrivacyMode) 12.dp else 0.dp, label = "blur_anim")
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    
+    var showAllocationSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress) {
@@ -137,6 +140,8 @@ fun HomeScreen(
     val wrappedKey = "$prevMonth-$prevYear"
 
     var showWrappedBanner by remember { mutableStateOf(sharedPrefs.getString("last_viewed_wrapped", "") != wrappedKey) }
+
+    val selectedTxsList = selectedTxs.mapNotNull { id -> transactionsWithSplits.find { it.transaction.id == id } }
 
     val isSelectionMode = selectedTxs.isNotEmpty()
     var showBulkCatDialog by remember { mutableStateOf(false) }
@@ -173,7 +178,7 @@ fun HomeScreen(
                         }
                     }
 
-                    val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim()
+                    val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#brutal", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim()
                     val greeting = rememberSaveable {
                         val calNow = java.util.Calendar.getInstance()
                         val hour = calNow.get(java.util.Calendar.HOUR_OF_DAY)
@@ -264,7 +269,7 @@ fun HomeScreen(
                         
                         ModalBottomSheet(
                             onDismissRequest = { showStreakSheet = false },
-                            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                            sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = false),
                             containerColor = AppSurface(),
                             scrimColor = Color.Black.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -272,7 +277,7 @@ fun HomeScreen(
                             StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
                     MonthYearSelector(selectedMonth, selectedYear, onMonthChange)
                     Spacer(modifier = Modifier.height(24.dp))
@@ -282,8 +287,8 @@ fun HomeScreen(
                     val prideGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
                     val defaultSurfaceColor = AppSurfaceVariant()
 
-                    // --- NEW DYNAMIC HEADER & FLOATING BALANCE ---
-                    val animatedBal by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
+                    val animatedBalance by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -291,7 +296,7 @@ fun HomeScreen(
                     ) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(AppStr.curBal, color = AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(AppStr.totalBalanceTitle, color = AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Icon(
                                     imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
@@ -306,13 +311,25 @@ fun HomeScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             val balPref = if (balance < 0) "- " else ""
                             AutoSizeText(
-                                text = "$balPref$curSym ${NumberFormat.getInstance(locale).format(animatedBal.toLong())}", 
+                                text = "$balPref$curSym ${NumberFormat.getInstance(locale).format(animatedBalance.toLong())}", 
                                 modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), 
                                 fontSize = 42.sp, 
                                 fontWeight = FontWeight.Black, 
                                 color = AppText(), 
                                 minimumFallbackSize = 24.sp
                             )
+                        }
+
+                        // Kuma Roulette Entry Point
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(AppPrimary().copy(alpha = 0.2f))
+                                .clickable { onOpenRoulette() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = AppPrimary(), modifier = Modifier.size(24.dp))
                         }
                     }
 
@@ -423,6 +440,8 @@ fun HomeScreen(
                                     }
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(20.dp))
                         }
                     }
 
@@ -436,11 +455,11 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = AppText().copy(alpha = 0.5f)) },
                         trailingIcon = { if (searchQuery.isNotEmpty()) { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).glassCard(16.dp, AppSurfaceVariant(), useHaze = true), shape = RoundedCornerShape(16.dp), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), shape = RoundedCornerShape(16.dp), singleLine = true,
                         colors = getGlassTextFieldColors()
                     )
 
@@ -635,7 +654,7 @@ fun HomeScreen(
             ModalBottomSheet(
                 onDismissRequest = { showReconcileDialog = false },
                 containerColor = AppSurface(),
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
             ) {
                 Column(
                     modifier = Modifier
@@ -659,7 +678,7 @@ fun HomeScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = realBalanceInput,
                         onValueChange = { 
                             val digitsOnly = it.filter { char -> char.isDigit() }
@@ -695,7 +714,7 @@ fun HomeScreen(
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
                             if (delta != 0L) {
                                 onReconcile(reconcileWalletName, delta)
@@ -727,6 +746,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 
 

@@ -58,7 +58,7 @@ object AppStr {
     val tar get() = if(isId) "Target Global" else "Global Target"
     val catBudget get() = if(isId) "Budget Kategori" else "Category Budget"
 
-    const val VERSION = "v6.3.0"
+    const val VERSION = "v6.3.1"
     val dat get() = if(isId) "Data" else "Data"
     val expPdf get() = if(isId) "Ekspor ke PDF" else "Export to PDF"
     val expCsv get() = if(isId) "Ekspor ke CSV" else "Export to CSV"
@@ -199,6 +199,18 @@ object AppStr {
     
     fun txDeleted(count: Int) = if(isId) "$count transaksi dihapus" else "$count transactions deleted"
     fun txChangedTo(count: Int, cat: String) = if(isId) "$count transaksi diubah ke $cat" else "$count transactions changed to $cat"
+    
+    val totalBalanceTitle get() = if(isId) "Total Saldo" else "Total Balance"
+    val rouletteOptionNameHint get() = if(isId) "Nama Opsi" else "Option Name"
+    val rouletteNominalHint get() = if(isId) "Rp Nominal" else "Rp Amount"
+    val rouletteAddBtn get() = if(isId) "Tambah" else "Add"
+    val rouletteNoOptions get() = if(isId) "Tidak ada opsi di bawah batas anggaran" else "No options under budget limit"
+    val rouletteSpinHint get() = if(isId) "Putar Roda!" else "Spin the Wheel!"
+    val rouletteWinnerTitle get() = if(isId) "Hasil Putaran" else "Spin Result"
+    val rouletteWinnerMsg get() = if(isId) "Roda memilih:" else "The wheel chose:"
+    val rouletteConfirmBtn get() = if(isId) "Catat Transaksi" else "Record Transaction"
+    val rouletteCancelBtn get() = if(isId) "Batal" else "Cancel"
+    
     val versionInfo get() = if(isId) "Versi: $VERSION\nBuild: Beta\nTipe: Standalone Local" else "Version: $VERSION\nBuild: Core Edition\nType: Standalone Local"
     val updAvail get() = if(isId) "Pembaruan Tersedia" else "Update Available"
     val newVerRdy get() = if(isId) "Versi baru sudah siap" else "New version is ready"
@@ -212,6 +224,27 @@ object AppStr {
     val dlDone get() = if(isId) "Unduhan Selesai!" else "Download Complete!"
     val openingInst get() = if(isId) "Membuka installer..." else "Opening installer..."
     val daysStreak get() = if(isId) "Hari Beruntun!" else "Days Streak!"
+
+    // Virtual Wallets (Zero-Based Budgeting)
+    val virtualWalletsTitle get() = if(isId) "Dompet Virtual" else "Virtual Wallets"
+    val unallocatedFundsTitle get() = if(isId) "Dana Belum Dialokasikan" else "Unallocated Funds"
+    val allocateWarning get() = if(isId) "Mohon alokasikan dana Anda yang tersisa ke dalam dompet virtual." else "Please kindly allocate your remaining funds into your virtual wallets."
+    val allocateFundsTitle get() = if(isId) "Alokasikan Dana" else "Allocate Funds"
+    val selectTargetWallet get() = if(isId) "Pilih dompet tujuan" else "Select target wallet"
+    val enterAmount get() = if(isId) "Masukkan nominal" else "Enter amount"
+    val allocateExceedError get() = if(isId) "Mohon maaf, nominal yang Anda masukkan melebihi batas dana yang tersedia." else "We sincerely apologize, the amount entered exceeds your available funds."
+    val fromVirtualWallet get() = if(isId) "Dari Dompet Virtual" else "From Virtual Wallet"
+    val virtualWalletInsufficientError get() = if(isId) "Mohon maaf, saldo dompet virtual Anda tidak mencukupi untuk transaksi ini. Apakah Anda berkenan mengambil dari dompet virtual lain?" else "We apologize, your virtual wallet balance is insufficient for this transaction. Would you like to allocate from another virtual wallet?"
+
+    // Kuma Roulette
+    val rouletteHeader get() = if(isId) "Bingung Menentukan Pilihan? Mari Putar Rodanya!" else "Having Trouble Deciding? Let's Spin the Wheel!"
+    val rouletteBudgetLabel get() = if(isId) "Batas Anggaran Anda" else "Your Maximum Budget"
+    val rouletteEmptyWallet get() = if(isId) "Mohon maaf, saldo dompet Anda belum mencukupi." else "We sincerely apologize, your wallet balance is insufficient."
+    val rouletteAddOptionHint get() = if(isId) "Masukkan pilihan Anda" else "Enter your choice"
+    val rouletteAddAnother get() = if(isId) "+ Tambah Opsi Lain" else "+ Add Another Option"
+    val rouletteDestiny get() = if(isId) "Takdir Anda hari ini:" else "Your destiny today:"
+    val rouletteRecordAuto get() = if(isId) "Catat Pengeluaran Otomatis" else "Record Expense Automatically"
+    val rouletteIconText get() = if(isId) "Roulette / Dadu" else "Roulette / Dice"
 }
 
 // ... [KumaIconLibrary] ...

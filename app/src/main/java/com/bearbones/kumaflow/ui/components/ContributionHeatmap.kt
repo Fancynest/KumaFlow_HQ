@@ -63,9 +63,12 @@ fun ContributionHeatmap(
         else dailyExpense.values.average()
     }
 
+    val emptyColor = AppSurfaceVariant()
+    val borderColor = AppText().copy(alpha = 0.2f)
+
     // Color mapping: green = below avg (hemat), yellow = around avg, red = above avg (boros)
     fun getHeatColor(amount: Long): Color {
-        if (amount == 0L) return Color(0xFF1B1F23).copy(alpha = 0.3f) // empty/no tx
+        if (amount == 0L) return emptyColor // empty/no tx
         val ratio = amount.toDouble() / avgDaily
         return when {
             ratio <= 0.5 -> Color(0xFF0E4429) // very hemat
@@ -141,6 +144,13 @@ fun ContributionHeatmap(
                             size = Size(cellSize.dp.toPx(), cellSize.dp.toPx()),
                             cornerRadius = CornerRadius(3.dp.toPx())
                         )
+                        drawRoundRect(
+                            color = borderColor,
+                            topLeft = Offset(x, y),
+                            size = Size(cellSize.dp.toPx(), cellSize.dp.toPx()),
+                            cornerRadius = CornerRadius(3.dp.toPx()),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
+                        )
                     }
                 }
             }
@@ -155,6 +165,7 @@ fun ContributionHeatmap(
         ) {
             Text(if (isId) "Hemat" else "Less", fontSize = 10.sp, color = AppText().copy(alpha = 0.5f))
             listOf(
+                emptyColor,
                 Color(0xFF0E4429),
                 Color(0xFF006D32),
                 Color(0xFF26A641),
@@ -165,6 +176,11 @@ fun ContributionHeatmap(
                     drawRoundRect(
                         color = c,
                         cornerRadius = CornerRadius(2.dp.toPx())
+                    )
+                    drawRoundRect(
+                        color = borderColor,
+                        cornerRadius = CornerRadius(2.dp.toPx()),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
                     )
                 }
             }

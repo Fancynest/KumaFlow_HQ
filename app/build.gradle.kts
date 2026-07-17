@@ -13,8 +13,8 @@ android {
         applicationId = "com.bearbones.kumaflow"
         minSdk = 27
         targetSdk = 35
-        versionCode = 49
-        versionName = "6.3.0"
+        versionCode = 50
+        versionName = "6.3.1"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -51,6 +51,7 @@ configurations.all {
 }
 
 dependencies {
+    implementation("androidx.graphics:graphics-shapes:1.0.1")
     // Pake libraries dari BOM agar stabil
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

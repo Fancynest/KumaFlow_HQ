@@ -23,6 +23,8 @@ import android.widget.TimePicker
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
+import androidx.compose.material.icons.Icons
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Canvas
@@ -44,7 +46,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.Backspace
@@ -356,7 +357,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AppPrimary().copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.AccountBalanceWallet, null, tint = AppPrimary(), modifier = Modifier.size(18.dp))
+                            KumaExpressiveIcon(Icons.Default.AccountBalanceWallet, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 24.dp, iconPadding = 3.dp)
                         }
                         Text(
                             AppStr.carryOver,
@@ -391,7 +392,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AppPrimary().copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.NotificationsActive, null, tint = AppPrimary(), modifier = Modifier.size(18.dp))
+                            KumaExpressiveIcon(Icons.Default.NotificationsActive, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 24.dp, iconPadding = 3.dp)
                         }
                         Text(
                             AppStr.dailyRem,
@@ -413,10 +414,13 @@ fun SettingsScreen(
                                 },
                                 modifier = Modifier.size(28.dp).padding(end = 4.dp)
                             ) {
-                                Icon(
+                                KumaExpressiveIcon(
                                     imageVector = if (expandReminders) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = "Expand",
-                                    tint = AppText()
+                                    contentDescription = null,
+                                    tint = AppPrimary(),
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    size = 24.dp,
+                                    iconPadding = 0.dp
                                 )
                             }
                         }
@@ -466,7 +470,7 @@ fun SettingsScreen(
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.AccessTime, null, tint = AppText().copy(alpha=0.7f), modifier = Modifier.size(16.dp))
+                                    KumaExpressiveIcon(Icons.Default.AccessTime, null, tint = AppText().copy(alpha=0.7f), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 20.dp, iconPadding = 2.dp)
                                     Text(
                                         "${AppStr.rem} ${index + 1}",
                                         modifier = Modifier.weight(1f).padding(start = 8.dp),
@@ -491,23 +495,28 @@ fun SettingsScreen(
                 }
             }
 
-            Column(
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .glassCard(16.dp, AppSurfaceVariant())
-                    .padding(16.dp)
+                    .glassCard(24.dp, AppSurface()),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.NotificationsActive, contentDescription = null, tint = AppPrimary())
+                    Box(
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AppPrimary().copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        KumaExpressiveIcon(imageVector = Icons.Default.NotificationsActive, contentDescription = null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 24.dp, iconPadding = 3.dp)
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Auto Notif Tracker",
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppText(),
                             maxLines = 1,
@@ -632,7 +641,7 @@ fun SettingsScreen(
                             expenseCatsList.forEach { catName ->
                                 val currentVal = targetMap[catName] ?: 0L
                                 var inputValue by remember { mutableStateOf(if (currentVal == 0L) "" else currentVal.toString()) }
-                                OutlinedTextField(
+                                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                     value = inputValue,
                                     onValueChange = { input ->
                                         if (input.isEmpty() || input.all { char -> char.isDigit() }) {
@@ -656,7 +665,7 @@ fun SettingsScreen(
                     }
                 },
                 confirmButton = {
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
                             scope.launch {
                                 val json = JSONObject()
@@ -692,7 +701,7 @@ fun SettingsScreen(
                     )
                 },
                 confirmButton = {
-                    Button(onClick = {
+                    com.bearbones.kumaflow.ui.components.KumaButton(onClick = {
                         showOemWarningDialog = false
                         try {
                             context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
@@ -742,7 +751,7 @@ fun SettingsScreen(
                                                 newWalletName = w
                                             },
                                             modifier = Modifier.size(24.dp)
-                                        ) { Icon(Icons.Default.Edit, null, tint = AppPrimary()) }
+                                        ) { KumaExpressiveIcon(Icons.Default.Edit, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent) }
 
                                         if (activeWallets.size > 1) {
                                             Spacer(modifier = Modifier.width(8.dp))
@@ -754,7 +763,7 @@ fun SettingsScreen(
                                                     com.bearbones.kumaflow.WalletLogoManager.deleteWalletLogo(context, w)
                                                 },
                                                 modifier = Modifier.size(24.dp)
-                                            ) { Icon(Icons.Default.Delete, null, tint = AppRed()) }
+                                            ) { KumaExpressiveIcon(Icons.Default.Delete, null, tint = AppRed(), containerColor = androidx.compose.ui.graphics.Color.Transparent) }
                                         }
                                     }
                                 }
@@ -767,7 +776,7 @@ fun SettingsScreen(
                             }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
+                            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                 value = newWalletName,
                                 onValueChange = { newWalletName = it },
                                 label = { Text(if (editingWalletOldName != null) AppStr.edit else AppStr.addWallet) },
@@ -784,7 +793,7 @@ fun SettingsScreen(
                                         newWalletName = ""
                                     },
                                     modifier = Modifier.background(AppRed(), CircleShape)
-                                ) { Icon(Icons.Default.Close, null, tint = Color.White) }
+                                ) { KumaExpressiveIcon(Icons.Default.Close, null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent) }
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
@@ -818,7 +827,7 @@ fun SettingsScreen(
                                     }
                                 },
                                 modifier = Modifier.background(AppPrimary(), CircleShape)
-                            ) { Icon(if (editingWalletOldName != null) Icons.Default.Check else Icons.Default.Add, null, tint = Color.White) }
+                            ) { KumaExpressiveIcon(if (editingWalletOldName != null) Icons.Default.Check else Icons.Default.Add, null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent) }
                         }
                     }
                 },
@@ -915,7 +924,7 @@ fun SettingsScreen(
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             },
                                             modifier = Modifier.size(24.dp)
-                                        ) { Icon(Icons.Default.Edit, null, tint = AppPrimary()) }
+                                        ) { KumaExpressiveIcon(Icons.Default.Edit, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent) }
 
                                         if (currentList.size > 1) {
                                             Spacer(modifier = Modifier.width(8.dp))
@@ -932,7 +941,7 @@ fun SettingsScreen(
                                                     }
                                                 },
                                                 modifier = Modifier.size(24.dp)
-                                            ) { Icon(Icons.Default.Delete, null, tint = AppRed()) }
+                                            ) { KumaExpressiveIcon(Icons.Default.Delete, null, tint = AppRed(), containerColor = androidx.compose.ui.graphics.Color.Transparent) }
                                         }
                                     }
                                 }
@@ -948,7 +957,7 @@ fun SettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                                 ) {
-                                    OutlinedTextField(
+                                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                         value = newCatName,
                                         onValueChange = { newCatName = it },
                                         label = { Text(AppStr.catName) },
@@ -963,7 +972,7 @@ fun SettingsScreen(
                                         newCatName = ""
                                         selectedIconKey = "Kategori"
                                     }, contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Close, null, tint = Color.White)
+                                        KumaExpressiveIcon(Icons.Default.Close, null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Box(modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(AppPrimary()).clickable {
@@ -999,11 +1008,11 @@ fun SettingsScreen(
                                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                         }
                                     }, contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Check, null, tint = Color.White)
+                                        KumaExpressiveIcon(Icons.Default.Check, null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                     }
                                 }
                             } else {
-                                OutlinedTextField(
+                                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                                     value = newCatName,
                                     onValueChange = { newCatName = it },
                                     label = { Text(AppStr.catName) },
@@ -1036,14 +1045,14 @@ fun SettingsScreen(
                                             .padding(8.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(icon, contentDescription = key, tint = if (selectedIconKey == key) Color.White else AppText(), modifier = Modifier.size(20.dp))
+                                        KumaExpressiveIcon(icon, contentDescription = key, tint = if (selectedIconKey == key) Color.White else AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 30.dp, iconPadding = 5.dp)
                                     }
                                 }
                             }
 
                             if (editingCatOldName == null) {
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Button(
+                                com.bearbones.kumaflow.ui.components.KumaButton(
                                     onClick = {
                                         if (newCatName.isNotBlank()) {
                                             val newCat = newCatName.trim()
@@ -1092,7 +1101,7 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.editProf, fontWeight = FontWeight.Bold) },
                 text = {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = newName,
                         onValueChange = { newName = it },
                         label = { Text(AppStr.usr) },
@@ -1102,7 +1111,7 @@ fun SettingsScreen(
                     )
                 },
                 confirmButton = {
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
                             scope.launch {
                                 dao.saveProfile(currentProfile.copy(userName = newName))
@@ -1131,7 +1140,7 @@ fun SettingsScreen(
                         currencies.chunked(2).forEach { rowItems ->
                             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 rowItems.forEach { (c, flag) ->
-                                    Button(
+                                    com.bearbones.kumaflow.ui.components.KumaButton(
                                         onClick = {
                                             scope.launch {
                                                 dao.saveProfile(currentProfile.copy(currency = c))
@@ -1164,7 +1173,7 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.setTar) },
                 text = {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = targetInput,
                         onValueChange = { if (it.all { c -> c.isDigit() }) targetInput = it },
                         label = { Text(AppStr.limExp) },
@@ -1176,7 +1185,7 @@ fun SettingsScreen(
                     )
                 },
                 confirmButton = {
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
                             scope.launch {
                                 dao.saveProfile(currentProfile.copy(monthlyTarget = targetInput.toLongOrNull() ?: 0L))
@@ -1201,6 +1210,7 @@ fun SettingsScreen(
                         val isJune = currentMonth == java.util.Calendar.JUNE
                         val hasPride = currentProfile.userName.contains("#pride", ignoreCase = true)
                         val hasBear = currentProfile.userName.contains("#bear", ignoreCase = true)
+                        val hasBrutal = currentProfile.userName.contains("#brutal", ignoreCase = true)
 
                         val themeOptions = mutableListOf(
                             0 to AppStr.themeSys,
@@ -1217,6 +1227,11 @@ fun SettingsScreen(
                                 themeOptions.add(5 to "Bear Light \uD83D\uDC3B")
                                 themeOptions.add(6 to "Bear Dark \uD83D\uDC3B")
                             }
+                        }
+                        
+                        if (hasBrutal) {
+                            themeOptions.add(7 to "Brutal Light \uD83E\uDDF1")
+                            themeOptions.add(8 to "Brutal Dark \uD83E\uDDF1")
                         }
 
                         themeOptions.forEach { (value, label) ->
@@ -1331,7 +1346,7 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(if(isTurningOn) AppStr.setPin else AppStr.confPin) },
                 text = {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = pinInput,
                         onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) pinInput = it },
                         label = { Text(AppStr.pinLabel) },
@@ -1342,7 +1357,7 @@ fun SettingsScreen(
                     )
                 },
                 confirmButton = {
-                    Button(
+                    com.bearbones.kumaflow.ui.components.KumaButton(
                         enabled = pinInput.length == 6,
                         onClick = {
                             when {
@@ -1439,12 +1454,12 @@ fun SettingsScreen(
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         Text(AppStr.qrisImg, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                        Button(
+                        com.bearbones.kumaflow.ui.components.KumaButton(
                             onClick = { launcher.launch("image/*") },
                             colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Image, contentDescription = null)
+                            KumaExpressiveIcon(Icons.Default.Image, contentDescription = null, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (currentProfile.qrisFilePath.isNotEmpty()) "Change QRIS Image" else "Upload QRIS Image")
                         }
@@ -1455,7 +1470,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(AppStr.bankName, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                        OutlinedTextField(
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                             value = bankName,
                             onValueChange = { bankName = it },
                             placeholder = { Text("e.g. BCA") },
@@ -1466,7 +1481,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(AppStr.bankAcc, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                        OutlinedTextField(
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                             value = bankAcc,
                             onValueChange = { bankAcc = it },
                             placeholder = { Text("e.g. 1234567890") },
@@ -1549,6 +1564,7 @@ fun SettingsScreen(
     }
 }
 }
+
 
 
 

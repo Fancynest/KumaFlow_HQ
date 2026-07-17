@@ -9,12 +9,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -120,7 +123,7 @@ fun ReportScreen(
             shape = RoundedCornerShape(16.dp),
             border = androidx.compose.foundation.BorderStroke(1.dp, if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.2f) else AppPrimary().copy(alpha = 0.5f))
         ) {
-            Icon(if (isCurrentOrFutureMonth) Icons.Default.Lock else Icons.Default.AutoAwesome, contentDescription = "Rewatch", tint = if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.5f) else AppPrimary())
+            KumaExpressiveIcon(if (isCurrentOrFutureMonth) Icons.Default.Lock else Icons.Default.AutoAwesome, contentDescription = "Rewatch", tint = if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.5f) else AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             Spacer(modifier = Modifier.width(8.dp))
             val btnText = if (isCurrentOrFutureMonth) "Wrapped $currentSelectedMonthName $selectedYear (Coming Soon) ✨" else "Putar Ulang Wrapped $currentSelectedMonthName $selectedYear ✨"
             Text(btnText, color = if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.5f) else AppPrimary(), fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
@@ -153,7 +156,7 @@ fun ReportScreen(
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.AutoAwesome, null, tint = AppPrimary(), modifier = Modifier.size(28.dp))
+                KumaExpressiveIcon(Icons.Default.AutoAwesome, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent, size = 32.dp, iconPadding = 4.dp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(AppStr.smartInsights, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = AppPrimary())
@@ -191,9 +194,7 @@ fun ReportScreen(
             Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppGreen().copy(alpha = 0.1f)).border(1.dp, AppGreen().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(28.dp).background(AppGreen().copy(alpha=0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ArrowUpward, null, tint = AppGreen(), modifier = Modifier.size(16.dp))
-                        }
+                        KumaExpressiveIcon(Icons.Default.ArrowUpward, null, tint = AppGreen(), containerColor = AppGreen().copy(alpha=0.2f), size = 28.dp, iconPadding = 6.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(AppStr.inc, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AppText().copy(alpha = 0.7f))
                     }
@@ -205,9 +206,7 @@ fun ReportScreen(
             Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppRed().copy(alpha = 0.1f)).border(1.dp, AppRed().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(28.dp).background(AppRed().copy(alpha=0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ArrowDownward, null, tint = AppRed(), modifier = Modifier.size(16.dp))
-                        }
+                        KumaExpressiveIcon(Icons.Default.ArrowDownward, null, tint = AppRed(), containerColor = AppRed().copy(alpha=0.2f), size = 28.dp, iconPadding = 6.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(AppStr.exp, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AppText().copy(alpha = 0.7f))
                     }
@@ -344,9 +343,7 @@ fun ReportScreen(
                             Box(modifier = Modifier.fillMaxWidth().height(65.dp)) {
                                 if (target > 0) Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(progress).background(catCol.copy(alpha = 0.15f)).align(Alignment.CenterStart))
                                 Row(modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catCol.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                                        Icon(icon, contentDescription = null, tint = catCol, modifier = Modifier.size(18.dp))
-                                    }
+                                    KumaExpressiveIcon(icon, contentDescription = null, tint = catCol, containerColor = catCol.copy(alpha = 0.2f), size = 36.dp, iconPadding = 9.dp)
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppText(), modifier = Modifier.weight(1f))
                                     Text("$curSym ${NumberFormat.getInstance(locale).format(amt)}", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
@@ -371,7 +368,7 @@ fun ReportScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(if (showAllCategories) AppStr.showLess else "${AppStr.showMore} (${expensePerCat.size - 5})", color = AppPrimary(), fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(if (showAllCategories) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null, tint = AppPrimary())
+                                    KumaExpressiveIcon(if (showAllCategories) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                                 }
                             }
                         }
@@ -444,6 +441,7 @@ fun ReportScreen(
                 val hasData = incomeData.sum() > 0f || expenseData.sum() > 0f
 
                 val isDark = LocalIsDark.current
+                val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val gridColVertical = if (isDark) Color.White.copy(alpha = 0.15f) else variantCol.copy(alpha = 0.5f)
@@ -457,8 +455,9 @@ fun ReportScreen(
                             drawLine(color = gridColHorizontal, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
                         }
                         if (hasData) {
-                            drawTrendsArea(incPoints, greenCol)
-                            drawTrendsArea(expPoints, redCol)
+                            val isBrut = isBrutal // Wait, let's pass `com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current` from Compose scope
+                            drawTrendsArea(incPoints, greenCol, isBrut)
+                            drawTrendsArea(expPoints, redCol, isBrut)
                         }
                     }
                     if (!hasData) {
@@ -479,7 +478,7 @@ fun ReportScreen(
         Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding() + 24.dp))
     }
 }
-fun DrawScope.drawTrendsArea(points: List<Float>, color: Color) {
+fun DrawScope.drawTrendsArea(points: List<Float>, color: Color, isBrutal: Boolean = false) {
     if (points.size < 2) return
     val w = size.width
     val h = size.height
@@ -509,21 +508,45 @@ fun DrawScope.drawTrendsArea(points: List<Float>, color: Color) {
     drawPath(
         path = fillPath,
         brush = Brush.verticalGradient(
-            colors = listOf(color.copy(alpha = 0.4f), color.copy(alpha = 0.0f)),
+            colors = listOf(color.copy(alpha = if (isBrutal) 0.6f else 0.4f), color.copy(alpha = 0.0f)),
             startY = 0f,
             endY = h
         )
     )
+    
+    val strokeWidth = if (isBrutal) 5.dp.toPx() else 3.dp.toPx()
+
+    if (isBrutal) {
+        translate(left = 4.dp.toPx(), top = 4.dp.toPx()) {
+            drawPath(
+                path = path,
+                color = Color.Black.copy(alpha = 1f),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+        }
+        drawPath(
+            path = path,
+            color = Color.Black,
+            style = Stroke(width = strokeWidth + 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+    }
+
     drawPath(
         path = path,
         color = color,
-        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
     )
 
     val lastX = w
     val lastY = h - (points.last() * h)
-    drawCircle(color, radius = 5.dp.toPx(), center = Offset(lastX, lastY))
-    drawCircle(Color.White, radius = 2.5f.dp.toPx(), center = Offset(lastX, lastY))
+    
+    if (isBrutal) {
+        drawCircle(Color.Black, radius = 7.dp.toPx(), center = Offset(lastX + 2.dp.toPx(), lastY + 2.dp.toPx()))
+        drawCircle(Color.Black, radius = 8.dp.toPx(), center = Offset(lastX, lastY))
+    }
+    
+    drawCircle(color, radius = 6.dp.toPx(), center = Offset(lastX, lastY))
+    drawCircle(Color.White, radius = 3.dp.toPx(), center = Offset(lastX, lastY))
 }
 
 

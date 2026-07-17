@@ -156,6 +156,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        
+        <!-- PINTU 9: LOGO BRUTAL (Default Mati) -->
+        <activity-alias
+            android:name=".MainActivityAliasBrutal"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher_kumabrutal"
+            android:roundIcon="@mipmap/ic_launcher_kumabrutal_round"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <service
             android:name=".KumaService"
