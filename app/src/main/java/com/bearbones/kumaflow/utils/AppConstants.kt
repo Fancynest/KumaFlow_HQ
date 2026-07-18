@@ -58,7 +58,7 @@ object AppStr {
     val tar get() = if(isId) "Target Global" else "Global Target"
     val catBudget get() = if(isId) "Budget Kategori" else "Category Budget"
 
-    const val VERSION = "v6.3.1"
+    const val VERSION = "v6.3.2"
     val dat get() = if(isId) "Data" else "Data"
     val expPdf get() = if(isId) "Ekspor ke PDF" else "Export to PDF"
     val expCsv get() = if(isId) "Ekspor ke CSV" else "Export to CSV"
@@ -245,6 +245,16 @@ object AppStr {
     val rouletteDestiny get() = if(isId) "Takdir Anda hari ini:" else "Your destiny today:"
     val rouletteRecordAuto get() = if(isId) "Catat Pengeluaran Otomatis" else "Record Expense Automatically"
     val rouletteIconText get() = if(isId) "Roulette / Dadu" else "Roulette / Dice"
+    // Tutorial Strings
+    val tutSummary get() = if(isId) "Ini adalah ringkasan keuangan Anda bulan ini.\nPantau sisa saldo dan pengeluaran Anda di sini." else "This is your financial summary for the month.\nMonitor your remaining balance and expenses here."
+    val tutWallets get() = if(isId) "Di sini Anda dapat melihat saldo dari setiap dompet atau rekening. Silakan geser untuk melihat selengkapnya." else "Here you can view the balance of each wallet or account. Swipe to see more."
+    val tutAddBtn get() = if(isId) "Mari kita mulai dengan mencatat transaksi pertama Anda. Ketuk tombol + ini." else "Let's start by recording your first transaction. Tap this + button."
+    val tutTabs get() = if(isId) "Pilih jenis transaksi Anda di sini: Pemasukan, Pengeluaran, atau Transfer antar dompet." else "Select your transaction type here: Income, Expense, or Transfer between wallets."
+    val tutDate get() = if(isId) "Atur tanggal transaksi Anda di sini." else "Set the date of your transaction here."
+    val tutCategory get() = if(isId) "Pilih kategori yang sesuai agar lebih mudah dipantau pada grafik laporan." else "Choose the appropriate category to easily monitor it on the report chart."
+    val tutTitleNotes get() = if(isId) "Masukkan judul dan nominal transaksi. Anda juga dapat menambahkan catatan kecil jika diperlukan." else "Enter the title and amount of the transaction. You can also add a small note if necessary."
+    val tutFunding get() = if(isId) "Terakhir, pilih dompet atau rekening yang digunakan untuk transaksi ini." else "Lastly, select the wallet or account used for this transaction."
+    val tutSave get() = if(isId) "Setelah semuanya selesai, ketuk Simpan!\nSelamat, Anda siap menggunakan KumaFlow! \uD83D\uDE80" else "Once everything is set, tap Save!\nCongratulations, you are ready to use KumaFlow! \uD83D\uDE80"
 }
 
 // ... [KumaIconLibrary] ...

@@ -116,6 +116,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
+import com.bearbones.kumaflow.ui.components.KumaIconButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
 
 // --- DATA CLASSES & OBJECTS ---
 fun isNotificationServiceEnabled(context: Context): Boolean {
@@ -407,7 +409,7 @@ fun SettingsScreen(
                         )
 
                         if (currentProfile.isReminderOn) {
-                            IconButton(
+                            KumaIconButton(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     expandReminders = !expandReminders
@@ -678,7 +680,7 @@ fun SettingsScreen(
                     ) { Text(AppStr.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showCatBudgetDialog = false }) { Text(AppStr.close, color = AppText()) }
+                    KumaTextButton(onClick = { showCatBudgetDialog = false }) { Text(AppStr.close, color = AppText()) }
                 },
                 
             )
@@ -713,7 +715,7 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showOemWarningDialog = false }) {
+                    KumaTextButton(onClick = { showOemWarningDialog = false }) {
                         Text(AppStr.laterBtn)
                     }
                 }
@@ -745,7 +747,7 @@ fun SettingsScreen(
                                 ) {
                                     Text("• $w", color = AppText(), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                                     Row {
-                                        IconButton(
+                                        KumaIconButton(
                                             onClick = {
                                                 editingWalletOldName = w
                                                 newWalletName = w
@@ -755,7 +757,7 @@ fun SettingsScreen(
 
                                         if (activeWallets.size > 1) {
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            IconButton(
+                                            KumaIconButton(
                                                 onClick = {
                                                     val newList = activeWallets.filter { it != w }
                                                     activeWallets = newList
@@ -787,7 +789,7 @@ fun SettingsScreen(
                             )
                             if (editingWalletOldName != null) {
                                 Spacer(modifier = Modifier.width(8.dp))
-                                IconButton(
+                                KumaIconButton(
                                     onClick = {
                                         editingWalletOldName = null
                                         newWalletName = ""
@@ -796,7 +798,7 @@ fun SettingsScreen(
                                 ) { KumaExpressiveIcon(Icons.Default.Close, null, tint = Color.White, containerColor = androidx.compose.ui.graphics.Color.Transparent) }
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
+                            KumaIconButton(
                                 onClick = {
                                     val safeNew = newWalletName.trim()
                                     if (safeNew.isNotBlank()) {
@@ -832,7 +834,7 @@ fun SettingsScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    KumaTextButton(
                         onClick = {
                             showWalletDialog = false
                             onForceUpdate()
@@ -915,7 +917,7 @@ fun SettingsScreen(
                                     Text("• $cat", color = AppText(), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
 
                                     Row {
-                                        IconButton(
+                                        KumaIconButton(
                                             onClick = {
                                                 editingCatOldName = cat
                                                 newCatName = cat
@@ -928,7 +930,7 @@ fun SettingsScreen(
 
                                         if (currentList.size > 1) {
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            IconButton(
+                                            KumaIconButton(
                                                 onClick = {
                                                     if (isIncomeTab) {
                                                         val newList = activeIncomeCats.filter { it != cat }
@@ -1084,7 +1086,7 @@ fun SettingsScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    KumaTextButton(
                         onClick = {
                             showCategoryDialog = false
                             onForceUpdate()
@@ -1230,8 +1232,8 @@ fun SettingsScreen(
                         }
                         
                         if (hasBrutal) {
-                            themeOptions.add(7 to "Brutal Light \uD83E\uDDF1")
-                            themeOptions.add(8 to "Brutal Dark \uD83E\uDDF1")
+                            themeOptions.add(7 to "Brutal Light")
+                            themeOptions.add(8 to "Brutal Dark")
                         }
 
                         themeOptions.forEach { (value, label) ->
@@ -1306,35 +1308,10 @@ fun SettingsScreen(
                             )
                         }
 
-                        if (currentProfile.isLiquidGlass) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 12.dp)) {
-                                    Text(if(AppStr.isId) "Efek Kaca Premium" else "Premium Glass Effect", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
-                                    Text(if(AppStr.isId) "Matikan untuk performa lebih baik di HP kentang" else "Turn off for better performance on low-end devices", fontSize = 10.sp, color = AppText().copy(alpha=0.6f))
-                                }
-                                Switch(
-                                    checked = currentProfile.isPremiumGlassBlur,
-                                    onCheckedChange = { isChecked ->
-                                        scope.launch {
-                                            dao.saveProfile(currentProfile.copy(isPremiumGlassBlur = isChecked))
-                                            onForceUpdate()
-                                        }
-                                    },
-                                    modifier = Modifier.scale(0.8f)
-                                )
-                            }
-                        }
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showThemeDialog = false }) { Text(AppStr.close) }
+                    KumaTextButton(onClick = { showThemeDialog = false }) { Text(AppStr.close) }
                 }
             )
         }
@@ -1394,7 +1371,7 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.info, fontWeight = FontWeight.Bold) },
                 text = { Text(AppStr.versionInfo) },
-                confirmButton = { TextButton(onClick = { showVersionDialog = false }) { Text(AppStr.close) } },
+                confirmButton = { KumaTextButton(onClick = { showVersionDialog = false }) { Text(AppStr.close) } },
                 
                 
             )
@@ -1411,7 +1388,7 @@ fun SettingsScreen(
                         Text(AppStr.privDesc)
                     }
                 },
-                confirmButton = { TextButton(onClick = { showPrivacyDialog = false }) { Text(AppStr.gotIt) } },
+                confirmButton = { KumaTextButton(onClick = { showPrivacyDialog = false }) { Text(AppStr.gotIt) } },
                 
                 
             )
@@ -1491,7 +1468,7 @@ fun SettingsScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = {
+                    KumaTextButton(onClick = {
                         scope.launch {
                             val newProf = currentProfile.copy(bankName = bankName, bankAccount = bankAcc)
                             dao.saveProfile(newProf)
@@ -1501,7 +1478,7 @@ fun SettingsScreen(
                     }) { Text(AppStr.save) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showQrisDialog = false }) { Text(AppStr.cancelBtn) }
+                    KumaTextButton(onClick = { showQrisDialog = false }) { Text(AppStr.cancelBtn) }
                 }
             )
         }
@@ -1517,7 +1494,7 @@ fun SettingsScreen(
                         Text(AppStr.termDesc)
                     }
                 },
-                confirmButton = { TextButton(onClick = { showTermsDialog = false }) { Text(AppStr.agree) } },
+                confirmButton = { KumaTextButton(onClick = { showTermsDialog = false }) { Text(AppStr.agree) } },
                 
                 
             )

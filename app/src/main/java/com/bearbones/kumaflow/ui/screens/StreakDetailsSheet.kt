@@ -48,6 +48,7 @@ import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.utils.ShareStreakUtils
 import java.time.LocalDate
 import java.time.YearMonth
+import com.bearbones.kumaflow.ui.components.KumaIconButton
 
 @Composable
 fun StreakDetailsSheet(
@@ -218,7 +219,7 @@ fun SimpleCalendar(activeDates: List<LocalDate>) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+            KumaIconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
                 KumaExpressiveIcon(Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             }
             Text(
@@ -227,7 +228,7 @@ fun SimpleCalendar(activeDates: List<LocalDate>) {
                 color = AppText(),
                 textAlign = TextAlign.Center
             )
-            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+            KumaIconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
                 KumaExpressiveIcon(Icons.Default.ChevronRight, contentDescription = "Next Month", tint = AppText(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             }
         }

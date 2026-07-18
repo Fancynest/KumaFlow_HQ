@@ -62,9 +62,9 @@ val ORAppFontFamily = FontFamily(
 
 val ORTypography = Typography(
     bodyLarge = TextStyle(
-        fontFamily = ORAppFontFamily,
+        fontFamily = AppFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
+        fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
@@ -83,16 +83,16 @@ val ORTypography = Typography(
         letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = ORAppFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = ORAppFontFamily,
+        fontFamily = AppFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
@@ -103,12 +103,12 @@ val ORTypography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp
     ),
-    labelLarge = TextStyle(
-        fontFamily = ORAppFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp
+    labelMedium = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
     )
 )
 

@@ -27,6 +27,7 @@ import com.bearbones.kumaflow.AppPrimary
 import com.bearbones.kumaflow.AppSurface
 import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.utils.ShareStreakUtils
+import com.bearbones.kumaflow.ui.components.KumaIconButton
 
 @Composable
 fun MilestonePopUp(
@@ -68,7 +69,7 @@ fun MilestonePopUp(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(onClick = onDismiss) {
+                        KumaIconButton(onClick = onDismiss) {
                             Icon(Icons.Default.Close, contentDescription = "Close", tint = AppText())
                         }
                     }

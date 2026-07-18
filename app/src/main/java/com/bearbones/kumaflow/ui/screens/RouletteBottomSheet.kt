@@ -57,6 +57,9 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import com.bearbones.kumaflow.ui.components.KumaOutlinedButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
+import com.bearbones.kumaflow.utils.bouncySheetContent
 
 data class RouletteOption(
     val name: String,
@@ -109,6 +112,7 @@ fun RouletteBottomSheet(
     ) {
         Column(
             modifier = Modifier
+                .bouncySheetContent()
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp),
@@ -422,7 +426,7 @@ fun RouletteBottomSheet(
                 ) { Text(AppStr.rouletteConfirmBtn, color = Color.White) }
             },
             dismissButton = {
-                TextButton(onClick = { showWinnerDialog = false }) {
+                KumaTextButton(onClick = { showWinnerDialog = false }) {
                     Text(AppStr.rouletteCancelBtn, color = AppText())
                 }
             },

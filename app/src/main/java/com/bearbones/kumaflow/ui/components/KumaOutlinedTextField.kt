@@ -2,6 +2,7 @@ package com.bearbones.kumaflow.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -44,16 +45,23 @@ fun KumaOutlinedTextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = OutlinedTextFieldDefaults.shape,
-    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = com.bearbones.kumaflow.AppSurface(),
+        unfocusedContainerColor = com.bearbones.kumaflow.AppSurface(),
+        disabledContainerColor = com.bearbones.kumaflow.AppSurface().copy(alpha = 0.5f),
+        errorContainerColor = com.bearbones.kumaflow.AppSurface()
+    )
 ) {
     val isBrutal = LocalIsBrutal.current
     val brutalModifier = if (isBrutal) {
-        Modifier.neobrutalism(
-            isBrutal = true,
-            cornerRadius = 12.dp,
-            borderWidth = 3.dp,
-            offset = 4.dp
-        )
+        Modifier
+            .padding(end = 4.dp, bottom = 4.dp)
+            .neobrutalism(
+                isBrutal = true,
+                cornerRadius = 12.dp,
+                borderWidth = 3.dp,
+                offset = 4.dp
+            )
     } else {
         Modifier
     }
@@ -64,10 +72,10 @@ fun KumaOutlinedTextField(
             unfocusedBorderColor = Color.Transparent,
             disabledBorderColor = Color.Transparent,
             errorBorderColor = Color.Transparent,
-            focusedContainerColor = colors.focusedContainerColor,
-            unfocusedContainerColor = colors.unfocusedContainerColor,
-            disabledContainerColor = colors.disabledContainerColor,
-            errorContainerColor = colors.errorContainerColor,
+            focusedContainerColor = com.bearbones.kumaflow.AppSurface(),
+            unfocusedContainerColor = com.bearbones.kumaflow.AppSurface(),
+            disabledContainerColor = com.bearbones.kumaflow.AppSurface().copy(alpha = 0.5f),
+            errorContainerColor = com.bearbones.kumaflow.AppSurface(),
             focusedTextColor = colors.focusedTextColor,
             unfocusedTextColor = colors.unfocusedTextColor,
             disabledTextColor = colors.disabledTextColor,
@@ -109,7 +117,7 @@ fun KumaOutlinedTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.then(brutalModifier),
+            modifier = Modifier.fillMaxWidth().then(brutalModifier),
             enabled = enabled,
             readOnly = readOnly,
             textStyle = textStyle,

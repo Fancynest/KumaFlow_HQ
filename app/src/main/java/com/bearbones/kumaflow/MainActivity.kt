@@ -4,6 +4,8 @@ package com.bearbones.kumaflow
 
 import android.Manifest
 import android.annotation.SuppressLint
+import com.bearbones.kumaflow.ui.tutorial.tutorialTarget
+import com.bearbones.kumaflow.ui.tutorial.TutorialStep
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -142,6 +144,9 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.graphics.shapes.CornerRounding
+import com.bearbones.kumaflow.ui.components.KumaButton
+import com.bearbones.kumaflow.ui.components.KumaIconButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
 
 // --- DATA CLASSES & OBJECTS ---
 
@@ -153,29 +158,47 @@ val LocalIsPremiumGlassBlur = compositionLocalOf { false }
 val LocalHazeState = compositionLocalOf { HazeState() }
 
 @Composable
-fun AppBg() = MaterialTheme.colorScheme.background
-
-@Composable
-fun AppSurface() = MaterialTheme.colorScheme.surface
-
-@Composable
-fun AppText() = MaterialTheme.colorScheme.onSurface
-
-@Composable
-fun AppPrimary() = MaterialTheme.colorScheme.primary
-
-@Composable
-fun AppSurfaceVariant() = if (LocalIsDark.current) {
-    if (LocalIsAmoled.current) Color(0xFF1A1A1A) else Color(0xFF333333)
-} else {
-    Color.White.copy(alpha = 0.5f)
+fun AppBg(): Color {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    return if (isBrutal && LocalIsDark.current) Color(0xFF1C1B20) else MaterialTheme.colorScheme.background
 }
 
 @Composable
-fun AppGreen() = if (LocalIsDark.current) Color(0xFF66BB6A) else Color(0xFF1B5E20)
+fun AppSurface(): Color {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    return if (isBrutal && LocalIsDark.current) Color(0xFF1C1B20) else MaterialTheme.colorScheme.surface
+}
 
 @Composable
-fun AppRed() = if (LocalIsDark.current) Color(0xFFEF5350) else Color(0xFFB71C1C)
+fun AppText(): Color {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    return if (isBrutal && LocalIsDark.current) Color(0xFFE8DEF8) else MaterialTheme.colorScheme.onSurface
+}
+
+@Composable
+fun AppPrimary(): Color {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    return if (isBrutal && LocalIsDark.current) Color(0xFFD0BCFF) else MaterialTheme.colorScheme.primary
+}
+
+@Composable
+fun AppSurfaceVariant(): Color {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    if (isBrutal) {
+        return if (LocalIsDark.current) Color(0xFF2B2930) else com.bearbones.kumaflow.ui.theme.BrutalWhite
+    }
+    return if (LocalIsDark.current) {
+        if (LocalIsAmoled.current) Color(0xFF1A1A1A) else Color(0xFF1E222B)
+    } else {
+        Color(0xFFF1F3F7)
+    }
+}
+
+@Composable
+fun AppGreen() = if (LocalIsDark.current) Color(0xFF2ECC71) else Color(0xFF16A34A)
+
+@Composable
+fun AppRed() = if (LocalIsDark.current) Color(0xFFFF5A5F) else Color(0xFFDC2626)
 
 @Composable
 fun Modifier.glassmorphic(
@@ -548,10 +571,13 @@ fun MainScreen(
                 val fgColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White
                 val isLiquidGlass = LocalIsLiquidGlass.current
                 
+                val tutorialState = com.bearbones.kumaflow.ui.tutorial.LocalTutorialState.current
+                
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(70.dp)
+                        .tutorialTarget(TutorialStep.HOME_ADD_BTN)
                         .bouncyScale(fabInteractionSource)
                         .graphicsLayer {
                             shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
@@ -571,6 +597,9 @@ fun MainScreen(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 transactionToEdit = null
                                 showBottomSheet = true
+                                if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
+                                    tutorialState.next()
+                                }
                             }
                         )
                 ) {
@@ -875,8 +904,21 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .animateEnterExit(
-                            enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
-                            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
+                            enter = androidx.compose.animation.slideInVertically(
+                                animationSpec = androidx.compose.animation.core.spring(
+                                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                                ),
+                                initialOffsetY = { it }
+                            ) + androidx.compose.animation.scaleIn(
+                                animationSpec = androidx.compose.animation.core.spring(
+                                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                                ),
+                                initialScale = 0.8f,
+                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                            ),
+                            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + androidx.compose.animation.scaleOut(targetScale = 0.8f)
                         )
                         .offset { androidx.compose.ui.unit.IntOffset(0, animatedOffsetY.toInt()) }
                         .clickable(
@@ -924,12 +966,12 @@ fun MainScreen(
                 title = { Text(AppStr.backupReminderTitle, fontWeight = FontWeight.Black) },
                 text = { Text(AppStr.backupReminderMsg) },
                 confirmButton = {
-                    Button(
+                    KumaButton(
                         onClick = { showBackupReminder = false; backupAppToJSON(context, userProfile, transactionListWithSplits) },
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                     ) { Text(AppStr.backupNow, color = Color.White) }
                 },
-                dismissButton = { TextButton(onClick = { showBackupReminder = false }) { Text(AppStr.later, color = AppText()) } },
+                dismissButton = { KumaTextButton(onClick = { showBackupReminder = false }) { Text(AppStr.later, color = AppText()) } },
                 shape = RoundedCornerShape(28.dp), containerColor = AppSurface(), titleContentColor = AppText(), textContentColor = AppText()
             )
         }
@@ -964,23 +1006,7 @@ fun TransactionBottomSheet(
     
     var showSplitBill by remember { mutableStateOf(false) }
 
-    val datePickerDialog = remember {
-        android.app.DatePickerDialog(
-            context,
-            { _, year, month, dayOfMonth ->
-                val cal = java.util.Calendar.getInstance()
-                cal.set(year, month, dayOfMonth)
-                val locale = java.util.Locale.forLanguageTag("id-ID")
-                txDateStr = java.time.LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0).format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, locale))
-
-                val now = java.time.LocalDateTime.now()
-                txTimestamp = java.time.LocalDateTime.of(year, month + 1, dayOfMonth, now.hour, now.minute).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            },
-            calendar.get(java.util.Calendar.YEAR),
-            calendar.get(java.util.Calendar.MONTH),
-            calendar.get(java.util.Calendar.DAY_OF_MONTH)
-        )
-    }
+    var showM3DatePicker by remember { mutableStateOf(false) }
 
     val expenseCategories = remember(profile.expenseCats) { profile.expenseCats.split(",").filter { it.isNotBlank() } }
     val incomeCategories = remember(profile.incomeCats) { profile.incomeCats.split(",").filter { it.isNotBlank() } }
@@ -988,7 +1014,7 @@ fun TransactionBottomSheet(
 
     val currentCategories = if (txMode == 1) incomeCategories else expenseCategories
     var selectedCategory by remember(baseTx, txMode) {
-        mutableStateOf(if (baseTx != null && (baseTx.isIncome == (txMode == 1))) baseTx.category else currentCategories.firstOrNull() ?: "Others")
+        mutableStateOf(if (baseTx != null && (baseTx.isIncome == (txMode == 1))) baseTx.category else "")
     }
 
     var name by remember(baseTx) { mutableStateOf(baseTx?.name ?: "") }
@@ -1019,12 +1045,6 @@ fun TransactionBottomSheet(
     val focusRequester = remember { FocusRequester() }
 
     val allowedMathChars = setOf('0','1','2','3','4','5','6','7','8','9','+','-','*','/','(',')',' ','.')
-
-    LaunchedEffect(Unit) {
-        if (baseTx == null) {
-            focusRequester.requestFocus()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -1057,6 +1077,8 @@ fun TransactionBottomSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .tutorialTarget(TutorialStep.ADD_TX_TABS)
+                .padding(end = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) 4.dp else 0.dp, bottom = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) 4.dp else 0.dp)
                 .height(50.dp)
                 .glassCard(16.dp, AppSurfaceVariant(), useHaze = false)
         ) {
@@ -1102,29 +1124,27 @@ fun TransactionBottomSheet(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    datePickerDialog.show()
-                }
+                .tutorialTarget(TutorialStep.ADD_TX_DATE)
         ) {
-            OutlinedTextField(
+            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                 value = txDateStr,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text(AppStr.date) },
+                placeholder = { Text(AppStr.date) },
                 trailingIcon = {
                     KumaExpressiveIcon(Icons.Default.CalendarToday, contentDescription = null, tint = AppPrimary(), size = 24.dp)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = AppText(),
-                    disabledBorderColor = AppSurfaceVariant(),
-                    disabledLabelColor = AppText().copy(alpha = 0.7f),
-                    disabledTrailingIconColor = AppPrimary()
-                ),
                 shape = RoundedCornerShape(16.dp)
+            )
+            // Transparent overlay to intercept clicks properly without disabling the TextField
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showM3DatePicker = true
+                    }
             )
         }
 
@@ -1138,11 +1158,11 @@ fun TransactionBottomSheet(
                     onExpandedChange = { expFrom = !expFrom },
                     modifier = Modifier.weight(1f)
                 ) {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = transferFromWallet,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(AppStr.tarikDari) },
+                        placeholder = { Text(AppStr.tarikDari) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expFrom) },
                         modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
@@ -1166,11 +1186,11 @@ fun TransactionBottomSheet(
                     onExpandedChange = { expTo = !expTo },
                     modifier = Modifier.weight(1f)
                 ) {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = transferToWallet,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(AppStr.simpanKe) },
+                        placeholder = { Text(AppStr.simpanKe) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expTo) },
                         modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
@@ -1192,13 +1212,13 @@ fun TransactionBottomSheet(
             ExposedDropdownMenuBox(
                 expanded = expandedCat,
                 onExpandedChange = { expandedCat = !expandedCat },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().tutorialTarget(TutorialStep.ADD_TX_CATEGORY)
             ) {
-                OutlinedTextField(
+                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                     value = selectedCategory,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(AppStr.cat) },
+                    placeholder = { Text(AppStr.cat) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCat) },
                     modifier = Modifier
                         .menuAnchor(MenuAnchorType.PrimaryEditable, true)
@@ -1232,12 +1252,13 @@ fun TransactionBottomSheet(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
+        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text(if (txMode == 2) "${AppStr.nme} (Opsional)" else AppStr.nme) },
+            placeholder = { Text(if (txMode == 2) "${AppStr.nme} (Opsional)" else AppStr.nme) },
             modifier = Modifier
                 .fillMaxWidth()
+                .tutorialTarget(TutorialStep.ADD_TX_TITLE_NOTES)
                 .focusRequester(focusRequester),
             shape = RoundedCornerShape(16.dp),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
@@ -1245,10 +1266,10 @@ fun TransactionBottomSheet(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
+        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
             value = message,
             onValueChange = { message = it },
-            label = { Text(AppStr.msgInp) },
+            placeholder = { Text(AppStr.msgInp) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
@@ -1266,14 +1287,13 @@ fun TransactionBottomSheet(
         }
 
         if (txMode == 2) {
-            OutlinedTextField(
+            com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                 value = initialSplits[0].amount,
                 onValueChange = {
                     if (it.all { c -> c in allowedMathChars }) {
                         initialSplits[0] = initialSplits[0].copy(amount = it)
                     }
                 },
-                label = { Text(AppStr.jumlahPindah) },
                 placeholder = { Text("Cth: 15000+2000") },
                 visualTransformation = if (initialSplits[0].amount.any { c -> c in "+-*/()" }) androidx.compose.ui.text.input.VisualTransformation.None else ThousandSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -1306,6 +1326,7 @@ fun TransactionBottomSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .tutorialTarget(if (index == 0) TutorialStep.ADD_TX_FUNDING else TutorialStep.NONE)
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1315,7 +1336,7 @@ fun TransactionBottomSheet(
                         onExpandedChange = { expandedWallet = !expandedWallet },
                         modifier = Modifier.weight(1.2f)
                     ) {
-                        OutlinedTextField(
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                             value = splitItem.wallet,
                             onValueChange = {},
                             readOnly = true,
@@ -1349,7 +1370,7 @@ fun TransactionBottomSheet(
                         }
                     }
 
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = splitItem.amount,
                         onValueChange = {
                             if (it.all { c -> c in allowedMathChars }) {
@@ -1364,7 +1385,7 @@ fun TransactionBottomSheet(
                     )
 
                     if (initialSplits.size > 1) {
-                        IconButton(
+                        KumaIconButton(
                             onClick = { initialSplits.removeAt(index) },
                             modifier = Modifier.size(36.dp)
                         ) {
@@ -1374,7 +1395,7 @@ fun TransactionBottomSheet(
                 }
             }
 
-            TextButton(
+            KumaTextButton(
                 onClick = {
                     initialSplits.add(
                         SplitItemUi(
@@ -1411,7 +1432,7 @@ fun TransactionBottomSheet(
         val isAmountValid = totalAmtFinal > 0L
 
         if (txMode == 0 && isAmountValid) {
-            Button(
+            KumaButton(
                 onClick = { showSplitBill = true },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1426,7 +1447,7 @@ fun TransactionBottomSheet(
             }
         }
 
-        Button(
+        KumaButton(
             onClick = {
                 val timeStr = txTimestamp
                 val dateStr = txDateStr
@@ -1448,12 +1469,70 @@ fun TransactionBottomSheet(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(55.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
+                .tutorialTarget(TutorialStep.ADD_TX_SAVE)
+                .height(60.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppPrimary(),
+                contentColor = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) AppBg() else Color.White,
+                disabledContainerColor = AppPrimary().copy(alpha = 0.5f),
+                disabledContentColor = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) AppBg().copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
+            ),
             shape = RoundedCornerShape(16.dp),
-            enabled = isAmountValid && (txMode == 2 || name.isNotEmpty())
+            brutalCornerRadius = 16.dp,
+            enabled = isAmountValid && (txMode == 2 || (name.isNotEmpty() && selectedCategory.isNotEmpty()))
         ) {
-            Text(AppStr.saveTx, color = Color.White, fontWeight = FontWeight.ExtraBold)
+            Text(AppStr.saveTx, fontWeight = FontWeight.ExtraBold)
+        }
+    }
+
+    if (showM3DatePicker) {
+        val datePickerState = androidx.compose.material3.rememberDatePickerState(
+            initialSelectedDateMillis = calendar.timeInMillis
+        )
+        androidx.compose.material3.DatePickerDialog(
+            onDismissRequest = { showM3DatePicker = false },
+            confirmButton = {
+                com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val cal = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+                        val locale = java.util.Locale.forLanguageTag("id-ID")
+                        txDateStr = java.time.LocalDateTime.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH), 0, 0).format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, locale))
+
+                        val now = java.time.LocalDateTime.now()
+                        txTimestamp = java.time.LocalDateTime.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH), now.hour, now.minute).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    }
+                    showM3DatePicker = false
+                }) {
+                    Text("OK", color = AppPrimary(), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = { showM3DatePicker = false }) {
+                    Text(AppStr.no, color = AppText())
+                }
+            },
+            colors = androidx.compose.material3.DatePickerDefaults.colors(containerColor = AppBg())
+        ) {
+            androidx.compose.material3.DatePicker(
+                state = datePickerState,
+                colors = androidx.compose.material3.DatePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = AppPrimary(),
+                    headlineContentColor = AppText(),
+                    weekdayContentColor = AppText().copy(alpha=0.7f),
+                    subheadContentColor = AppText(),
+                    yearContentColor = AppText(),
+                    currentYearContentColor = AppPrimary(),
+                    selectedYearContentColor = Color.White,
+                    selectedYearContainerColor = AppPrimary(),
+                    dayContentColor = AppText(),
+                    disabledDayContentColor = AppText().copy(alpha=0.3f),
+                    selectedDayContentColor = Color.White,
+                    selectedDayContainerColor = AppPrimary(),
+                    todayContentColor = AppPrimary(),
+                    todayDateBorderColor = AppPrimary()
+                )
+            )
         }
     }
 
@@ -1462,16 +1541,16 @@ fun TransactionBottomSheet(
             onDismissRequest = { showNewWalletDialog = false; newWalletName = "" },
             title = { Text(AppStr.newWallet, fontWeight = FontWeight.Bold) },
             text = {
-                OutlinedTextField(
+                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                     value = newWalletName,
                     onValueChange = { newWalletName = it },
-                    label = { Text(AppStr.walletName) },
+                    placeholder = { Text(AppStr.walletName) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
             },
             confirmButton = {
-                Button(
+                KumaButton(
                     onClick = {
                         if (newWalletName.isNotBlank() && !walletList.contains(newWalletName.trim())) {
                             val newWallet = newWalletName.trim()
@@ -1485,7 +1564,7 @@ fun TransactionBottomSheet(
                 ) { Text(AppStr.save) }
             },
             dismissButton = {
-                TextButton(onClick = { showNewWalletDialog = false }) {
+                KumaTextButton(onClick = { showNewWalletDialog = false }) {
                     Text(AppStr.no, color = AppText())
                 }
             }
@@ -1500,10 +1579,10 @@ fun TransactionBottomSheet(
             title = { Text(AppStr.newCat, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    OutlinedTextField(
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = newCategoryName,
                         onValueChange = { newCategoryName = it },
-                        label = { Text(AppStr.catName) },
+                        placeholder = { Text(AppStr.catName) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -1537,7 +1616,7 @@ fun TransactionBottomSheet(
                 }
             },
             confirmButton = {
-                Button(
+                KumaButton(
                     onClick = {
                         if (newCategoryName.isNotBlank() && !currentCategories.contains(newCategoryName.trim())) {
                             val newCat = newCategoryName.trim()
@@ -1560,7 +1639,7 @@ fun TransactionBottomSheet(
                 ) { Text(AppStr.save) }
             },
             dismissButton = {
-                TextButton(onClick = { showNewCategoryDialog = false }) {
+                KumaTextButton(onClick = { showNewCategoryDialog = false }) {
                     Text(AppStr.no, color = AppText())
                 }
             }
@@ -1609,7 +1688,7 @@ fun MonthYearSelector(currentMonth: Int, currentYear: Int, onMonthChange: (Int, 
             .glassCard(20.dp, AppSurfaceVariant(), useHaze = false)
             .padding(vertical = 6.dp)
     ) {
-        IconButton(
+        KumaIconButton(
             onClick = {
                 var m = currentMonth - 1
                 var y = currentYear
@@ -1631,7 +1710,7 @@ fun MonthYearSelector(currentMonth: Int, currentYear: Int, onMonthChange: (Int, 
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        IconButton(
+        KumaIconButton(
             onClick = {
                 var m = currentMonth + 1
                 var y = currentYear
@@ -2120,7 +2199,7 @@ fun CustomBottomNav(
                     Text(
                         pair.second,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2234,7 +2313,7 @@ fun TransactionItem(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(AppStr.delConf) },
             confirmButton = {
-                Button(
+                KumaButton(
                     onClick = {
                         onDelete(obj)
                         showDeleteDialog = false
@@ -2243,7 +2322,7 @@ fun TransactionItem(
                 ) { Text(AppStr.yes) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                KumaTextButton(onClick = { showDeleteDialog = false }) {
                     Text(AppStr.no, color = AppText())
                 }
             }
@@ -2313,13 +2392,8 @@ fun TransactionItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(if (isSelected) AppPrimary().copy(alpha = 0.2f) else Color.Transparent)
-                .bouncyScale(interactionSource)
-                .border(
-                    width = if (isSelected) 2.dp else 0.dp,
-                    color = if (isSelected) AppPrimary() else Color.Transparent,
-                    shape = RoundedCornerShape(20.dp)
-                )
+                .glassCard(20.dp, if (isSelected) AppPrimary().copy(alpha = 0.2f) else AppSurface())
+                .bouncyScale(interactionSource = interactionSource)
                 .combinedClickable(
                     interactionSource = interactionSource,
                     indication = androidx.compose.foundation.LocalIndication.current,
@@ -2358,14 +2432,19 @@ fun TransactionItem(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                 } else {
-                    KumaExpressiveIcon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = AppPrimary(),
-                        containerColor = AppPrimary().copy(alpha = 0.2f),
-                        size = 45.dp,
-                        iconPadding = 10.dp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(45.dp)
+                            .background(AppPrimary().copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = AppPrimary(),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                 }
 

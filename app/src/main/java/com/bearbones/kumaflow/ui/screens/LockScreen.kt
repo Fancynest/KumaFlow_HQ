@@ -528,13 +528,16 @@ class MainActivity : FragmentActivity() {
             }
 
             val hazeState = remember { dev.chrisbanes.haze.HazeState() }
+            val tutorialState = remember { com.bearbones.kumaflow.ui.tutorial.TutorialState() }
+            
             CompositionLocalProvider(
                 LocalIsDark provides isDark,
                 LocalIsAmoled provides isAmoled,
                 LocalIsLiquidGlass provides (userProfile?.isLiquidGlass == true),
                 LocalIsPremiumGlassBlur provides (userProfile?.isPremiumGlassBlur == true),
                 LocalHazeState provides hazeState,
-                com.bearbones.kumaflow.ui.theme.LocalIsBrutal provides (isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8))
+                com.bearbones.kumaflow.ui.theme.LocalIsBrutal provides (isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8)),
+                com.bearbones.kumaflow.ui.tutorial.LocalTutorialState provides tutorialState
             ) {
                 val colorScheme = when {
                     // NEW: #OR Easter Egg
@@ -574,8 +577,8 @@ class MainActivity : FragmentActivity() {
                     }
 
                     // 3. Fallback Default
-                    isDark -> if (isAmoled) darkColorScheme(background = Color(0xFF000000), surface = Color(0xFF121212), onBackground = Color(0xFFE0E0E0), onSurface = Color(0xFFE0E0E0), primary = Color(0xFFD5641C), onPrimary = Color.White) else darkColorScheme(background = Color(0xFF121212), surface = Color(0xFF1E1E1E), onBackground = Color(0xFFE0E0E0), onSurface = Color(0xFFE0E0E0), primary = Color(0xFFD5641C), onPrimary = Color.White)
-                    else -> lightColorScheme(background = Color(0xFFD9D2C5), surface = Color(0xFFC7BCAC), onBackground = Color(0xFF4A2F1D), onSurface = Color(0xFF4A2F1D), primary = Color(0xFF4A2F1D), onPrimary = Color.White)
+                    isDark -> if (isAmoled) darkColorScheme(background = Color(0xFF000000), surface = Color(0xFF121212), onBackground = Color(0xFFF5F7FA), onSurface = Color(0xFFF5F7FA), primary = Color(0xFF4F8CFF), onPrimary = Color.White, onSurfaceVariant = Color(0xFFA7B0BE), outline = Color(0xFF2C313C), error = Color(0xFFFF5A5F)) else darkColorScheme(background = Color(0xFF0F1115), surface = Color(0xFF171A21), onBackground = Color(0xFFF5F7FA), onSurface = Color(0xFFF5F7FA), primary = Color(0xFF4F8CFF), onPrimary = Color.White, onSurfaceVariant = Color(0xFFA7B0BE), outline = Color(0xFF2C313C), error = Color(0xFFFF5A5F))
+                    else -> lightColorScheme(background = Color(0xFFF8F9FC), surface = Color(0xFFFFFFFF), onBackground = Color(0xFF1A1D24), onSurface = Color(0xFF1A1D24), primary = Color(0xFF2563EB), onPrimary = Color.White, onSurfaceVariant = Color(0xFF69707D), outline = Color(0xFFE3E7EF), error = Color(0xFFDC2626))
                 }
 
                 val activeTypography = when {
@@ -590,7 +593,7 @@ class MainActivity : FragmentActivity() {
                     val isWrappedOpen = wrappedTarget != null
                     val isAppLocked = userProfile?.isAppLocked == true && !isAuthenticated
                     
-                    val isPaused = isOverlayOpen || isWrappedOpen || isAppLocked || homeListState.isScrollInProgress
+                    val isPaused = isOverlayOpen || isWrappedOpen || isAppLocked || homeListState.isScrollInProgress || tutorialState.currentStep != com.bearbones.kumaflow.ui.tutorial.TutorialStep.NONE
                     val scrollOffsetProvider = remember(homeListState) { { homeListState.firstVisibleItemScrollOffset.toFloat() } }
 
                     Box(modifier = Modifier.fillMaxSize().background(AppBg())) {
@@ -619,7 +622,42 @@ class MainActivity : FragmentActivity() {
                                     onOverlayStateChange = { isOverlayOpen = it }
                                 )
 
-                                NewUserAnnouncementDialog()
+                                val currentProfile = userProfile ?: UserProfile(userName = "User")
+                                var isNewUserDialogDismissed by remember { mutableStateOf(false) }
+                                var txCount by remember { mutableIntStateOf(-1) }
+                                
+                                LaunchedEffect(Unit) {
+                                    dao.getAllTransactionsWithSplits().collect { txs ->
+                                        txCount = txs.size
+                                    }
+                                }
+
+                                NewUserAnnouncementDialog(
+                                    onDismissed = { isNewUserDialogDismissed = true }
+                                )
+
+                                // Only run tutorial logic once we know txCount and the dialog is dismissed
+                                if (isNewUserDialogDismissed && !currentProfile.hasSeenTutorial && !isAppLocked && txCount >= 0) {
+                                    if (txCount == 0 && currentProfile.userName == "User") {
+                                        LaunchedEffect(Unit) {
+                                            tutorialState.advanceTo(com.bearbones.kumaflow.ui.tutorial.TutorialStep.HOME_SUMMARY)
+                                        }
+                                        com.bearbones.kumaflow.ui.tutorial.TutorialOverlay(
+                                            onComplete = {
+                                                coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                                    dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
+                                                }
+                                            }
+                                        )
+                                    } else {
+                                        // Existing user (has transactions or changed name), silently mark as seen
+                                        LaunchedEffect(Unit) {
+                                            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                                dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
+                                            }
+                                        }
+                                    }
+                                }
 
                                 if (showUpdateDialog && updateInfo != null) {
                                     com.bearbones.kumaflow.ui.screens.UpdateDialog(
@@ -677,22 +715,28 @@ class MainActivity : FragmentActivity() {
                                             } catch (e: Exception) { false }
                                         }
 
+                                    val closeWrapped = {
+                                        wrappedTarget = null
+                                        val todayCal = java.util.Calendar.getInstance()
+                                        todayCal.add(java.util.Calendar.MONTH, -1)
+                                        val pMonth = todayCal.get(java.util.Calendar.MONTH) + 1
+                                        val pYear = todayCal.get(java.util.Calendar.YEAR)
+
+                                        // Dismiss the banner exclusively if the navigated content belongs to the previous month
+                                        if (targetMonth == pMonth && targetYear == pYear) {
+                                            sharedPrefs.edit().putString("last_viewed_wrapped", "$pMonth-$pYear").apply()
+                                        }
+                                    }
+
+                                    androidx.activity.compose.BackHandler(enabled = true) {
+                                        closeWrapped()
+                                    }
+
                                     WrappedScreen(
                                         profile = userProfile!!,
                                         prevMonthTransactions = targetMonthTxs,
                                         monthName = "$targetMonthName $targetYear",
-                                        onClose = {
-                                            wrappedTarget = null
-                                            val todayCal = java.util.Calendar.getInstance()
-                                            todayCal.add(java.util.Calendar.MONTH, -1)
-                                            val pMonth = todayCal.get(java.util.Calendar.MONTH) + 1
-                                            val pYear = todayCal.get(java.util.Calendar.YEAR)
-
-                                            // Dismiss the banner exclusively if the navigated content belongs to the previous month
-                                            if (targetMonth == pMonth && targetYear == pYear) {
-                                                sharedPrefs.edit().putString("last_viewed_wrapped", "$pMonth-$pYear").apply()
-                                            }
-                                        }
+                                        onClose = closeWrapped
                                     )
                                 }
                                 }

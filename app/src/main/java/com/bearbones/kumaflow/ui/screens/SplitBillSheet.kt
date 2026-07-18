@@ -14,7 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.TextButton
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,9 +35,12 @@ import com.bearbones.kumaflow.AppSurfaceVariant
 import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.getGlassTextFieldColors
 import com.bearbones.kumaflow.glassCard
+import com.bearbones.kumaflow.utils.bouncySheetContent
 import com.bearbones.kumaflow.utils.ShareSplitBillUtils
 import java.text.NumberFormat
 import java.util.Locale
+import com.bearbones.kumaflow.ui.components.KumaIconButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
 
 @Composable
 fun SplitBillSheet(
@@ -63,6 +66,7 @@ fun SplitBillSheet(
     ) {
         Column(
             modifier = Modifier
+                .bouncySheetContent()
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
                 .windowInsetsPadding(WindowInsets.navigationBars)
@@ -205,7 +209,7 @@ fun SplitBillSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(AppStr.customItems, fontWeight = FontWeight.Bold, color = AppText())
-                    IconButton(onClick = { viewModel.addCustomItem() }) {
+                    KumaIconButton(onClick = { viewModel.addCustomItem() }) {
                         KumaExpressiveIcon(Icons.Default.Add, contentDescription = "Add", tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
                     }
                 }
@@ -234,7 +238,7 @@ fun SplitBillSheet(
                                 colors = getGlassTextFieldColors(),
                                 modifier = Modifier.weight(1f)
                             )
-                            IconButton(onClick = { viewModel.removeCustomItem(item.id) }) {
+                            KumaIconButton(onClick = { viewModel.removeCustomItem(item.id) }) {
                                 KumaExpressiveIcon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error, containerColor = androidx.compose.ui.graphics.Color.Transparent)
                             }
                         }
@@ -255,7 +259,7 @@ fun SplitBillSheet(
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text(name, color = AppText())
                                     Text("Rp ${format.format(amount)}", fontWeight = FontWeight.Bold, color = AppPrimary())
-                                    IconButton(
+                                    KumaIconButton(
                                         onClick = {
                                             val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(amount)}", amount)
                                             previewUri = uri
@@ -270,11 +274,11 @@ fun SplitBillSheet(
                             }
 
                             if (result.remainingPeopleCount > 0) {
-                                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text("${AppStr.remaining} (${result.remainingPeopleCount} ${AppStr.splitBillOrg})", color = AppText())
                                     Text("Rp ${format.format(result.remainingPerPerson)} /${AppStr.splitBillOrg}", fontWeight = FontWeight.Bold, color = AppPrimary())
-                                    IconButton(
+                                    KumaIconButton(
                                         onClick = {
                                             val uri = ShareSplitBillUtils.generateQRWithText(context, qrisFilePath, "Total: Rp ${format.format(result.remainingPerPerson)}", result.remainingPerPerson)
                                             previewUri = uri
@@ -339,7 +343,7 @@ fun SplitBillSheet(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPreviewDialog = false }) { Text(AppStr.close) }
+                KumaTextButton(onClick = { showPreviewDialog = false }) { Text(AppStr.close) }
             }
         )
     }

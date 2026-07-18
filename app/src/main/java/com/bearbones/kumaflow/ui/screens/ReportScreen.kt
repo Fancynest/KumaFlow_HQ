@@ -3,6 +3,10 @@
 
 package com.bearbones.kumaflow
 
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.text.drawText
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -17,7 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.bearbones.kumaflow.neobrutalism
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,6 +59,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.translate
+import com.bearbones.kumaflow.ui.components.KumaTextButton
+import com.bearbones.kumaflow.ui.components.KumaOutlinedButton
 
 
 @Composable
@@ -111,7 +117,7 @@ fun ReportScreen(
 
         val context = LocalContext.current
 
-        OutlinedButton(
+        KumaOutlinedButton(
             onClick = {
                 if (isCurrentOrFutureMonth) {
                     Toast.makeText(context, AppStr.wrappedComingSoon(currentSelectedMonthName, selectedYear.toString()), Toast.LENGTH_SHORT).show()
@@ -119,9 +125,19 @@ fun ReportScreen(
                     onOpenWrapped(selectedMonth, selectedYear)
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier.fillMaxWidth().height(50.dp).then(
+                if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current)
+                    Modifier.neobrutalism(
+                        isBrutal = true,
+                        backgroundColor = AppSurface(),
+                        cornerRadius = 16.dp,
+                        borderWidth = 2.dp,
+                        offset = 4.dp
+                    )
+                else Modifier
+            ),
             shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.2f) else AppPrimary().copy(alpha = 0.5f))
+            border = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) null else androidx.compose.foundation.BorderStroke(1.dp, if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.2f) else AppPrimary().copy(alpha = 0.5f))
         ) {
             KumaExpressiveIcon(if (isCurrentOrFutureMonth) Icons.Default.Lock else Icons.Default.AutoAwesome, contentDescription = "Rewatch", tint = if (isCurrentOrFutureMonth) AppText().copy(alpha = 0.5f) else AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent)
             Spacer(modifier = Modifier.width(8.dp))
@@ -151,7 +167,7 @@ fun ReportScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .glassCard(24.dp, AppPrimary().copy(alpha = 0.15f), useHaze = true)
+                .glassCard(24.dp, AppSurface(), useHaze = true)
                 .border(1.dp, AppPrimary().copy(alpha = 0.3f), RoundedCornerShape(24.dp))
                 .padding(16.dp)
         ) {
@@ -177,7 +193,7 @@ fun ReportScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .glassCard(32.dp, AppSurfaceVariant())
+                .glassCard(32.dp, AppSurface())
                 .padding(24.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -191,7 +207,7 @@ fun ReportScreen(
         // INCOME EXPENSE ROW
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // INCOME
-            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppGreen().copy(alpha = 0.1f)).border(1.dp, AppGreen().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
+            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppSurface()).border(1.dp, AppGreen().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         KumaExpressiveIcon(Icons.Default.ArrowUpward, null, tint = AppGreen(), containerColor = AppGreen().copy(alpha=0.2f), size = 28.dp, iconPadding = 6.dp)
@@ -203,7 +219,7 @@ fun ReportScreen(
                 }
             }
             // EXPENSE
-            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppRed().copy(alpha = 0.1f)).border(1.dp, AppRed().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
+            Box(modifier = Modifier.weight(1f).glassCard(24.dp, AppSurface()).border(1.dp, AppRed().copy(alpha = 0.2f), RoundedCornerShape(24.dp)).padding(16.dp)) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         KumaExpressiveIcon(Icons.Default.ArrowDownward, null, tint = AppRed(), containerColor = AppRed().copy(alpha=0.2f), size = 28.dp, iconPadding = 6.dp)
@@ -240,7 +256,7 @@ fun ReportScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(modifier = Modifier.size(220.dp).padding(16.dp), contentAlignment = Alignment.Center) {
-                    val bgArcCol = AppSurfaceVariant()
+                    val bgArcCol = if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) AppText().copy(alpha = 0.1f) else AppSurfaceVariant()
                     var selectedCategory by remember { mutableStateOf<String?>(null) }
                     val animatedSweep by androidx.compose.animation.core.animateFloatAsState(targetValue = 1f, animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "sweep")
                     
@@ -364,7 +380,7 @@ fun ReportScreen(
                         }
                         
                         if (expensePerCat.size > 5) {
-                            TextButton(onClick = { showAllCategories = !showAllCategories }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                            KumaTextButton(onClick = { showAllCategories = !showAllCategories }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(if (showAllCategories) AppStr.showLess else "${AppStr.showMore} (${expensePerCat.size - 5})", color = AppPrimary(), fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -442,8 +458,34 @@ fun ReportScreen(
 
                 val isDark = LocalIsDark.current
                 val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+                var activeScrubX by remember { androidx.compose.runtime.mutableStateOf<Float?>(null) }
+                val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+                val tooltipTextColor = AppSurface()
+
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
+                    Canvas(modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { offset -> activeScrubX = offset.x },
+                                onDragEnd = { activeScrubX = null },
+                                onDragCancel = { activeScrubX = null },
+                                onDrag = { change, _ ->
+                                    activeScrubX = change.position.x
+                                    change.consume()
+                                }
+                            )
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { offset ->
+                                    activeScrubX = offset.x
+                                    tryAwaitRelease()
+                                    activeScrubX = null
+                                }
+                            )
+                        }
+                    ) {
                         val gridColVertical = if (isDark) Color.White.copy(alpha = 0.15f) else variantCol.copy(alpha = 0.5f)
                         val gridColHorizontal = if (isDark) Color.White.copy(alpha = 0.1f) else variantCol.copy(alpha = 0.3f)
                         for (i in 0..4) {
@@ -454,10 +496,81 @@ fun ReportScreen(
                             val y = size.height - (i * size.height / 5)
                             drawLine(color = gridColHorizontal, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
                         }
+                        
+                        // Y-axis labels
                         if (hasData) {
-                            val isBrut = isBrutal // Wait, let's pass `com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current` from Compose scope
+                            val ySteps = listOf(maxVal, maxVal / 2, 0f)
+                            ySteps.forEachIndexed { i, v ->
+                                val yPos = if (i == 2) size.height - 15.dp.toPx() else (i * size.height / 2f) + if(i==0) 5.dp.toPx() else 0f
+                                val label = java.text.NumberFormat.getInstance(locale).format(v.toLong())
+                                val style = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, color = textCol.copy(alpha = 0.5f), fontWeight = FontWeight.Bold)
+                                drawText(
+                                    textMeasurer = textMeasurer,
+                                    text = label,
+                                    style = style,
+                                    topLeft = Offset(10f, yPos)
+                                )
+                            }
+                        }
+
+                        if (hasData) {
+                            val isBrut = isBrutal
                             drawTrendsArea(incPoints, greenCol, isBrut)
                             drawTrendsArea(expPoints, redCol, isBrut)
+                        }
+
+                        // Tooltip for scrubbing
+                        activeScrubX?.let { xPos ->
+                            if (hasData) {
+                                val cx = xPos.coerceIn(0f, size.width)
+                                val step = size.width / 4
+                                val exactIndex = cx / step
+                                val leftIdx = kotlin.math.floor(exactIndex).toInt().coerceIn(0, 3)
+                                val rightIdx = kotlin.math.ceil(exactIndex).toInt().coerceIn(1, 4)
+                                val fraction = exactIndex - leftIdx
+                                
+                                val incValue = (incomeData[leftIdx] * (1 - fraction)) + (incomeData[rightIdx] * fraction)
+                                val expValue = (expenseData[leftIdx] * (1 - fraction)) + (expenseData[rightIdx] * fraction)
+                                
+                                val smoothFraction = fraction * fraction * (3 - 2 * fraction)
+                                val incYLeft = size.height - (incPoints[leftIdx] * size.height)
+                                val incYRight = size.height - (incPoints[rightIdx] * size.height)
+                                val incY = incYLeft + (incYRight - incYLeft) * smoothFraction
+                                
+                                val expYLeft = size.height - (expPoints[leftIdx] * size.height)
+                                val expYRight = size.height - (expPoints[rightIdx] * size.height)
+                                val expY = expYLeft + (expYRight - expYLeft) * smoothFraction
+
+                                drawLine(color = textCol.copy(alpha = 0.5f), start = Offset(cx, 0f), end = Offset(cx, size.height), strokeWidth = 2.dp.toPx())
+                                
+                                drawCircle(color = greenCol, radius = 6.dp.toPx(), center = Offset(cx, incY))
+                                drawCircle(color = redCol, radius = 6.dp.toPx(), center = Offset(cx, expY))
+                                
+                                val incStr = java.text.NumberFormat.getInstance(locale).format(incValue.toLong())
+                                val expStr = java.text.NumberFormat.getInstance(locale).format(expValue.toLong())
+                                val monthLabel = if (fraction < 0.5f) monthLabels[leftIdx] else monthLabels[rightIdx]
+                                val tooltipText = "$monthLabel\n+ $incStr\n- $expStr"
+                                
+                                val textLayoutResult = textMeasurer.measure(
+                                    text = tooltipText,
+                                    style = androidx.compose.ui.text.TextStyle(fontSize = 10.sp, color = tooltipTextColor, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                )
+                                val tooltipW = textLayoutResult.size.width + 20f
+                                val tooltipH = textLayoutResult.size.height + 20f
+                                val tooltipX = (cx - tooltipW / 2).coerceIn(0f, size.width - tooltipW)
+                                val tooltipY = 0f
+                                
+                                drawRoundRect(
+                                    color = textCol.copy(alpha = 0.85f),
+                                    topLeft = Offset(tooltipX, tooltipY),
+                                    size = androidx.compose.ui.geometry.Size(tooltipW, tooltipH),
+                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f, 16f)
+                                )
+                                drawText(
+                                    textLayoutResult = textLayoutResult,
+                                    topLeft = Offset(tooltipX + 10f, tooltipY + 10f)
+                                )
+                            }
                         }
                     }
                     if (!hasData) {

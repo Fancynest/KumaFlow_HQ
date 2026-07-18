@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.bearbones.kumaflow.neobrutalism
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -41,6 +42,9 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import org.json.JSONObject
+import com.bearbones.kumaflow.ui.components.KumaOutlinedButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
+import com.bearbones.kumaflow.utils.bouncySheetContent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -198,11 +202,13 @@ fun HistoryScreen(
             com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text(if (isId) "Cari transaksi..." else "Search transactions...") },
+                placeholder = { Text(AppStr.searchTx) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                 singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                colors = getGlassTextFieldColors(),
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppText().copy(alpha = 0.5f)) },
+                trailingIcon = { if (searchQuery.isNotEmpty()) { com.bearbones.kumaflow.ui.components.KumaIconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -244,8 +250,10 @@ fun HistoryScreen(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .background(AppSurfaceVariant(), RoundedCornerShape(16.dp))
-                        .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                        .then(
+                            if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) Modifier.neobrutalism(isBrutal = true, backgroundColor = AppSurface(), cornerRadius = 16.dp, borderWidth = 2.dp, offset = 2.dp)
+                            else Modifier.glassCard(16.dp, AppSurface())
+                        )
                         .clickable { com.bearbones.kumaflow.generatePDF(context, filteredTx.map { it.transaction }, profile, 0, 0) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -328,7 +336,7 @@ fun HistoryScreen(
                                 
                                 if (!isExpanded && txs.size > 1) {
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = AppText().copy(alpha = 0.1f))
-                                    TextButton(
+                                    KumaTextButton(
                                         onClick = { expandedDates = expandedDates + date },
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                     ) {
@@ -336,7 +344,7 @@ fun HistoryScreen(
                                     }
                                 } else if (isExpanded && txs.size > 1) {
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = AppText().copy(alpha = 0.1f))
-                                    TextButton(
+                                    KumaTextButton(
                                         onClick = { expandedDates = expandedDates - date },
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                     ) {
@@ -355,12 +363,12 @@ fun HistoryScreen(
             ModalBottomSheet(
                 onDismissRequest = { showDateSheet = false },
                 sheetState = dateSheetState,
-                containerColor = AppBg()
+                containerColor = AppSurface()
             ) {
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
+                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(isId) "Pilih tanggal transaksi" else "Choose transaction date", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
-                        TextButton(onClick = { selectedDateFilter = "All time"; customStartDate = null; customEndDate = null; showDateSheet = false }) {
+                        KumaTextButton(onClick = { selectedDateFilter = "All time"; customStartDate = null; customEndDate = null; showDateSheet = false }) {
                             Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
                         }
                     }
@@ -402,15 +410,15 @@ fun HistoryScreen(
             ModalBottomSheet(
                 onDismissRequest = { showCatSheet = false },
                 sheetState = catSheetState,
-                containerColor = AppBg()
+                containerColor = AppSurface()
             ) {
                 val allCats = (profile.expenseCats.split(",") + profile.incomeCats.split(",")).filter { it.isNotBlank() }.distinct()
                 val savedIcons = remember(profile.categoryIcons) { try { JSONObject(profile.categoryIcons) } catch (e: Exception) { JSONObject() } }
                 
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
+                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(isId) "Filter kategori" else "Filter category", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
-                        TextButton(onClick = { selectedCategories = emptySet() }) {
+                        KumaTextButton(onClick = { selectedCategories = emptySet() }) {
                             Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
                         }
                     }
@@ -426,7 +434,7 @@ fun HistoryScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
-                                    .glassCard(16.dp, if (isSelected) AppPrimary().copy(alpha = 0.2f) else AppSurfaceVariant())
+                                    .glassCard(16.dp, if (isSelected) AppPrimary().copy(alpha = 0.2f) else AppSurface())
                                     .clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         val newSet = selectedCategories.toMutableSet()
@@ -476,13 +484,13 @@ fun HistoryScreen(
             ModalBottomSheet(
                 onDismissRequest = { showWalletSheet = false },
                 sheetState = walletSheetState,
-                containerColor = AppBg()
+                containerColor = AppSurface()
             ) {
                 val allWallets = profile.wallets.split(",").filter { it.isNotBlank() }
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
+                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(isId) "Filter dompet" else "Filter by methods", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
-                        TextButton(onClick = { selectedWallets = emptySet() }) {
+                        KumaTextButton(onClick = { selectedWallets = emptySet() }) {
                             Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
                         }
                     }
@@ -548,7 +556,7 @@ fun HistoryScreen(
             DatePickerDialog(
                 onDismissRequest = { showM3DatePicker = false },
                 confirmButton = {
-                    TextButton(onClick = {
+                    KumaTextButton(onClick = {
                         customStartDate = dateRangePickerState.selectedStartDateMillis
                         customEndDate = dateRangePickerState.selectedEndDateMillis
                         selectedDateFilter = "Custom date"
@@ -558,7 +566,7 @@ fun HistoryScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showM3DatePicker = false }) {
+                    KumaTextButton(onClick = { showM3DatePicker = false }) {
                         Text(AppStr.no, color = AppText())
                     }
                 },
@@ -613,8 +621,10 @@ fun HistoryScreen(
 fun FilterChipCustom(text: String, isActive: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Row(
         modifier = modifier
-            .background(if (isActive) AppPrimary().copy(alpha = 0.2f) else AppSurfaceVariant(), RoundedCornerShape(16.dp))
-            .border(1.dp, if (isActive) AppPrimary() else AppText().copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+            .then(
+                if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) Modifier.neobrutalism(isBrutal = true, backgroundColor = if (isActive) AppPrimary().copy(alpha = 0.2f) else AppSurface(), cornerRadius = 16.dp, borderWidth = 2.dp, offset = 2.dp)
+                else Modifier.glassCard(16.dp, if (isActive) AppPrimary().copy(alpha = 0.2f) else AppSurface())
+            )
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 6.dp),

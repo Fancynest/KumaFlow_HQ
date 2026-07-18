@@ -94,7 +94,8 @@ data class UserProfile(
     val lastMilestoneNotified: Int = 0,
     val qrisFilePath: String = "",
     val bankName: String = "",
-    val bankAccount: String = ""
+    val bankAccount: String = "",
+    val hasSeenTutorial: Boolean = false
 )
 
 @Dao
@@ -303,6 +304,12 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
     }
 }
 
+val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN hasSeenTutorial INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -310,7 +317,7 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
         TransactionSplit::class,
         TransactionFTS::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -326,7 +333,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24)
                     .build()
                 INSTANCE = instance
                 instance

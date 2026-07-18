@@ -34,6 +34,8 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.absoluteValue
+import com.bearbones.kumaflow.ui.components.KumaButton
+import com.bearbones.kumaflow.ui.components.KumaIconButton
 
 @Composable
 fun WrappedScreen(
@@ -263,7 +265,7 @@ fun WrappedScreen(
                                     Text(if(isId) "Perjalanan keuangan $monthName kamu resmi ditutup." else "Your financial journey for $monthName is officially closed.", fontFamily = googleFont, color = Color.White, fontSize = 24.sp, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(32.dp))
 
-                                    Button(
+                                    KumaButton(
                                         onClick = onClose,
                                         colors = ButtonDefaults.buttonColors(containerColor = pageColor),
                                         shape = RoundedCornerShape(16.dp),
@@ -301,7 +303,7 @@ fun WrappedScreen(
             }
         }
 
-        IconButton(
+        KumaIconButton(
             onClick = onClose,
             modifier = Modifier
                 .align(Alignment.TopEnd)

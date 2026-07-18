@@ -37,6 +37,8 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import kotlin.math.sin
 import java.util.Locale
+import com.bearbones.kumaflow.ui.components.KumaButton
+import com.bearbones.kumaflow.ui.components.KumaOutlinedButton
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -176,7 +178,7 @@ fun UpdateDialog(
                                 }
                                 Spacer(modifier = Modifier.height(24.dp))
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    OutlinedButton(
+                                    KumaOutlinedButton(
                                         onClick = onSnooze,
                                         modifier = Modifier.weight(1f).height(56.dp),
                                         shape = RoundedCornerShape(16.dp),
@@ -185,7 +187,7 @@ fun UpdateDialog(
                                     ) {
                                         Text(com.bearbones.kumaflow.AppStr.laterBtn, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                                     }
-                                    Button(
+                                    KumaButton(
                                         onClick = onUpdate,
                                         modifier = Modifier.weight(1f).height(56.dp),
                                         shape = RoundedCornerShape(16.dp),
@@ -219,12 +221,12 @@ fun UpdateDialog(
                                     animationSpec = androidx.compose.animation.core.tween(durationMillis = 300, easing = androidx.compose.animation.core.LinearEasing),
                                     label = "progressAnim"
                                 )
-                                SquigglyProgressIndicator(
-                                    progress = animatedProgress,
-                                    modifier = Modifier.fillMaxWidth().height(12.dp),
+                                LinearProgressIndicator(
+                                    progress = { animatedProgress },
+                                    modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)),
                                     color = Color(0xFF00ACC1),
                                     trackColor = Color(0xFF2A3138),
-                                    strokeWidth = 6.dp
+                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Row(
@@ -265,7 +267,7 @@ fun UpdateDialog(
                 ) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(
+                        KumaOutlinedButton(
                             onClick = onCancelDownload,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),

@@ -5,6 +5,8 @@ package com.bearbones.kumaflow
 
 import android.content.Context
 import android.widget.Toast
+import com.bearbones.kumaflow.ui.tutorial.tutorialTarget
+import com.bearbones.kumaflow.ui.tutorial.TutorialStep
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -70,8 +72,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.draw.shadow
+import com.bearbones.kumaflow.utils.expressiveElevation
 import org.burnoutcrew.reorderable.*
+import com.bearbones.kumaflow.ui.components.KumaIconButton
+import com.bearbones.kumaflow.ui.components.KumaTextButton
+import com.bearbones.kumaflow.ui.components.KumaOutlinedButton
+import com.bearbones.kumaflow.utils.bouncySheetContent
 
 // --- DATA CLASSES & OBJECTS ---
 @Composable
@@ -139,7 +145,8 @@ fun HomeScreen(
     val prevYear = cal.get(java.util.Calendar.YEAR)
     val wrappedKey = "$prevMonth-$prevYear"
 
-    var showWrappedBanner by remember { mutableStateOf(sharedPrefs.getString("last_viewed_wrapped", "") != wrappedKey) }
+    // Hide for new users who have no transactions
+    var showWrappedBanner by remember { mutableStateOf(sharedPrefs.getString("last_viewed_wrapped", "") != wrappedKey && transactionsWithSplits.isNotEmpty()) }
 
     val selectedTxsList = selectedTxs.mapNotNull { id -> transactionsWithSplits.find { it.transaction.id == id } }
 
@@ -158,21 +165,31 @@ fun HomeScreen(
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                     if (showWrappedBanner) {
-                        val bannerGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFF732982)))
+                        val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+                        val bannerBackground = if (isBrutal) androidx.compose.ui.graphics.SolidColor(com.bearbones.kumaflow.AppPrimary()) else androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFF732982)))
+                        val bannerTextColor = if (isBrutal) AppBg() else Color.White
+                        val cardShape = if (isBrutal) RoundedCornerShape(0.dp) else RoundedCornerShape(24.dp)
+                        
+                        val modifier = if (isBrutal) {
+                            Modifier.fillMaxWidth().padding(bottom = 20.dp).neobrutalism(backgroundColor = AppPrimary(), cornerRadius = 0.dp).clickable { onOpenWrapped(prevMonth, prevYear) }
+                        } else {
+                            Modifier.fillMaxWidth().padding(bottom = 20.dp).clickable { onOpenWrapped(prevMonth, prevYear) }
+                        }
+
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp).clickable { onOpenWrapped(prevMonth, prevYear) },
-                            shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            modifier = modifier,
+                            shape = cardShape, elevation = if (isBrutal) CardDefaults.cardElevation(0.dp) else CardDefaults.cardElevation(8.dp)
                         ) {
-                            Box(modifier = Modifier.fillMaxWidth().background(bannerGradient).padding(20.dp)) {
+                            Box(modifier = Modifier.fillMaxWidth().background(bannerBackground).padding(20.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("KumaFlow Wrapped ✨", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                                        Text("KumaFlow Wrapped ✨", color = bannerTextColor, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                                         Spacer(modifier = Modifier.height(4.dp))
                                         val monthName = cal.getDisplayName(java.util.Calendar.MONTH, java.util.Calendar.LONG, locale) ?: "Bulan Lalu"
-                                        Text(if (AppStr.isId) "Rapor keuanganmu di bulan $monthName udah siap! Yuk intip pengeluaranmu." else "Your financial report for $monthName is ready! Let's take a look at your expenses.", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp, lineHeight = 16.sp)
+                                        Text(if (AppStr.isId) "Rapor keuanganmu di bulan $monthName udah siap! Yuk intip pengeluaranmu." else "Your financial report for $monthName is ready! Let's take a look at your expenses.", color = bannerTextColor.copy(alpha = 0.9f), fontSize = 12.sp, lineHeight = 16.sp)
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Icon(Icons.Default.ArrowForwardIos, contentDescription = "Buka Wrapped", tint = Color.White, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.ArrowForwardIos, contentDescription = "Buka Wrapped", tint = bannerTextColor, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }
@@ -274,7 +291,9 @@ fun HomeScreen(
                             scrimColor = Color.Black.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                         ) {
-                            StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
+                            Box(modifier = Modifier.bouncySheetContent()) {
+                                StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
+                            }
                         }
                     }
 
@@ -290,7 +309,7 @@ fun HomeScreen(
                     val animatedBalance by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().tutorialTarget(TutorialStep.HOME_SUMMARY),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -338,9 +357,9 @@ fun HomeScreen(
                     // --- NEW FINANCIAL HUB CARD ---
                     Box(
                         modifier = if (isPrideThemeActive) {
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(prideGradient)
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(prideGradient).tutorialTarget(TutorialStep.HOME_WALLETS)
                         } else {
-                            Modifier.fillMaxWidth().glassCard(32.dp, defaultSurfaceColor, useHaze = true)
+                            Modifier.fillMaxWidth().glassCard(32.dp, defaultSurfaceColor, useHaze = true).tutorialTarget(TutorialStep.HOME_WALLETS)
                         }
                     ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)) {
@@ -395,7 +414,7 @@ fun HomeScreen(
                             LazyRow(
                                 state = reorderState.listState,
                                 modifier = Modifier.fillMaxWidth().reorderable(reorderState),
-                                contentPadding = PaddingValues(horizontal = 24.dp),
+                                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(walletOrder, { it }) { walletName ->
@@ -406,13 +425,29 @@ fun HomeScreen(
                                         Column(
                                             modifier = Modifier
                                                 .zIndex(if (isDragging) 1f else 0f)
+                                                .graphicsLayer {
+                                                    val layoutInfo = reorderState.listState.layoutInfo
+                                                    val itemInfo = layoutInfo.visibleItemsInfo.find { it.key == walletName }
+                                                    if (itemInfo != null) {
+                                                        val center = layoutInfo.viewportEndOffset / 2f
+                                                        val childCenter = itemInfo.offset + (itemInfo.size / 2f)
+                                                        val distance = kotlin.math.abs(center - childCenter)
+                                                        val maxDist = center.coerceAtLeast(1f)
+                                                        val ratio = (distance / maxDist).coerceIn(0f, 1f)
+                                                        val pScale = 1f - (ratio * 0.2f)
+                                                        scaleX = pScale
+                                                        scaleY = pScale
+                                                        alpha = 1f - (ratio * 0.4f)
+                                                    }
+                                                }
                                                 .scale(cardScale)
                                                 .detectReorderAfterLongPress(reorderState)
                                                 .clickable { 
                                                     reconcileWalletName = walletName
                                                     showReconcileDialog = true
                                                 }
-                                                .background(if (isPrideThemeActive) Color.White.copy(alpha=0.15f) else AppBg().copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                                                .padding(end = 6.dp, bottom = 6.dp)
+                                                .glassCard(20.dp, com.bearbones.kumaflow.AppSurface())
                                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
@@ -458,7 +493,7 @@ fun HomeScreen(
                     com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = AppText().copy(alpha = 0.5f)) },
-                        trailingIcon = { if (searchQuery.isNotEmpty()) { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } },
+                        trailingIcon = { if (searchQuery.isNotEmpty()) { KumaIconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } },
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), shape = RoundedCornerShape(16.dp), singleLine = true,
                         colors = getGlassTextFieldColors()
                     )
@@ -466,7 +501,7 @@ fun HomeScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(AppStr.isId) "Transaksi Hari Ini" else "Today's Transactions", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = AppText())
                         if (isSelectionMode) {
-                            TextButton(onClick = { clearSelection() }) {
+                            KumaTextButton(onClick = { clearSelection() }) {
                                 Text(AppStr.cancelBulk, color = AppRed(), fontWeight = FontWeight.Bold)
                             }
                         }
@@ -541,7 +576,7 @@ fun HomeScreen(
                             
                             if (!isExpanded && txs.size > 1) {
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = AppText().copy(alpha = 0.1f))
-                                TextButton(
+                                KumaTextButton(
                                     onClick = { expandedDates = expandedDates + date },
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                 ) {
@@ -549,7 +584,7 @@ fun HomeScreen(
                                 }
                             } else if (isExpanded && txs.size > 1) {
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = AppText().copy(alpha = 0.1f))
-                                TextButton(
+                                KumaTextButton(
                                     onClick = { expandedDates = expandedDates - date },
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                                 ) {
@@ -641,7 +676,7 @@ fun HomeScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showBulkCatDialog = false }) { Text(AppStr.close, color = AppRed()) }
+                    KumaTextButton(onClick = { showBulkCatDialog = false }) { Text(AppStr.close, color = AppRed()) }
                 },
                 containerColor = AppSurface()
             )
@@ -658,6 +693,7 @@ fun HomeScreen(
             ) {
                 Column(
                     modifier = Modifier
+                        .bouncySheetContent()
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 16.dp)
                         .padding(bottom = 32.dp),
@@ -726,7 +762,7 @@ fun HomeScreen(
                             .height(56.dp)
                             .then(
                                 if (realBalanceInput.isNotEmpty() && delta != 0L)
-                                    Modifier.shadow(12.dp, RoundedCornerShape(24.dp), ambientColor = AppPrimary(), spotColor = AppPrimary())
+                                    Modifier.expressiveElevation(12.dp, RoundedCornerShape(24.dp), baseColor = AppBg(), tintColor = AppPrimary())
                                 else
                                     Modifier
                             ),

@@ -25,16 +25,36 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.draw.clip
+
 /**
- * Material 3 Expressive bouncy scale modifier using spring physics.
- * Adapts to any interaction source so it works with clickable or combinedClickable.
+ * Material 3 Expressive bouncy scale modifier using spring physics and advanced haptics.
  */
 fun Modifier.bouncyScale(
     interactionSource: InteractionSource,
-    scaleDown: Float = 0.85f
+    scaleDown: Float = 0.85f,
+    disableHaptics: Boolean = false
 ): Modifier = composed {
     val isPressed by interactionSource.collectIsPressedAsState()
+    val haptic = LocalHapticFeedback.current
     
+    LaunchedEffect(isPressed) {
+        if (!disableHaptics) {
+            if (isPressed) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) // Squish thud
+            } else {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress) // Release tick
+            }
+        }
+    }
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) scaleDown else 1f,
         animationSpec = spring(
@@ -48,6 +68,46 @@ fun Modifier.bouncyScale(
         scaleX = scale
         scaleY = scale
     }
+}
+
+/**
+ * Modifier to apply a spring-loaded scaling effect to bottom sheet content.
+ */
+fun Modifier.bouncySheetContent(): Modifier = composed {
+    val isLaunched = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { isLaunched.value = true }
+
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isLaunched.value) 1f else 0.85f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "sheet_scale"
+    )
+    this.graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+    }
+}
+
+/**
+ * Material 3 Expressive Tonal Elevation.
+ * Instead of black drop shadows, we blend a lighter overlay over the base color depending on elevation.
+ */
+fun Modifier.expressiveElevation(
+    elevation: Dp,
+    shape: Shape,
+    baseColor: Color,
+    tintColor: Color = Color.White
+): Modifier = composed {
+    val elevationPx = elevation.value
+    // Algorithm: higher elevation = more tint color blended into base color
+    val alpha = ((Math.log(elevationPx.toDouble() + 1) * 4.5f) / 100f).coerceIn(0.0, 1.0).toFloat()
+    val tonalColor = tintColor.copy(alpha = alpha).compositeOver(baseColor)
+    
+    this.clip(shape).background(tonalColor)
 }
 
 class MorphPolygonShape(private val morph: Morph, private val progress: Float) : Shape {

@@ -6,20 +6,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bearbones.kumaflow.ui.components.KumaTextButton
 
 @Composable
-fun NewUserAnnouncementDialog() {
+fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
     val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("KumaFlowPrefs", Context.MODE_PRIVATE)
 
@@ -59,17 +61,24 @@ fun NewUserAnnouncementDialog() {
                 }
             },
             confirmButton = {
-                TextButton(
+                KumaTextButton(
                     onClick = {
                         // Upon button interaction, update the "is_first_time_user" status flag to false
                         // Persist this state locally to ensure the dialog is not displayed on subsequent app launches
                         sharedPref.edit().putBoolean("is_first_time_user", false).apply()
                         showDialog = false
+                        onDismissed()
                     }
                 ) {
                     Text(AppStr.understandCont)
                 }
             }
         )
+    } else {
+        // If the user already acknowledged it previously, we just call onDismissed immediately
+        // so the app can proceed to other flows like Tutorial
+        LaunchedEffect(Unit) {
+            onDismissed()
+        }
     }
 }
