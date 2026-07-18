@@ -1396,6 +1396,7 @@ fun SettingsScreen(
 
         if (showQrisDialog) {
             var qrisUri by remember { mutableStateOf<Uri?>(null) }
+            var holderName by remember { mutableStateOf(currentProfile.qrisHolderName) }
             var bankName by remember { mutableStateOf(currentProfile.bankName) }
             var bankAcc by remember { mutableStateOf(currentProfile.bankAccount) }
 
@@ -1446,6 +1447,17 @@ fun SettingsScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        Text(AppStr.holderName, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                            value = holderName,
+                            onValueChange = { holderName = it },
+                            placeholder = { Text("e.g. Gabriel Bernard") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = getGlassTextFieldColors()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Text(AppStr.bankName, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
                         com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                             value = bankName,
@@ -1470,7 +1482,7 @@ fun SettingsScreen(
                 confirmButton = {
                     KumaTextButton(onClick = {
                         scope.launch {
-                            val newProf = currentProfile.copy(bankName = bankName, bankAccount = bankAcc)
+                            val newProf = currentProfile.copy(qrisHolderName = holderName, bankName = bankName, bankAccount = bankAcc)
                             dao.saveProfile(newProf)
                             onForceUpdate()
                             showQrisDialog = false

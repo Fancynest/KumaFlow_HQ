@@ -103,7 +103,7 @@ object DynamicQrisUtils {
     /**
      * Converts a Static QRIS payload to a Dynamic QRIS payload by injecting the amount.
      */
-    fun generateDynamicQrisString(staticPayload: String, amount: Long): String? {
+    fun generateDynamicQrisString(staticPayload: String, amount: Long, message: String? = null): String? {
         if (!staticPayload.startsWith("000201")) return null
 
         var payload = staticPayload
@@ -131,7 +131,8 @@ object DynamicQrisUtils {
 
         // 5. Inject Bill Number (Tag 62 Sub-tag 01)
         val billNumberId = "01"
-        val billNumberValue = "KMA" + (System.currentTimeMillis() % 100000000L).toString()
+        val fallbackBillNumber = "KMA" + (System.currentTimeMillis() % 100000000L).toString()
+        val billNumberValue = if (!message.isNullOrEmpty()) message.take(25) else fallbackBillNumber
         val billNumberLength = String.format("%02d", billNumberValue.length)
         val billNumberTag = billNumberId + billNumberLength + billNumberValue
 

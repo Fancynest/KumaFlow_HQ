@@ -113,16 +113,16 @@ object ShareSplitBillUtils {
         }
     }
 
-    fun shareToWhatsApp(context: Context, imageUri: Uri?, finalAmountStr: String, bankName: String, bankAccount: String) {
+    fun shareToWhatsApp(context: Context, imageUri: Uri?, finalAmountStr: String, holderName: String, bankName: String, bankAccount: String) {
         val hasQris = imageUri != null
         val hasBank = bankName.isNotBlank() && bankAccount.isNotBlank()
 
         val autoTextString = buildString {
             if (hasQris && hasBank) {
                 if (com.bearbones.kumaflow.AppStr.isId) {
-                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan pindai QRIS terlampir atau transfer ke rekening berikut:\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
+                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan pindai QRIS terlampir atau transfer ke rekening berikut:\n👤 $holderName\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
                 } else {
-                    append("Here are the billing details for *Rp $finalAmountStr*. Please scan the attached QRIS or transfer to the following account:\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
+                    append("Here are the billing details for *Rp $finalAmountStr*. Please scan the attached QRIS or transfer to the following account:\n👤 $holderName\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
                 }
             } else if (hasQris) {
                 if (com.bearbones.kumaflow.AppStr.isId) {
@@ -132,9 +132,9 @@ object ShareSplitBillUtils {
                 }
             } else if (hasBank) {
                 if (com.bearbones.kumaflow.AppStr.isId) {
-                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan transfer ke rekening berikut:\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
+                    append("Berikut rincian penagihan sejumlah *Rp $finalAmountStr*. Silakan transfer ke rekening berikut:\n👤 $holderName\n🏦 $bankName\n💳 $bankAccount\n\nTerima kasih.")
                 } else {
-                    append("Here are the billing details for *Rp $finalAmountStr*. Please transfer to the following account:\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
+                    append("Here are the billing details for *Rp $finalAmountStr*. Please transfer to the following account:\n👤 $holderName\n🏦 $bankName\n💳 $bankAccount\n\nThank you.")
                 }
             } else {
                 if (com.bearbones.kumaflow.AppStr.isId) {

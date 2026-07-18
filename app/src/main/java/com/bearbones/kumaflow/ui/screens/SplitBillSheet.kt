@@ -46,6 +46,7 @@ import com.bearbones.kumaflow.ui.components.KumaTextButton
 fun SplitBillSheet(
     viewModel: SplitBillViewModel,
     qrisFilePath: String,
+    holderName: String,
     bankName: String,
     bankAccount: String,
     onDismissRequest: () -> Unit
@@ -332,7 +333,7 @@ fun SplitBillSheet(
             confirmButton = {
                 com.bearbones.kumaflow.ui.components.KumaButton(
                     onClick = {
-                        ShareSplitBillUtils.shareToWhatsApp(context, previewUri, previewAmountStr, bankName, bankAccount)
+                        ShareSplitBillUtils.shareToWhatsApp(context, previewUri, previewAmountStr, holderName, bankName, bankAccount)
                         showPreviewDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())

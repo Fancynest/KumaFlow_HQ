@@ -61,7 +61,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -191,7 +194,7 @@ fun LockScreen(correctPin: String, activity: FragmentActivity, onSuccess: () -> 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (androidx.compose.foundation.isSystemInDarkTheme()) androidx.compose.ui.graphics.Color.Black.copy(alpha=0.2f) else androidx.compose.ui.graphics.Color.White.copy(alpha=0.4f))
+            .background(AppBg())
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -277,25 +280,24 @@ fun MorphingKeypadButton(
     onClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
+    var isPressed by remember { mutableStateOf(false) }
     
     val width by animateDpAsState(
-        targetValue = if (isPressed) 90.dp else 70.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        targetValue = if (isPressed) 80.dp else 70.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh),
         label = "width"
     )
     val height by animateDpAsState(
-        targetValue = if (isPressed) 55.dp else 70.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        targetValue = if (isPressed) 60.dp else 70.dp,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh),
         label = "height"
     )
 
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    val buttonShape = if (isBrutal) RoundedCornerShape(8.dp) else RoundedCornerShape(percent = 50)
+    val buttonShape = RoundedCornerShape(percent = 50)
     
-    val fallbackColor = if (isBrutal) AppPrimary() else AppSurface()
-    val contentColor = if (isBrutal) AppBg() else AppText()
+    val fallbackColor = if (isBrutal) Color.White else AppSurface()
+    val contentColor = if (isBrutal) Color.Black else AppText()
     
     val isLiquidGlass = com.bearbones.kumaflow.LocalIsLiquidGlass.current
     val isPremiumGlassBlur = com.bearbones.kumaflow.LocalIsPremiumGlassBlur.current
@@ -329,9 +331,17 @@ fun MorphingKeypadButton(
 
     val baseModifier = if (isBrutal) {
         Modifier
+            .drawBehind {
+                drawRoundRect(
+                    color = Color.Black,
+                    size = size,
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width / 2, size.height / 2),
+                    topLeft = Offset(3.dp.toPx(), 4.dp.toPx())
+                )
+            }
             .clip(buttonShape)
-            .background(fallbackColor)
-            .border(3.dp, AppText(), buttonShape)
+            .background(Color.White)
+            .border(2.dp, Color.Black, buttonShape)
     } else if (isLiquidGlass) {
         val tintAlpha = if (isPremiumGlassBlur) 0.2f else 0.1f
         val adjustedColor = glassColor.copy(alpha = (glassColor.alpha + tintAlpha).coerceAtMost(1f))
@@ -360,14 +370,24 @@ fun MorphingKeypadButton(
         modifier = Modifier
             .size(width = width, height = height)
             .then(baseModifier)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                }
-            ),
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        val startTime = System.currentTimeMillis()
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onClick()
+                        
+                        tryAwaitRelease()
+                        
+                        val duration = System.currentTimeMillis() - startTime
+                        if (duration < 150) {
+                            kotlinx.coroutines.delay(150 - duration)
+                        }
+                        isPressed = false
+                    }
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         when (label) {

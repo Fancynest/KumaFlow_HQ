@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bearbones.kumaflow.neobrutalism
 import androidx.compose.ui.zIndex
 import org.json.JSONObject
 import java.text.NumberFormat
@@ -156,6 +157,10 @@ fun HomeScreen(
     var showReconcileDialog by remember { mutableStateOf(false) }
     var reconcileWalletName by remember { mutableStateOf("") }
 
+    var showQrisDirectSheet by remember { mutableStateOf(false) }
+    var showQrisDirectResult by remember { mutableStateOf(false) }
+    var qrisDirectAmount by remember { mutableStateOf(0L) }
+    var qrisDirectMessage by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -338,17 +343,62 @@ fun HomeScreen(
                                 minimumFallbackSize = 24.sp
                             )
                         }
-
+                    } // End of Balance Row
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Action Buttons (Below Total Balance)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+                        
+                        // QRIS Button
+                        Box(
+                            modifier = Modifier
+                                .height(48.dp)
+                                .then(
+                                    if (isBrutal) 
+                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
+                                    else 
+                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
+                                )
+                                .clickable { 
+                                    if (profile.qrisFilePath.isNotEmpty()) {
+                                        qrisDirectAmount = 0L
+                                        qrisDirectMessage = ""
+                                        showQrisDirectResult = true 
+                                    } else {
+                                        android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
                         // Kuma Roulette Entry Point
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .clip(CircleShape)
-                                .background(AppPrimary().copy(alpha = 0.2f))
+                                .then(
+                                    if (isBrutal) 
+                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
+                                    else 
+                                        Modifier.clip(CircleShape).background(AppPrimary().copy(alpha = 0.2f))
+                                )
                                 .clickable { onOpenRoulette() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = AppPrimary(), modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(24.dp))
                         }
                     }
 
@@ -779,6 +829,40 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+        
+        if (showQrisDirectSheet) {
+            com.bearbones.kumaflow.ui.screens.QrisDirectSheet(
+                onDismissRequest = { showQrisDirectSheet = false },
+                onSubmitNominal = { amount, msg -> 
+                    qrisDirectAmount = amount
+                    qrisDirectMessage = msg
+                    showQrisDirectSheet = false
+                    showQrisDirectResult = true
+                },
+                onWithoutNominal = {
+                    qrisDirectAmount = 0L
+                    qrisDirectMessage = ""
+                    showQrisDirectSheet = false
+                    showQrisDirectResult = true
+                }
+            )
+        }
+        
+        if (showQrisDirectResult) {
+            com.bearbones.kumaflow.ui.screens.QrisDirectResultSheet(
+                qrisFilePath = profile.qrisFilePath,
+                holderName = profile.qrisHolderName,
+                bankName = profile.bankName,
+                bankAccount = profile.bankAccount,
+                amount = qrisDirectAmount,
+                message = qrisDirectMessage,
+                onDismissRequest = { showQrisDirectResult = false },
+                onEditNominal = { 
+                    showQrisDirectResult = false
+                    showQrisDirectSheet = true
+                }
+            )
         }
     }
 }

@@ -1665,6 +1665,7 @@ fun TransactionBottomSheet(
         com.bearbones.kumaflow.ui.screens.SplitBillSheet(
             viewModel = splitViewModel,
             qrisFilePath = profile.qrisFilePath,
+            holderName = profile.qrisHolderName,
             bankName = profile.bankName,
             bankAccount = profile.bankAccount,
             onDismissRequest = { showSplitBill = false }

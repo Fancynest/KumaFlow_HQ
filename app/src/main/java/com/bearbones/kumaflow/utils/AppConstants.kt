@@ -26,6 +26,7 @@ object AppStr {
     val splitBillOrg get() = if(isId) "org" else "pax"
     val name get() = if(isId) "Nama" else "Name"
     val qrisImg get() = if(isId) "Gambar QRIS" else "QRIS Image"
+    val holderName get() = if(isId) "Nama Pemilik Rekening" else "Account Holder Name"
     val bankName get() = if(isId) "Nama Bank" else "Bank Name"
     val bankAcc get() = if(isId) "Nomor Rekening" else "Account Number"
     val selectImg get() = if(isId) "Pilih Gambar" else "Select Image"
