@@ -13,8 +13,8 @@ android {
         applicationId = "com.bearbones.kumaflow"
         minSdk = 27
         targetSdk = 35
-        versionCode = 51
-        versionName = "6.3.2"
+        versionCode = 53
+        versionName = "6.3.4"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -89,4 +89,21 @@ dependencies {
     
     // QR Code Processing
     implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    
+    // HTTP Server for Local WiFi QR Transfer
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
+
+    // Security
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // CameraX
+    val cameraxVersion = "1.4.0"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // OkHttp for downloading the backup JSON
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

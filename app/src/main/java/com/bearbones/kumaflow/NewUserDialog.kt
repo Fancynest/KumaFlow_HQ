@@ -31,6 +31,9 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
     }
 
     if (showDialog) {
+        LaunchedEffect(Unit) {
+            sharedPref.edit().putBoolean("is_first_time_user", false).apply()
+        }
         AlertDialog(
             onDismissRequest = {
                 // Intentionally left blank to prevent the user from accidentally dismissing the dialog
@@ -65,7 +68,6 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
                     onClick = {
                         // Upon button interaction, update the "is_first_time_user" status flag to false
                         // Persist this state locally to ensure the dialog is not displayed on subsequent app launches
-                        sharedPref.edit().putBoolean("is_first_time_user", false).apply()
                         showDialog = false
                         onDismissed()
                     }

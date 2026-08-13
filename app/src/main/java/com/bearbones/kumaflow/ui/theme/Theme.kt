@@ -29,8 +29,8 @@ private val DarkColorScheme = darkColorScheme(
 // 2. Light Mode Color Scheme
 private val LightColorScheme = lightColorScheme(
     primary = DeepGrizzly,
-    background = CreamyBelly,
-    surface = CreamyBelly,
+    background = Color(0xFFF6F7F9),
+    surface = Color.White,
     onPrimary = Color.White,
     onBackground = DeepGrizzly,
     onSurface = DeepGrizzly

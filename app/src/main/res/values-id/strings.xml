@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">KumaFlow</string>
+    <!-- Duo Pairing Screen -->
+    <string name="duo_pairing_title">Kuma Duo Pairing</string>
+    <string name="duo_btn_show_qr">Tampilkan QR</string>
+    <string name="duo_btn_scan_qr">Scan QR</string>
+    <string name="duo_err_server_start">Gagal memulai server lokal</string>
+    <string name="duo_err_connect_wifi">Sambungkan ke WiFi atau Hotspot terlebih dahulu</string>
+    <string name="duo_err_gen_qr">Gagal generate QR</string>
+    <string name="duo_msg_ask_partner_scan">Minta partner untuk scan QR ini</string>
+    <string name="duo_msg_waiting_conn">Menunggu koneksi dari partner...</string>
+    <string name="duo_msg_pairing_handshake">Melakukan handshake dengan partner...</string>
+    <string name="duo_msg_pairing_success">Pairing sukses!</string>
+    <string name="duo_msg_pairing_failed">Gagal pairing</string>
+    <string name="duo_msg_point_cam">Arahkan kamera ke QR Code partner</string>
+    <string name="duo_err_cam_perm">Izin kamera diperlukan untuk scan QR Duo.</string>
+    
+    <string name="duo_title_select_wallet">Pilih Dompet untuk Di-share</string>
+    <string name="duo_lbl_connected_with">Terhubung dengan: %1$s</string>
+    <string name="duo_lbl_sync_old_history">Sertakan riwayat transaksi lama?</string>
+    <string name="duo_desc_sync_old_history">Jika aktif, transaksi lama akan dikirim ke partner.</string>
+    <string name="duo_btn_saving">Menyimpan...</string>
+    <string name="duo_btn_done">Selesai</string>
+</resources>

@@ -400,6 +400,21 @@ fun MorphingKeypadButton(
 
 class MainActivity : FragmentActivity() {
     var pendingRestoreJson: String? = null
+    private lateinit var autoSyncManager: com.bearbones.kumaflow.duo.DuoAutoSyncManager
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        checkNfcIntent(intent)
+    }
+
+    private fun checkNfcIntent(intent: Intent?) {
+        if (intent?.action == android.nfc.NfcAdapter.ACTION_TECH_DISCOVERED ||
+            intent?.action == android.nfc.NfcAdapter.ACTION_TAG_DISCOVERED ||
+            intent?.action == android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED) {
+            com.bearbones.kumaflow.nfc.NfcTriggerManager.showNfcTrigger.tryEmit(Unit)
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -432,8 +447,45 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val nfcAdapter = android.nfc.NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter != null) {
+            val intent = Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                android.app.PendingIntent.FLAG_MUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            } else {
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            }
+            val pendingIntent = android.app.PendingIntent.getActivity(this, 0, intent, flags)
+            nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null)
+        }
+        autoSyncManager.start()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        val nfcAdapter = android.nfc.NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter != null) {
+            try {
+                nfcAdapter.disableForegroundDispatch(this)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        autoSyncManager.stop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        checkNfcIntent(intent)
+        
+        autoSyncManager = com.bearbones.kumaflow.duo.DuoAutoSyncManager(this, com.bearbones.kumaflow.KumaDatabase.getDatabase(this))
+        autoSyncManager.onSyncEvent = { msg ->
+            runOnUiThread {
+                android.widget.Toast.makeText(this, msg, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val display = windowManager.defaultDisplay
@@ -563,7 +615,7 @@ class MainActivity : FragmentActivity() {
                     // NEW: #OR Easter Egg
                     isOREasterEgg -> lightColorScheme(
                         background = Color(0xFFFEE1F5), // Lavender blush
-                        surface = Color(0xFFF9BED4), // Cotton candy
+                        surface = Color.White, // Clean white surface for better contrast
                         primary = Color(0xFFEF71C3), // Hot pink
                         onPrimary = Color.White,
                         onBackground = Color(0xFF5E3F6B), // Darkened Lilac for readable text
@@ -656,25 +708,32 @@ class MainActivity : FragmentActivity() {
                                     onDismissed = { isNewUserDialogDismissed = true }
                                 )
 
-                                // Only run tutorial logic once we know txCount and the dialog is dismissed
-                                if (isNewUserDialogDismissed && !currentProfile.hasSeenTutorial && !isAppLocked && txCount >= 0) {
-                                    if (txCount == 0 && currentProfile.userName == "User") {
-                                        LaunchedEffect(Unit) {
-                                            tutorialState.advanceTo(com.bearbones.kumaflow.ui.tutorial.TutorialStep.HOME_SUMMARY)
+                                var showTutorialFlow by remember { mutableStateOf(false) }
+
+                                LaunchedEffect(currentProfile.hasSeenTutorial, txCount, isNewUserDialogDismissed, isAppLocked) {
+                                    if (isNewUserDialogDismissed && !currentProfile.hasSeenTutorial && !isAppLocked && txCount == 0 && currentProfile.userName == "User" && !showTutorialFlow) {
+                                        showTutorialFlow = true
+                                        // Silently mark as seen in DB immediately so it doesn't show again if user force closes the app
+                                        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                            dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
                                         }
-                                        com.bearbones.kumaflow.ui.tutorial.TutorialOverlay(
-                                            onComplete = {
-                                                coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                                                    dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
-                                                }
-                                            }
-                                        )
-                                    } else {
-                                        // Existing user (has transactions or changed name), silently mark as seen
-                                        LaunchedEffect(Unit) {
-                                            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                                                dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
-                                            }
+                                    }
+                                }
+
+                                if (showTutorialFlow) {
+                                    LaunchedEffect(Unit) {
+                                        tutorialState.advanceTo(com.bearbones.kumaflow.ui.tutorial.TutorialStep.HOME_SUMMARY)
+                                    }
+                                    com.bearbones.kumaflow.ui.tutorial.TutorialOverlay(
+                                        onComplete = {
+                                            showTutorialFlow = false
+                                        }
+                                    )
+                                } else if (isNewUserDialogDismissed && !currentProfile.hasSeenTutorial && !isAppLocked && txCount >= 0) {
+                                    // Existing user (has transactions or changed name), silently mark as seen
+                                    LaunchedEffect(Unit) {
+                                        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                            dao.saveProfile(currentProfile.copy(hasSeenTutorial = true))
                                         }
                                     }
                                 }

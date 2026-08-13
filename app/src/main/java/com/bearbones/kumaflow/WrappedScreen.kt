@@ -53,6 +53,10 @@ fun WrappedScreen(
         "GBP" -> "£"
         "JPY", "CNY" -> "¥"
         "CHF" -> "CHF"
+        "MYR" -> "RM"
+        "THB" -> "฿"
+        "PHP" -> "₱"
+        "VND" -> "₫"
         else -> "Rp"
     }
 

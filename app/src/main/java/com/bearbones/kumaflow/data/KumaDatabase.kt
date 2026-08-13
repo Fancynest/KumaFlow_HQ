@@ -31,7 +31,14 @@ data class KumaTransaction(
     val wallet: String,
     val timestamp: String,
     val message: String = "",
-    val isEdited: Boolean = false
+    val isEdited: Boolean = false,
+    
+    // Kuma Duo Sync Fields
+    val transactionUuid: String = java.util.UUID.randomUUID().toString(),
+    val originDeviceId: String = "",
+    val lastModified: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
+    val syncVersion: Int = 1
 )
 
 @Entity(
@@ -102,13 +109,13 @@ data class UserProfile(
 @Dao
 interface TransactionDao {
     @Transaction
-    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY timestamp DESC")
     fun getAllTransactionsWithSplits(): Flow<List<TransactionWithSplits>>
 
     @Transaction
     @Query("""
         SELECT * FROM transactions 
-        WHERE wallet = :walletName AND isIncome = 0 AND CAST(amount AS INTEGER) <= :maxBudget 
+        WHERE wallet = :walletName AND isIncome = 0 AND CAST(amount AS INTEGER) <= :maxBudget AND isDeleted = 0
         GROUP BY name 
         ORDER BY timestamp DESC LIMIT 8
     """)
@@ -118,7 +125,7 @@ interface TransactionDao {
     @Query("""
         SELECT t.* FROM transactions t 
         JOIN transactions_fts fts ON (t.id = fts.rowid) 
-        WHERE transactions_fts MATCH :query
+        WHERE transactions_fts MATCH :query AND t.isDeleted = 0
     """)
     fun searchTransactions(query: String): Flow<List<TransactionWithSplits>>
 
@@ -167,6 +174,67 @@ interface TransactionDao {
     @Query("DELETE FROM transactions")
     suspend fun clearTransactions()
 
+    // --- Kuma Duo Methods ---
+    @Query("SELECT * FROM wallet_metadata")
+    suspend fun getAllWalletMetadata(): List<com.bearbones.kumaflow.duo.model.WalletMetadata>
+
+    @Transaction
+    suspend fun getOrGenerateAllWalletMetadata(): List<com.bearbones.kumaflow.duo.model.WalletMetadata> {
+        val profile = getProfileSync() ?: return emptyList()
+        val wallets = profile.wallets.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val allMeta = getAllWalletMetadata().toMutableList()
+        val metaNames = allMeta.map { it.currentName }
+        
+        var addedNew = false
+        val now = System.currentTimeMillis()
+        for (w in wallets) {
+            if (!metaNames.contains(w)) {
+                val newMeta = com.bearbones.kumaflow.duo.model.WalletMetadata(
+                    walletStableId = java.util.UUID.randomUUID().toString(),
+                    currentName = w,
+                    createdAt = now,
+                    nameLastModified = now
+                )
+                upsertWalletMetadata(newMeta)
+                allMeta.add(newMeta)
+                addedNew = true
+            }
+        }
+        return if (addedNew) getAllWalletMetadata() else allMeta
+    }
+
+    @Query("SELECT * FROM wallet_metadata WHERE currentName = :name LIMIT 1")
+    suspend fun getWalletMetadataByName(name: String): com.bearbones.kumaflow.duo.model.WalletMetadata?
+
+    @Query("SELECT * FROM wallet_metadata WHERE walletStableId = :id LIMIT 1")
+    suspend fun getWalletMetadataById(id: String): com.bearbones.kumaflow.duo.model.WalletMetadata?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertWalletMetadata(metadata: com.bearbones.kumaflow.duo.model.WalletMetadata)
+
+    @Query("SELECT * FROM duo_pairings WHERE isActive = 1")
+    suspend fun getActivePairings(): List<com.bearbones.kumaflow.duo.model.DuoPairing>
+    
+    @Query("SELECT * FROM duo_pairings WHERE isActive = 1")
+    fun observeActivePairings(): kotlinx.coroutines.flow.Flow<List<com.bearbones.kumaflow.duo.model.DuoPairing>>
+
+    @Query("SELECT * FROM duo_pairings WHERE sharedWalletStableId = :walletStableId AND isActive = 1 LIMIT 1")
+    suspend fun getPairingByWalletId(walletStableId: String): com.bearbones.kumaflow.duo.model.DuoPairing?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPairing(pairing: com.bearbones.kumaflow.duo.model.DuoPairing)
+
+    @Insert
+    suspend fun insertConflictLog(log: com.bearbones.kumaflow.duo.model.DuoConflictLog)
+
+    @Transaction
+    @Query("SELECT * FROM transactions WHERE wallet = :walletName AND lastModified > :sinceTimestamp")
+    suspend fun getTransactionsForSync(walletName: String, sinceTimestamp: Long): List<TransactionWithSplits>
+
+    @Query("SELECT * FROM transactions WHERE transactionUuid = :uuid LIMIT 1")
+    suspend fun getTransactionByUuid(uuid: String): KumaTransaction?
+    // -------------------------
+
     @Query("UPDATE transactions SET wallet = :newName WHERE wallet = :oldName")
     suspend fun updateTransactionsWalletName(oldName: String, newName: String)
 
@@ -180,6 +248,31 @@ interface TransactionDao {
     suspend fun updateWalletName(oldName: String, newName: String) {
         updateTransactionsWalletName(oldName, newName)
         updateSplitsWalletName(oldName, newName)
+    }
+
+    @Transaction
+    suspend fun renameWalletStringInProfile(oldName: String, newName: String) {
+        val profile = getProfileSync()
+        if (profile != null) {
+            val walletsList = profile.wallets.split(",").map { it.trim() }.toMutableList()
+            val index = walletsList.indexOf(oldName)
+            if (index != -1) {
+                walletsList[index] = newName
+                saveProfile(profile.copy(wallets = walletsList.joinToString(",")))
+            }
+        }
+    }
+
+    @Transaction
+    suspend fun renameWalletAndMetadata(oldName: String, newName: String) {
+        updateWalletName(oldName, newName)
+        renameWalletStringInProfile(oldName, newName)
+        // Find existing metadata and update it so stable ID is preserved
+        val metas = getAllWalletMetadata()
+        val meta = metas.find { it.currentName == oldName }
+        if (meta != null) {
+            upsertWalletMetadata(meta.copy(currentName = newName, nameLastModified = System.currentTimeMillis()))
+        }
     }
 
     @Transaction
@@ -317,14 +410,102 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
     }
 }
 
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1. Create WalletMetadata table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `wallet_metadata` (
+                `walletStableId` TEXT NOT NULL,
+                `currentName` TEXT NOT NULL,
+                `createdAt` INTEGER NOT NULL,
+                `nameLastModified` INTEGER NOT NULL,
+                PRIMARY KEY(`walletStableId`)
+            )
+            """.trimIndent()
+        )
+        // Extract wallets from user_profile and insert to WalletMetadata
+        val cursor = db.query("SELECT wallets FROM user_profile LIMIT 1")
+        if (cursor.moveToFirst()) {
+            val walletsCsv = cursor.getString(0) ?: ""
+            val wallets = walletsCsv.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+            val now = System.currentTimeMillis()
+            for (wallet in wallets) {
+                val stableId = java.util.UUID.randomUUID().toString()
+                db.execSQL(
+                    "INSERT INTO `wallet_metadata` (`walletStableId`, `currentName`, `createdAt`, `nameLastModified`) VALUES (?, ?, ?, ?)",
+                    arrayOf(stableId, wallet, now, now)
+                )
+            }
+        }
+        cursor.close()
+
+        // 2. Create DuoPairing table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `duo_pairings` (
+                `pairingId` TEXT NOT NULL,
+                `partnerDeviceId` TEXT NOT NULL,
+                `partnerDisplayName` TEXT NOT NULL,
+                `pairingSecret` TEXT NOT NULL,
+                `sharedWalletStableId` TEXT NOT NULL,
+                `pairedAt` INTEGER NOT NULL,
+                `lastSyncedTimestamp` INTEGER NOT NULL,
+                `isActive` INTEGER NOT NULL,
+                PRIMARY KEY(`pairingId`)
+            )
+            """.trimIndent()
+        )
+
+        // 3. Create DuoConflictLog table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `duo_conflict_log` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `transactionUuid` TEXT NOT NULL,
+                `walletStableId` TEXT NOT NULL,
+                `conflictedAt` INTEGER NOT NULL,
+                `reason` TEXT NOT NULL,
+                `originalDataJson` TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+
+        // 4. Update transactions table
+        db.execSQL("ALTER TABLE transactions ADD COLUMN transactionUuid TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN originDeviceId TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN lastModified INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE transactions ADD COLUMN syncVersion INTEGER NOT NULL DEFAULT 1")
+        
+        // Generate UUID for existing transactions
+        val txCursor = db.query("SELECT id FROM transactions")
+        val nowForTx = System.currentTimeMillis()
+        while (txCursor.moveToNext()) {
+            val id = txCursor.getInt(0)
+            val newUuid = java.util.UUID.randomUUID().toString()
+            db.execSQL("UPDATE transactions SET transactionUuid = ?, lastModified = ? WHERE id = ?", arrayOf(newUuid, nowForTx, id))
+        }
+        txCursor.close()
+        
+        // Rebuild FTS
+        db.execSQL("DROP TABLE IF EXISTS `transactions_fts`")
+        db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` USING FTS4(`name` TEXT, `category` TEXT, `message` TEXT, content=`transactions`)")
+        db.execSQL("INSERT INTO `transactions_fts` (`transactions_fts`, `rowid`, `name`, `category`, `message`) SELECT 'rebuild', `id`, `name`, `category`, `message` FROM `transactions`")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
         UserProfile::class,
         TransactionSplit::class,
-        TransactionFTS::class
+        TransactionFTS::class,
+        com.bearbones.kumaflow.duo.model.WalletMetadata::class,
+        com.bearbones.kumaflow.duo.model.DuoPairing::class,
+        com.bearbones.kumaflow.duo.model.DuoConflictLog::class
     ],
-    version = 25,
+    version = 26,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -340,7 +521,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
                     .build()
                 INSTANCE = instance
                 instance

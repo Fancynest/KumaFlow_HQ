@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -57,7 +58,9 @@ fun HistoryScreen(
     onDelete: (TransactionWithSplits) -> Unit,
     onToggleSelect: (Int) -> Unit,
     selectedTxs: Set<Int>,
-    isSelectionMode: Boolean
+    isSelectionMode: Boolean,
+    onBulkDelete: (List<TransactionWithSplits>) -> Unit,
+    clearSelection: () -> Unit
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -181,22 +184,22 @@ fun HistoryScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header
-            Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding() + 24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (isId) "Riwayat Transaksi" else "Transaction history",
-                    fontSize = 24.sp,
+                    text = com.bearbones.kumaflow.AppStr.hist,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = AppText()
                 )
                 
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // SEARCH BAR
             com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
@@ -211,7 +214,7 @@ fun HistoryScreen(
                 trailingIcon = { if (searchQuery.isNotEmpty()) { com.bearbones.kumaflow.ui.components.KumaIconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Filter Chips Row
             Row(
@@ -354,6 +357,46 @@ fun HistoryScreen(
                             }
                         }
                     }
+                    item { Spacer(modifier = Modifier.height(if (isSelectionMode) 120.dp else 100.dp)) }
+                }
+            }
+        }
+        
+        // 🔥 BULK ACTION OVERLAY BAR 🔥
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isSelectionMode,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = paddingValues.calculateBottomPadding() + 8.dp),
+            enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
+            exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .border(1.dp, AppText().copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                    .glassCard(24.dp, AppSurfaceVariant())
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${selectedTxs.size} ${AppStr.selected}", fontWeight = FontWeight.Black, fontSize = 14.sp, color = AppText())
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            val txsToDelete = allTransactions.filter { selectedTxs.contains(it.transaction.id) }
+                            onBulkDelete(txsToDelete)
+                            clearSelection()
+                        }
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, tint = AppRed())
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(AppStr.bulkDel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AppRed())
+                    }
                 }
             }
         }
@@ -425,6 +468,7 @@ fun HistoryScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
+                        modifier = Modifier.heightIn(max = 400.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -469,10 +513,11 @@ fun HistoryScreen(
                     com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = { showCatSheet = false },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
-                        shape = RoundedCornerShape(16.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary(), contentColor = MaterialTheme.colorScheme.onPrimary),
+                        shape = RoundedCornerShape(16.dp),
+                        brutalCornerRadius = 16.dp
                     ) {
-                        Text(if(AppStr.isId) "Atur Filter" else "Set filter", fontWeight = FontWeight.ExtraBold)
+                        Text(if(AppStr.isId) "Atur Filter" else "Set filter", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
@@ -494,7 +539,7 @@ fun HistoryScreen(
                             Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                     allWallets.forEach { w ->
                         val isSelected = selectedWallets.contains(w)
                         Row(
@@ -535,14 +580,16 @@ fun HistoryScreen(
                         }
                         HorizontalDivider(color = AppText().copy(alpha = 0.1f))
                     }
+                    } // end scrollable wallet list Column
                     Spacer(modifier = Modifier.height(24.dp))
                     com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = { showWalletSheet = false },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
-                        shape = RoundedCornerShape(16.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary(), contentColor = MaterialTheme.colorScheme.onPrimary),
+                        shape = RoundedCornerShape(16.dp),
+                        brutalCornerRadius = 16.dp
                     ) {
-                        Text(if(AppStr.isId) "Atur Filter" else "Set filter", fontWeight = FontWeight.ExtraBold)
+                        Text(if(AppStr.isId) "Atur Filter" else "Set filter", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }

@@ -73,8 +73,11 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 // Utilize the updated DAO query (WithSplits) for complex transaction structures
                 val transactionsWithSplits = db.transactionDao().getAllTransactionsWithSplits().firstOrNull() ?: emptyList()
 
+                val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+                val isPrivacyMode = sharedPref.getBoolean("privacy_mode", false)
+
                 val locale = Locale.forLanguageTag("id-ID")
-                val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; else -> "Rp" }
+                val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
                 val currentMonth = LocalDateTime.now().monthValue
                 val currentYear = LocalDateTime.now().year
@@ -104,7 +107,9 @@ class KumaWidgetProvider : AppWidgetProvider() {
 
                         // Calculate the total income and expenses exclusively for the current month
                         if (dt.monthValue == currentMonth && dt.year == currentYear) {
-                            if (t.isIncome) income += amt else expenses += amt
+                            if (t.category != "Transfer") {
+                                if (t.isIncome) income += amt else expenses += amt
+                            }
                         }
                     } catch (_: Exception) {}
                 }
@@ -112,22 +117,28 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 val totalBal = walletBalances.values.sum()
                 val top3Wallets = walletBalances.entries.toList().take(3)
 
+                fun formatWidget(value: Long, useAbs: Boolean = false): String {
+                    val v = if (useAbs) abs(value) else value
+                    val formatted = NumberFormat.getInstance(locale).format(v)
+                    return if (isPrivacyMode) formatted.replace(Regex("\\d"), "*") else formatted
+                }
+
                 // Update widget UI components with the newly calculated data
-                views.setTextViewText(R.id.tv_widget_balance, "$curSym ${NumberFormat.getInstance(locale).format(totalBal)}")
-                views.setTextViewText(R.id.tv_widget_income, "$curSym ${NumberFormat.getInstance(locale).format(income)}")
-                views.setTextViewText(R.id.tv_widget_expense, "$curSym ${NumberFormat.getInstance(locale).format(expenses)}")
+                views.setTextViewText(R.id.tv_widget_balance, "$curSym ${formatWidget(totalBal)}")
+                views.setTextViewText(R.id.tv_widget_income, "$curSym ${formatWidget(income)}")
+                views.setTextViewText(R.id.tv_widget_expense, "$curSym ${formatWidget(expenses)}")
 
                 if (top3Wallets.isNotEmpty()) {
                     views.setTextViewText(R.id.tv_w1_name, top3Wallets[0].key)
-                    views.setTextViewText(R.id.tv_w1_bal, "$curSym ${NumberFormat.getInstance(locale).format(abs(top3Wallets[0].value))}")
+                    views.setTextViewText(R.id.tv_w1_bal, "$curSym ${formatWidget(top3Wallets[0].value, true)}")
                 }
                 if (top3Wallets.size > 1) {
                     views.setTextViewText(R.id.tv_w2_name, top3Wallets[1].key)
-                    views.setTextViewText(R.id.tv_w2_bal, "$curSym ${NumberFormat.getInstance(locale).format(abs(top3Wallets[1].value))}")
+                    views.setTextViewText(R.id.tv_w2_bal, "$curSym ${formatWidget(top3Wallets[1].value, true)}")
                 }
                 if (top3Wallets.size > 2) {
                     views.setTextViewText(R.id.tv_w3_name, top3Wallets[2].key)
-                    views.setTextViewText(R.id.tv_w3_bal, "$curSym ${NumberFormat.getInstance(locale).format(abs(top3Wallets[2].value))}")
+                    views.setTextViewText(R.id.tv_w3_bal, "$curSym ${formatWidget(top3Wallets[2].value, true)}")
                 }
 
                 // Apply the updated views to the homescreen widget

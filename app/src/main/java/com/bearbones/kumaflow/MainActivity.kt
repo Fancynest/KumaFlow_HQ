@@ -190,7 +190,7 @@ fun AppSurfaceVariant(): Color {
     return if (LocalIsDark.current) {
         if (LocalIsAmoled.current) Color(0xFF1A1A1A) else Color(0xFF1E222B)
     } else {
-        Color(0xFFF1F3F7)
+        Color.White
     }
 }
 
@@ -258,6 +258,8 @@ fun Modifier.neobrutalism(
                     )
                 )
             }
+            
+            // Draw shadow only OUTSIDE the card
             clipPath(
                 path = cardPath,
                 clipOp = androidx.compose.ui.graphics.ClipOp.Difference
@@ -269,6 +271,8 @@ fun Modifier.neobrutalism(
                     cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
                 )
             }
+            
+            // Draw background if specified
             if (backgroundColor != Color.Unspecified) {
                 drawRoundRect(
                     color = backgroundColor,
@@ -278,6 +282,7 @@ fun Modifier.neobrutalism(
             }
         }
         .border(width = borderWidth, color = borderColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius))
+        .clip(androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius))
 }
 
 @Composable
@@ -472,11 +477,12 @@ fun MainScreen(
     }
 
     val totalBalance by remember(walletBalances, forceUpdateTrigger) { derivedStateOf { walletBalances.values.sum() } }
-    val totalIncome by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { it.transaction.isIncome }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
-    val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
+    val totalIncome by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
+    val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
 
-    var showMilestone by remember { mutableStateOf(userProfile.currentStreak > 0 && userProfile.currentStreak % 30 == 0 && userProfile.currentStreak > userProfile.lastMilestoneNotified) }
+    var showMilestone by remember { mutableStateOf(false /* userProfile.currentStreak > 0 && userProfile.currentStreak % 30 == 0 && userProfile.currentStreak > userProfile.lastMilestoneNotified */) }
     var showRouletteSheet by remember { mutableStateOf(false) }
+    var showSplitBill by remember { mutableStateOf(false) }
     
     if (showMilestone) {
         com.bearbones.kumaflow.ui.screens.MilestonePopUp(
@@ -496,9 +502,12 @@ fun MainScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showBackupReminder by remember { mutableStateOf(false) }
+    var showQrTransfer by remember { mutableStateOf(false) }
+    var showDuoSync by remember { mutableStateOf(false) }
+    var showDuoPairing by remember { mutableStateOf(false) }
     LaunchedEffect(showBottomSheet) { onOverlayStateChange(showBottomSheet) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
-    var showBackupReminder by remember { mutableStateOf(false) }
     val totalTxCount = transactionListWithSplits.size
 
     // FAB shape state - changes when sheet closes, but only visible when pressed
@@ -539,6 +548,24 @@ fun MainScreen(
         )
     }
 
+    if (showSplitBill) {
+        val splitViewModel: com.bearbones.kumaflow.ui.screens.SplitBillViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+        
+        LaunchedEffect(Unit) {
+            splitViewModel.resetState()
+            splitViewModel.setTotalBill(0L)
+        }
+
+        com.bearbones.kumaflow.ui.screens.SplitBillSheet(
+            viewModel = splitViewModel,
+            qrisFilePath = userProfile.qrisFilePath,
+            holderName = userProfile.qrisHolderName,
+            bankName = userProfile.bankName,
+            bankAccount = userProfile.bankAccount,
+            onDismissRequest = { showSplitBill = false }
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         floatingActionButton = {
@@ -567,7 +594,12 @@ fun MainScreen(
                 }
                 val fabShape = remember(progress) { MorphPolygonShape(morph, progress) }
                 
-                val bgColor = if (LocalIsLiquidGlass.current) Color.Black.copy(alpha=0.4f) else AppPrimary()
+                val isDark = LocalIsDark.current
+                val bgColor = if (LocalIsLiquidGlass.current) {
+                    if (isDark) Color(0xFF2C2C2E).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
+                } else {
+                    AppPrimary()
+                }
                 val fgColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White
                 val isLiquidGlass = LocalIsLiquidGlass.current
                 
@@ -609,7 +641,7 @@ fun MainScreen(
         },
         bottomBar = {
             androidx.compose.animation.AnimatedVisibility(
-                visible = !showBottomSheet,
+                visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
                 exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
             ) {
@@ -782,9 +814,9 @@ fun MainScreen(
                         paddingValues = paddingValues,
                         onMonthChange = { m: Int, y: Int -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); selectedMonth = m; selectedYear = y },
                         onEdit = { t: TransactionWithSplits -> transactionToEdit = t; showBottomSheet = true },
-                        onDelete = { t: TransactionWithSplits -> scope.launch { try { dao.deleteTransaction(t.transaction); updateKumaWidget(context) } catch (e: Exception) { Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show() } } },
-
+                        onDelete = { t: TransactionWithSplits -> scope.launch { try { dao.updateFullTransaction(t.transaction.copy(isDeleted = true, lastModified = System.currentTimeMillis(), syncVersion = t.transaction.syncVersion + 1), t.splits); updateKumaWidget(context) } catch (e: Exception) { Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show() } } },
                         onOpenWrapped = onOpenWrapped,
+                        onOpenSplitBill = { showSplitBill = true },
                         listState = homeListState,
                         selectedTxs = selectedTxs,
                         onToggleSelect = { id: Int ->
@@ -796,7 +828,7 @@ fun MainScreen(
                         onBulkDelete = { listToDelete: List<TransactionWithSplits> ->
                             scope.launch {
                                 try {
-                                    listToDelete.forEach { dao.deleteTransaction(it.transaction) }
+                                    listToDelete.forEach { dao.updateFullTransaction(it.transaction.copy(isDeleted = true, lastModified = System.currentTimeMillis(), syncVersion = it.transaction.syncVersion + 1), it.splits) }
                                     updateKumaWidget(context)
                                     Toast.makeText(context, AppStr.txDeleted(listToDelete.size), Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
@@ -808,7 +840,11 @@ fun MainScreen(
                         onBulkUpdateCategory = { listToUpdate: List<TransactionWithSplits>, newCat: String ->
                             scope.launch {
                                 listToUpdate.forEach { txObj ->
-                                    val updatedTx = txObj.transaction.copy(category = newCat)
+                                    val updatedTx = txObj.transaction.copy(
+                                        category = newCat,
+                                        lastModified = System.currentTimeMillis(),
+                                        syncVersion = txObj.transaction.syncVersion + 1
+                                    )
                                     dao.updateFullTransaction(updatedTx, txObj.splits)
                                 }
                                 forceUpdateTrigger++
@@ -865,7 +901,19 @@ fun MainScreen(
                             selectedTxs = newSet
                         },
                         selectedTxs = selectedTxs,
-                        isSelectionMode = isSelectionMode
+                        isSelectionMode = isSelectionMode,
+                        onBulkDelete = { listToDelete: List<TransactionWithSplits> ->
+                            scope.launch {
+                                try {
+                                    listToDelete.forEach { dao.deleteTransaction(it.transaction) }
+                                    updateKumaWidget(context)
+                                    Toast.makeText(context, AppStr.txDeleted(listToDelete.size), Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Delete Error: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        },
+                        clearSelection = { selectedTxs = emptySet() }
                     )
                     2 -> ReportScreen(
                         profile = userProfile, monthlyTransactions = monthlyTransactionsWithSplits.map { it.transaction }, allTransactions = transactionListWithSplits.map { it.transaction }, income = totalIncome, expenses = totalExpenses, balance = totalBalance, selectedMonth = selectedMonth, selectedYear = selectedYear,
@@ -876,7 +924,9 @@ fun MainScreen(
                     3 -> SettingsScreen(
                         currentProfile = userProfile, monthlyTransactionsWithSplits = monthlyTransactionsWithSplits, allTransactionsWithSplits = transactionListWithSplits, dao = dao, selectedMonth = selectedMonth, selectedYear = selectedYear,
                         paddingValues = paddingValues,
-                        onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) }
+                        onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) },
+                        onOpenQrTransfer = { showQrTransfer = true },
+                        onOpenDuoSync = { showDuoSync = true }
                     )
                 }
             }
@@ -973,6 +1023,30 @@ fun MainScreen(
                 },
                 dismissButton = { KumaTextButton(onClick = { showBackupReminder = false }) { Text(AppStr.later, color = AppText()) } },
                 shape = RoundedCornerShape(28.dp), containerColor = AppSurface(), titleContentColor = AppText(), textContentColor = AppText()
+            )
+        }
+
+        if (showQrTransfer && userProfileState != null) {
+            com.bearbones.kumaflow.ui.screens.QrTransferScreen(
+                onBack = { showQrTransfer = false },
+                profile = userProfileState,
+                allTransactionsWithSplits = transactionListWithSplits
+            )
+        }
+
+        if (showDuoSync && userProfileState != null) {
+            com.bearbones.kumaflow.ui.screens.DuoSyncScreen(
+                onBack = { showDuoSync = false },
+                onNavigateToPairing = { showDuoSync = false; showDuoPairing = true },
+                database = com.bearbones.kumaflow.KumaDatabase.getDatabase(context)
+            )
+        }
+
+        if (showDuoPairing && userProfileState != null) {
+            com.bearbones.kumaflow.ui.screens.DuoPairingScreen(
+                onBack = { showDuoPairing = false; showDuoSync = true },
+                profile = userProfileState,
+                database = com.bearbones.kumaflow.KumaDatabase.getDatabase(context)
             )
         }
     }
@@ -1283,6 +1357,10 @@ fun TransactionBottomSheet(
             "GBP" -> "£"
             "JPY", "CNY" -> "¥"
             "CHF" -> "CHF"
+            "MYR" -> "RM"
+            "THB" -> "฿"
+            "PHP" -> "₱"
+            "VND" -> "₫"
             else -> "Rp"
         }
 
@@ -1460,7 +1538,34 @@ fun TransactionBottomSheet(
                     onSave(listOf(Pair(txOut, emptyList()), Pair(txIn, emptyList())))
                 } else {
                     val parentWalletStr = if(evaluatedSplits.size > 1) "${AppStr.multiWallet} (${evaluatedSplits.size})" else evaluatedSplits[0].wallet
-                    val newTx = KumaTransaction(id = baseTx?.id ?: 0, name = name, date = dateStr, amount = totalAmtFinal.toString(), isIncome = (txMode == 1), category = selectedCategory, wallet = parentWalletStr, timestamp = timeStr, message = message, isEdited = (baseTx != null))
+                    val newTx = if (baseTx != null) {
+                        baseTx.copy(
+                            name = name,
+                            date = dateStr,
+                            amount = totalAmtFinal.toString(),
+                            isIncome = (txMode == 1),
+                            category = selectedCategory,
+                            wallet = parentWalletStr,
+                            timestamp = timeStr,
+                            message = message,
+                            isEdited = true,
+                            lastModified = System.currentTimeMillis(),
+                            syncVersion = baseTx.syncVersion + 1
+                        )
+                    } else {
+                        KumaTransaction(
+                            id = 0,
+                            name = name,
+                            date = dateStr,
+                            amount = totalAmtFinal.toString(),
+                            isIncome = (txMode == 1),
+                            category = selectedCategory,
+                            wallet = parentWalletStr,
+                            timestamp = timeStr,
+                            message = message,
+                            isEdited = false
+                        )
+                    }
                     val dbSplits = evaluatedSplits.filter { it.amount.isNotBlank() && (it.amount.toLongOrNull() ?: 0L) > 0 }.map { TransactionSplit(transactionId = 0, splitWallet = it.wallet, splitAmount = it.amount.toLongOrNull() ?: 0L) }
 
                     onSave(listOf(Pair(newTx, dbSplits)))
@@ -1833,7 +1938,7 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
     val paint = Paint()
     val titlePaint = Paint().apply { isFakeBoldText = true; textSize = 18f; color = android.graphics.Color.BLACK }
     val headerPaint = Paint().apply { isFakeBoldText = true; textSize = 12f; color = android.graphics.Color.DKGRAY }
-    val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; else -> "Rp" }
+    val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
     var logoBitmap: android.graphics.Bitmap? = null
     try {
@@ -1904,16 +2009,12 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
 
     pdfDocument.finishPage(page)
     val fileSuffix = if (month in 1..12) "${month}_${year}" else "Filtered"
-    val file = File(context.cacheDir, "KumaFlow_Report_$fileSuffix.pdf")
+    val filename = "KumaFlow_Report_$fileSuffix.pdf"
+    
     try {
-        pdfDocument.writeTo(FileOutputStream(file))
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, AppStr.sharePdf))
+        val bos = java.io.ByteArrayOutputStream()
+        pdfDocument.writeTo(bos)
+        saveToMediaStore(context, filename, "application/pdf", "KumaPDF", bos.toByteArray())
     } catch (_: Exception) {
         android.widget.Toast.makeText(context, AppStr.failPdf, android.widget.Toast.LENGTH_SHORT).show()
     } finally {
@@ -1923,48 +2024,32 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
 
 fun generateCSV(context: Context, data: List<KumaTransaction>, profile: UserProfile, month: Int, year: Int) {
     val fileSuffix = if (month in 1..12) "${month}_${year}" else "Filtered"
-    val file = File(context.cacheDir, "KumaFlow_Report_$fileSuffix.csv")
+    val filename = "KumaFlow_Report_$fileSuffix.csv"
     try {
-        file.bufferedWriter().use { out ->
-            out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
-            data.sortedBy { it.timestamp }.forEach { t ->
-                val type = if (t.isIncome) AppStr.inc else AppStr.exp
-                out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
-            }
+        val sb = java.lang.StringBuilder()
+        sb.append("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
+        data.sortedBy { it.timestamp }.forEach { t ->
+            val type = if (t.isIncome) AppStr.inc else AppStr.exp
+            sb.append("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
         }
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, AppStr.shareCsv))
+        saveToMediaStore(context, filename, "text/csv", "KumaCSV", sb.toString().toByteArray())
     } catch (_: Exception) {
         Toast.makeText(context, AppStr.failCsv, Toast.LENGTH_SHORT).show()
     }
 }
 
 fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserProfile, month: Int, year: Int) {
-    val file = File(context.cacheDir, "KumaFlow_Drive_${month}_${year}.csv")
+    val filename = "KumaFlow_Drive_${month}_${year}.csv"
     try {
-        file.bufferedWriter().use { out ->
-            out.write("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
-            data.sortedBy { it.timestamp }.forEach { t ->
-                val type = if (t.isIncome) AppStr.inc else AppStr.exp
-                out.write("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
-            }
+        val sb = java.lang.StringBuilder()
+        sb.append("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
+        data.sortedBy { it.timestamp }.forEach { t ->
+            val type = if (t.isIncome) AppStr.inc else AppStr.exp
+            sb.append("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
         }
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            setPackage("com.google.android.apps.docs")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(intent)
+        saveToMediaStore(context, filename, "text/csv", "KumaCSV", sb.toString().toByteArray())
     } catch (_: Exception) {
-        Toast.makeText(context, AppStr.noDrive, Toast.LENGTH_LONG).show()
-        generateCSV(context, data, profile, month, year)
+        Toast.makeText(context, AppStr.failCsv, Toast.LENGTH_LONG).show()
     }
 }
 
@@ -2000,6 +2085,22 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
             put("lastActiveDate", profile.lastActiveDate)
             put("freezeCount", profile.freezeCount)
             put("lastMilestoneNotified", profile.lastMilestoneNotified)
+            put("qrisFilePath", profile.qrisFilePath)
+            put("qrisHolderName", profile.qrisHolderName)
+            put("bankName", profile.bankName)
+            put("bankAccount", profile.bankAccount)
+            if (profile.qrisFilePath.isNotEmpty()) {
+                try {
+                    val file = java.io.File(profile.qrisFilePath)
+                    if (file.exists()) {
+                        val bytes = file.readBytes()
+                        val base64Str = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+                        put("qrisBase64", base64Str)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
         root.put("profile", pJson)
 
@@ -2030,18 +2131,44 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
         }
 
         root.put("transactions", tArr)
-        val file = File(context.cacheDir, "KumaFlow_Backup_${System.currentTimeMillis()}.kuma")
-        file.writeText(root.toString())
-
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, AppStr.saveBak))
+        val filename = "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
+        saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray())
     } catch (_: Exception) {
         Toast.makeText(context, AppStr.failBak, Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun saveToMediaStore(
+    context: Context,
+    filename: String,
+    mimeType: String,
+    subFolder: String,
+    content: ByteArray
+) {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOCUMENTS + "/KumaFlow/" + subFolder)
+            }
+            val uri = context.contentResolver.insert(android.provider.MediaStore.Files.getContentUri("external"), values)
+            if (uri != null) {
+                context.contentResolver.openOutputStream(uri)?.use { it.write(content) }
+                android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+            } else {
+                android.widget.Toast.makeText(context, "Failed to create file", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            val dir = java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS), "KumaFlow/$subFolder")
+            if (!dir.exists()) dir.mkdirs()
+            val file = java.io.File(dir, filename)
+            java.io.FileOutputStream(file).use { it.write(content) }
+            android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -2175,7 +2302,7 @@ fun CustomBottomNav(
                 .fillMaxHeight()
                 .padding(6.dp)
                 .clip(RoundedCornerShape(32.dp))
-                .background(if (LocalIsDark.current) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f))
+                .background(if (LocalIsDark.current) Color.White.copy(alpha = 0.12f) else AppPrimary().copy(alpha = 0.15f))
                 .border(1.dp, if (LocalIsDark.current) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.03f), RoundedCornerShape(32.dp))
         )
 
@@ -2288,6 +2415,10 @@ fun TransactionItem(
             "GBP" -> "£"
             "JPY", "CNY" -> "¥"
             "CHF" -> "CHF"
+            "MYR" -> "RM"
+            "THB" -> "฿"
+            "PHP" -> "₱"
+            "VND" -> "₫"
             else -> "Rp"
         }
     }

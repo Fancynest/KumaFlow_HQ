@@ -116,6 +116,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
+import com.bearbones.kumaflow.TransactionDao
 import com.bearbones.kumaflow.ui.components.KumaIconButton
 import com.bearbones.kumaflow.ui.components.KumaTextButton
 
@@ -135,7 +136,9 @@ fun SettingsScreen(
     selectedMonth: Int,
     selectedYear: Int,
     paddingValues: PaddingValues,
-    onForceUpdate: () -> Unit
+    onForceUpdate: () -> Unit,
+    onOpenQrTransfer: () -> Unit,
+    onOpenDuoSync: () -> Unit
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -194,7 +197,26 @@ fun SettingsScreen(
                         currentStreak = pObj.optInt("currentStreak", 0),
                         lastActiveDate = pObj.optString("lastActiveDate", ""),
                         freezeCount = pObj.optInt("freezeCount", 0),
-                        lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0)
+                        lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0),
+                    )
+                    
+                    var restoredQrisPath = pObj.optString("qrisFilePath", "")
+                    val qrisBase64 = pObj.optString("qrisBase64", "")
+                    if (qrisBase64.isNotEmpty()) {
+                        try {
+                            val bytes = android.util.Base64.decode(qrisBase64, android.util.Base64.DEFAULT)
+                            val file = java.io.File(context.filesDir, "qris_restored_${System.currentTimeMillis()}.jpg")
+                            java.io.FileOutputStream(file).use { it.write(bytes) }
+                            restoredQrisPath = file.absolutePath
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                    val finalProfile = newProfile.copy(
+                        qrisFilePath = restoredQrisPath,
+                        qrisHolderName = pObj.optString("qrisHolderName", ""),
+                        bankName = pObj.optString("bankName", ""),
+                        bankAccount = pObj.optString("bankAccount", "")
                     )
 
                     val txsArr = root.getJSONArray("transactions")
@@ -246,7 +268,7 @@ fun SettingsScreen(
 
                     // Atomic block to prevent corruption if user leaves or crashes
                     kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
-                        dao.restoreDatabase(newProfile, txsWithSplits)
+                        dao.restoreDatabase(finalProfile, txsWithSplits)
                     }
 
                     withContext(Dispatchers.Main) {
@@ -564,6 +586,8 @@ fun SettingsScreen(
                         AppStr.expCsv to Icons.Default.Description,
                         AppStr.expDrive to Icons.Default.AddToDrive,
                         AppStr.backApp to Icons.Default.CloudUpload,
+                        "Transfer via Local WiFi" to Icons.Default.Wifi,
+                        "Kuma Duo (Shared Wallet)" to Icons.Default.SyncAlt,
                         AppStr.rest to Icons.Default.History,
                         AppStr.optDb to Icons.Default.CleaningServices
                     )
@@ -574,6 +598,8 @@ fun SettingsScreen(
                         AppStr.expCsv -> generateCSV(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.expDrive -> exportToDrive(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.backApp -> backupAppToJSON(context, currentProfile, allTransactionsWithSplits)
+                        "Transfer via Local WiFi" -> onOpenQrTransfer()
+                        "Kuma Duo (Shared Wallet)" -> onOpenDuoSync()
                         AppStr.rest -> { mainActivity?.openSafeFilePicker() }
                         AppStr.optDb -> {
                             scope.launch(Dispatchers.IO) {
@@ -693,14 +719,7 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.importantBattery, fontWeight = FontWeight.Bold) },
                 text = {
-                    Text(
-                        "Untuk HP Android tertentu (terutama Oppo/ColorOS, Xiaomi, Vivo), sistem akan membunuh fitur pelacak secara paksa di background.\n\n" +
-                        "Mohon pastikan:\n" +
-                        "1. Buka App Info KumaFlow.\n" +
-                        "2. Set Battery Usage ke 'Unrestricted' / 'Don't Optimize'.\n" +
-                        "3. Nyalakan izin 'Auto-Launch' atau 'Allow Background Activity'.\n\n" +
-                        "Tanpa ini, notifikasi tidak akan tercatat otomatis."
-                    )
+                    Text(AppStr.oemWarningText)
                 },
                 confirmButton = {
                     com.bearbones.kumaflow.ui.components.KumaButton(onClick = {
@@ -810,7 +829,7 @@ fun SettingsScreen(
                                                 activeWallets = newList
                                                 scope.launch {
                                                     dao.saveProfile(currentProfile.copy(wallets = newList.joinToString(",")))
-                                                    dao.updateWalletName(oldName, safeNew)
+                                                    dao.renameWalletAndMetadata(oldName, safeNew)
                                                 }
                                                 // Handle logo rename basically by just keeping things as is, but we could delete the old one
                                                 com.bearbones.kumaflow.WalletLogoManager.deleteWalletLogo(context, oldName)
@@ -1136,7 +1155,8 @@ fun SettingsScreen(
                     val currencies = listOf(
                         "IDR" to "🇮🇩", "USD" to "🇺🇸", "EUR" to "🇪🇺", "JPY" to "🇯🇵",
                         "GBP" to "🇬🇧", "AUD" to "🇦🇺", "CAD" to "🇨🇦", "CHF" to "🇨🇭",
-                        "CNY" to "🇨🇳", "SGD" to "🇸🇬"
+                        "CNY" to "🇨🇳", "SGD" to "🇸🇬", "MYR" to "🇲🇾", "THB" to "🇹🇭",
+                        "PHP" to "🇵🇭", "VND" to "🇻🇳"
                     )
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         currencies.chunked(2).forEach { rowItems ->

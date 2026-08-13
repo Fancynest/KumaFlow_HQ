@@ -33,6 +33,7 @@ import com.bearbones.kumaflow.glassCard
 import com.bearbones.kumaflow.AppStr
 import java.text.NumberFormat
 import java.util.Locale
+import androidx.compose.ui.focus.onFocusChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,13 +98,15 @@ fun QrisDirectSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            var isMessageFocused by remember { mutableStateOf(false) }
+
             // Message Input
             KumaOutlinedTextField(
                 value = messageStr,
                 onValueChange = { messageStr = it },
                 placeholder = { Text(if (AppStr.isId) "Cth: Pembayaran Makan Siang" else "Ex: Lunch Payment") },
                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.Message, contentDescription = null, tint = AppText().copy(alpha = 0.5f)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().onFocusChanged { isMessageFocused = it.isFocused },
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true
             )
@@ -128,39 +131,40 @@ fun QrisDirectSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Custom Numpad
-            val numpadKeys = listOf(
-                listOf("1", "2", "3"),
-                listOf("4", "5", "6"),
-                listOf("7", "8", "9"),
-                listOf("0", "000", "DEL")
-            )
+            // Custom Numpad (Hide when typing message to prevent overlapping)
+            if (!isMessageFocused) {
+                val numpadKeys = listOf(
+                    listOf("1", "2", "3"),
+                    listOf("4", "5", "6"),
+                    listOf("7", "8", "9"),
+                    listOf("0", "000", "DEL")
+                )
 
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                numpadKeys.forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-                        row.forEach { key ->
-                            val label = if (key == "DEL") "Del" else key
-                            MorphingKeypadButton(
-                                label = label,
-                                onClick = {
-                                    when (key) {
-                                        "DEL" -> if (nominalStr.isNotEmpty()) nominalStr = nominalStr.dropLast(1)
-                                        "000" -> if (nominalStr.isNotEmpty() && nominalStr.length <= 9) nominalStr += "000"
-                                        else -> if (nominalStr.length <= 11) {
-                                            if (!(nominalStr == "0" && key == "0")) {
-                                                nominalStr += key
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    numpadKeys.forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                            row.forEach { key ->
+                                val label = if (key == "DEL") "Del" else key
+                                MorphingKeypadButton(
+                                    label = label,
+                                    onClick = {
+                                        when (key) {
+                                            "DEL" -> if (nominalStr.isNotEmpty()) nominalStr = nominalStr.dropLast(1)
+                                            "000" -> if (nominalStr.isNotEmpty() && nominalStr.length <= 9) nominalStr += "000"
+                                            else -> if (nominalStr.length <= 11) {
+                                                if (!(nominalStr == "0" && key == "0")) {
+                                                    nominalStr += key
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(24.dp))
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             KumaButton(
                 onClick = { 

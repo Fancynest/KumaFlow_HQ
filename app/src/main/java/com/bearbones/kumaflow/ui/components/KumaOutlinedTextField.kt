@@ -60,8 +60,10 @@ fun KumaOutlinedTextField(
                 isBrutal = true,
                 cornerRadius = 12.dp,
                 borderWidth = 3.dp,
-                offset = 4.dp
+                offset = 4.dp,
+                backgroundColor = com.bearbones.kumaflow.AppSurface()
             )
+            .padding(top = 8.dp)
     } else {
         Modifier
     }

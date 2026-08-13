@@ -1,3 +1,24 @@
 <resources>
     <string name="app_name">KumaFlow</string>
+    <!-- Duo Pairing Screen -->
+    <string name="duo_pairing_title">Kuma Duo Pairing</string>
+    <string name="duo_btn_show_qr">Show QR</string>
+    <string name="duo_btn_scan_qr">Scan QR</string>
+    <string name="duo_err_server_start">Failed to start local server</string>
+    <string name="duo_err_connect_wifi">Connect to WiFi or Hotspot first</string>
+    <string name="duo_err_gen_qr">Failed to generate QR</string>
+    <string name="duo_msg_ask_partner_scan">Ask partner to scan this QR</string>
+    <string name="duo_msg_waiting_conn">Waiting for partner connection...</string>
+    <string name="duo_msg_pairing_handshake">Handshaking with partner...</string>
+    <string name="duo_msg_pairing_success">Pairing successful!</string>
+    <string name="duo_msg_pairing_failed">Pairing failed</string>
+    <string name="duo_msg_point_cam">Point camera to partner\'s QR Code</string>
+    <string name="duo_err_cam_perm">Camera permission is required to scan Duo QR.</string>
+    
+    <string name="duo_title_select_wallet">Select Wallets to Share</string>
+    <string name="duo_lbl_connected_with">Connected with: %1$s</string>
+    <string name="duo_lbl_sync_old_history">Include old transaction history?</string>
+    <string name="duo_desc_sync_old_history">If checked, old transactions will be sent to partner.</string>
+    <string name="duo_btn_saving">Saving...</string>
+    <string name="duo_btn_done">Done</string>
 </resources>

@@ -1,0 +1,11 @@
+framework module prepaid_lib_ios {
+  umbrella header "prepaid_lib_ios.h"
+
+  export *
+  module * { export * }
+}
+
+module prepaid_lib_ios.Swift {
+    header "prepaid_lib_ios-Swift.h"
+    requires objc
+}

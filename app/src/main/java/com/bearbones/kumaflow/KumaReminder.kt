@@ -51,7 +51,7 @@ class KumaReminder : BroadcastReceiver() {
     }
 
     private fun showNotification(context: Context) {
-        val channelId = "kumaflow_reminder_channel_v8"
+        val channelId = "kumaflow_reminder_channel_v9"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val soundUri = Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/${R.raw.kumaflownotification}")
 
@@ -113,7 +113,7 @@ class KumaReminder : BroadcastReceiver() {
             .setContentTitle(randomMsg.first)
             .setContentText(randomMsg.second)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+            // setDefaults removed to prevent overriding custom sound
             .setSound(soundUri)
             .setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
             .setContentIntent(pendingIntent)

@@ -41,7 +41,7 @@ object AppStr {
     val pricePreTax get() = if(isId) "Harga (Sblm Pajak)" else "Price (Pre-tax)"
     val resultAfterTax get() = if(isId) "Hasil (Stlh Pajak & Pembulatan)" else "Results (After Tax & Rounding)"
     val remaining get() = if(isId) "Sisanya" else "Remaining"
-    val shareWa get() = if(isId) "Kirim ke WhatsApp" else "Share to WhatsApp"
+    val shareWa get() = if(isId) "Bagikan Tagihan" else "Share Billing"
     val loadQrisFailed get() = if(isId) "Gagal memuat QRIS" else "Failed to load QRIS"
     val net get() = if(isId) "Tabungan Bersih" else "Net Savings"
     val targetProg get() = if(isId) "Progres Target Bulanan" else "Monthly Target Progress"
@@ -59,7 +59,7 @@ object AppStr {
     val tar get() = if(isId) "Target Global" else "Global Target"
     val catBudget get() = if(isId) "Budget Kategori" else "Category Budget"
 
-    const val VERSION = "v6.3.2"
+    const val VERSION = "v6.3.4"
     val dat get() = if(isId) "Data" else "Data"
     val expPdf get() = if(isId) "Ekspor ke PDF" else "Export to PDF"
     val expCsv get() = if(isId) "Ekspor ke CSV" else "Export to CSV"
@@ -189,6 +189,7 @@ object AppStr {
     val errRestore get() = if(isId) "Error Restore:" else "Restore Error:"
     val reqNotifAcc get() = if(isId) "Mohon berikan izin Notification Access ke KumaFlow" else "Please grant Notification Access to KumaFlow"
     val errOpenBat get() = if(isId) "Tidak dapat membuka pengaturan baterai" else "Cannot open battery settings"
+    val oemWarningText get() = if (isId) "Untuk HP Android tertentu (terutama Oppo/ColorOS, Xiaomi, Vivo), sistem akan membunuh fitur pelacak secara paksa di background.\n\nMohon pastikan:\n1. Buka App Info KumaFlow.\n2. Set Battery Usage ke 'Unrestricted' / 'Don't Optimize'.\n3. Nyalakan izin 'Auto-Launch' atau 'Allow Background Activity'.\n\nTanpa ini, notifikasi tidak akan tercatat otomatis." else "For certain Android phones (especially Oppo/ColorOS, Xiaomi, Vivo), the system will forcibly kill the background tracker feature.\n\nPlease ensure:\n1. Open KumaFlow App Info.\n2. Set Battery Usage to 'Unrestricted' / 'Don't Optimize'.\n3. Turn on 'Auto-Launch' or 'Allow Background Activity' permission.\n\nWithout this, notifications won't be recorded automatically."
     val autoNotifTracker get() = if(isId) "Auto Notif Tracker" else "Auto Notif Tracker"
 
     val smartInsights get() = if(isId) "Smart Insights ?" else "Smart Insights ?"
@@ -212,7 +213,7 @@ object AppStr {
     val rouletteConfirmBtn get() = if(isId) "Catat Transaksi" else "Record Transaction"
     val rouletteCancelBtn get() = if(isId) "Batal" else "Cancel"
     
-    val versionInfo get() = if(isId) "Versi: $VERSION\nBuild: Beta\nTipe: Standalone Local" else "Version: $VERSION\nBuild: Core Edition\nType: Standalone Local"
+    val versionInfo get() = if(isId) "Versi: $VERSION\nBuild: Beta\nTipe: Standalone Local" else "Version: $VERSION\nBuild: Stable\nType: Standalone Local"
     val updAvail get() = if(isId) "Pembaruan Tersedia" else "Update Available"
     val newVerRdy get() = if(isId) "Versi baru sudah siap" else "New version is ready"
     val currVer get() = if(isId) "Saat ini" else "Current"
@@ -247,6 +248,9 @@ object AppStr {
     val rouletteRecordAuto get() = if(isId) "Catat Pengeluaran Otomatis" else "Record Expense Automatically"
     val rouletteIconText get() = if(isId) "Roulette / Dadu" else "Roulette / Dice"
     // Tutorial Strings
+    val tutFinishBtn get() = if(isId) "Selesai & Tutup" else "Finish & Close"
+    val tutTapNext get() = if(isId) "Tap untuk lanjut" else "Tap to continue"
+    val tutClickBtn get() = if(isId) "Silakan klik tombolnya!" else "Please click the button!"
     val tutSummary get() = if(isId) "Ini adalah ringkasan keuangan Anda bulan ini.\nPantau sisa saldo dan pengeluaran Anda di sini." else "This is your financial summary for the month.\nMonitor your remaining balance and expenses here."
     val tutWallets get() = if(isId) "Di sini Anda dapat melihat saldo dari setiap dompet atau rekening. Silakan geser untuk melihat selengkapnya." else "Here you can view the balance of each wallet or account. Swipe to see more."
     val tutAddBtn get() = if(isId) "Mari kita mulai dengan mencatat transaksi pertama Anda. Ketuk tombol + ini." else "Let's start by recording your first transaction. Tap this + button."

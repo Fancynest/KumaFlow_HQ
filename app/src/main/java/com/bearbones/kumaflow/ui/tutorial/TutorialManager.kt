@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.*
 import com.bearbones.kumaflow.neobrutalism
 
 enum class TutorialStep {
@@ -95,14 +96,39 @@ fun TutorialOverlay(
     val isInteractiveStep = currentStep == TutorialStep.HOME_ADD_BTN
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(
-                if (!isInteractiveStep) {
-                    Modifier.clickable { tutorialState.next() }
-                } else Modifier
-            )
+        modifier = Modifier.fillMaxSize()
     ) {
+        if (!isInteractiveStep) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) { tutorialState.next() }
+            )
+        } else if (targetBounds != null) {
+            val padding = with(density) { 8.dp.toPx() }
+            val topH = with(density) { (targetBounds.top - padding).coerceAtLeast(0f).toDp() }
+            val botY = with(density) { (targetBounds.bottom + padding).toDp() }
+            val leftW = with(density) { (targetBounds.left - padding).coerceAtLeast(0f).toDp() }
+            val rightX = with(density) { (targetBounds.right + padding).toDp() }
+            val midH = with(density) { ((targetBounds.bottom + padding) - (targetBounds.top - padding)).coerceAtLeast(0f).toDp() }
+
+            val blocker = Modifier.pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                            .changes.forEach { it.consume() }
+                    }
+                }
+            }
+
+            Box(Modifier.fillMaxWidth().height(topH).then(blocker))
+            Box(Modifier.fillMaxWidth().padding(top = botY).fillMaxHeight().then(blocker))
+            Box(Modifier.padding(top = topH).width(leftW).height(midH).then(blocker))
+            Box(Modifier.padding(top = topH, start = rightX).fillMaxWidth().height(midH).then(blocker))
+        }
         Canvas(modifier = Modifier.fillMaxSize()) {
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -164,14 +190,14 @@ fun TutorialOverlay(
                     Spacer(modifier = Modifier.height(12.dp))
                     if (!isInteractiveStep) {
                         Text(
-                            text = if (currentStep == TutorialStep.ADD_TX_SAVE) "Selesai & Tutup" else "Tap untuk lanjut",
+                            text = if (currentStep == TutorialStep.ADD_TX_SAVE) com.bearbones.kumaflow.AppStr.tutFinishBtn else com.bearbones.kumaflow.AppStr.tutTapNext,
                             fontSize = 12.sp,
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
                         )
                     } else {
                         Text(
-                            text = "Silakan klik tombolnya!",
+                            text = com.bearbones.kumaflow.AppStr.tutClickBtn,
                             fontSize = 12.sp,
                             color = com.bearbones.kumaflow.ui.theme.BrutalGreen,
                             fontWeight = FontWeight.Black

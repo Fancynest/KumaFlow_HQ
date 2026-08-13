@@ -98,6 +98,12 @@ fun QrisDirectResultSheet(
                         }
                     }
                 }
+
+                // Add Frame to mimic Gopay style
+                if (qrBitmap != null) {
+                    val amtStr = if (amount > 0) "Rp ${format.format(amount)}" else ""
+                    qrBitmap = ShareSplitBillUtils.addQrisFrame(context, qrBitmap!!, holderName, amtStr)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 isError = true
@@ -153,41 +159,57 @@ fun QrisDirectResultSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // QR Code
+            // QR Code with Gopay-style frame
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassCard(24.dp, AppSurface())
-                    .padding(24.dp),
+                    .clip(RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     if (loading) {
-                        CircularProgressIndicator(color = AppPrimary())
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .glassCard(24.dp, AppSurface())
+                                .padding(48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = AppPrimary())
+                        }
                     } else if (isError || qrBitmap == null) {
-                        Text(if (AppStr.isId) "Gagal memuat QRIS." else "Failed to load QRIS.", color = Color.Red)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .glassCard(24.dp, AppSurface())
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(if (AppStr.isId) "Gagal memuat QRIS." else "Failed to load QRIS.", color = Color.Red)
+                        }
                     } else {
                         Image(
                             bitmap = qrBitmap!!.asImageBitmap(),
                             contentDescription = "QRIS",
-                            modifier = Modifier.size(250.dp).clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Fit
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.FillWidth
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
-                        Surface(
-                            color = AppSurfaceVariant(),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.clickable { onEditNominal() }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Surface(
+                        color = AppSurfaceVariant(),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.clickable { onEditNominal() }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Icon(Icons.Default.Refresh, contentDescription = null, tint = AppText(), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(if (AppStr.isId) "Buat tagihan QRIS pakai nominal" else "Create QRIS billing with amount", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            }
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = AppText(), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (AppStr.isId) "Buat tagihan QRIS pakai nominal" else "Create QRIS billing with amount", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -212,7 +234,7 @@ fun QrisDirectResultSheet(
                                 cacheFile
                             )
                             val amtStr = if (amount > 0) "Total: Rp ${format.format(amount)}" else ""
-                            ShareSplitBillUtils.shareToWhatsApp(context, uri, amtStr, holderName, bankName, bankAccount)
+                            ShareSplitBillUtils.shareBillingDetails(context, uri, amtStr, holderName, bankName, bankAccount)
                         } catch(e: Exception) {
                             e.printStackTrace()
                         }

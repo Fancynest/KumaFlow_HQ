@@ -104,20 +104,29 @@ fun HomeScreen(
     onBulkUpdateCategory: (List<TransactionWithSplits>, String) -> Unit,
     onUpdateProfile: (UserProfile) -> Unit,
     onOpenRoulette: () -> Unit,
+    onOpenSplitBill: () -> Unit = {},
     onReconcile: (String, Long) -> Unit = { _, _ -> },
     onAddTransaction: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val locale = java.util.Locale.forLanguageTag("id-ID")
-    val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; else -> "Rp" }
+    val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
     val haptic = LocalHapticFeedback.current
 
-    var isPrivacyMode by rememberSaveable { mutableStateOf(false) }
+    val sharedPref = remember { context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE) }
+    var isPrivacyMode by remember { mutableStateOf(sharedPref.getBoolean("privacy_mode", false)) }
+    
+    fun formatHide(value: Long): String {
+        val formatted = NumberFormat.getInstance(locale).format(value)
+        return if (isPrivacyMode) formatted.replace(Regex("\\d"), "*") else formatted
+    }
+    
     val blurRadius by androidx.compose.animation.core.animateDpAsState(targetValue = if (isPrivacyMode) 12.dp else 0.dp, label = "blur_anim")
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     
     var showAllocationSheet by remember { mutableStateOf(false) }
+    var showNfcReader by remember { mutableStateOf(false) }
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress) {
@@ -146,9 +155,7 @@ fun HomeScreen(
     val prevYear = cal.get(java.util.Calendar.YEAR)
     val wrappedKey = "$prevMonth-$prevYear"
 
-    // Hide for new users who have no transactions
-    var showWrappedBanner by remember { mutableStateOf(sharedPrefs.getString("last_viewed_wrapped", "") != wrappedKey && transactionsWithSplits.isNotEmpty()) }
-
+    // Wrapped banner removed
     val selectedTxsList = selectedTxs.mapNotNull { id -> transactionsWithSplits.find { it.transaction.id == id } }
 
     val isSelectionMode = selectedTxs.isNotEmpty()
@@ -156,6 +163,24 @@ fun HomeScreen(
     var expandedDates by rememberSaveable { mutableStateOf(setOf<String>()) }
     var showReconcileDialog by remember { mutableStateOf(false) }
     var reconcileWalletName by remember { mutableStateOf("") }
+    
+    var sharedWalletNames by remember { mutableStateOf(emptySet<String>()) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val db = com.bearbones.kumaflow.KumaDatabase.getDatabase(context)
+                val pairings = db.transactionDao().getActivePairings()
+                val sharedIds = pairings.map { it.sharedWalletStableId }.toSet()
+                val names = db.transactionDao().getAllWalletMetadata()
+                    .filter { sharedIds.contains(it.walletStableId) }
+                    .map { it.currentName }
+                    .toSet()
+                sharedWalletNames = names
+            } catch(e: Exception) {
+                // Ignore
+            }
+        }
+    }
 
     var showQrisDirectSheet by remember { mutableStateOf(false) }
     var showQrisDirectResult by remember { mutableStateOf(false) }
@@ -169,36 +194,7 @@ fun HomeScreen(
         ) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    if (showWrappedBanner) {
-                        val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-                        val bannerBackground = if (isBrutal) androidx.compose.ui.graphics.SolidColor(com.bearbones.kumaflow.AppPrimary()) else androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFF732982)))
-                        val bannerTextColor = if (isBrutal) AppBg() else Color.White
-                        val cardShape = if (isBrutal) RoundedCornerShape(0.dp) else RoundedCornerShape(24.dp)
-                        
-                        val modifier = if (isBrutal) {
-                            Modifier.fillMaxWidth().padding(bottom = 20.dp).neobrutalism(backgroundColor = AppPrimary(), cornerRadius = 0.dp).clickable { onOpenWrapped(prevMonth, prevYear) }
-                        } else {
-                            Modifier.fillMaxWidth().padding(bottom = 20.dp).clickable { onOpenWrapped(prevMonth, prevYear) }
-                        }
-
-                        Card(
-                            modifier = modifier,
-                            shape = cardShape, elevation = if (isBrutal) CardDefaults.cardElevation(0.dp) else CardDefaults.cardElevation(8.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxWidth().background(bannerBackground).padding(20.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("KumaFlow Wrapped ✨", color = bannerTextColor, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        val monthName = cal.getDisplayName(java.util.Calendar.MONTH, java.util.Calendar.LONG, locale) ?: "Bulan Lalu"
-                                        Text(if (AppStr.isId) "Rapor keuanganmu di bulan $monthName udah siap! Yuk intip pengeluaranmu." else "Your financial report for $monthName is ready! Let's take a look at your expenses.", color = bannerTextColor.copy(alpha = 0.9f), fontSize = 12.sp, lineHeight = 16.sp)
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Icon(Icons.Default.ArrowForwardIos, contentDescription = "Buka Wrapped", tint = bannerTextColor, modifier = Modifier.size(20.dp))
-                                }
-                            }
-                        }
-                    }
+                        // Wrapped banner removed
 
                     val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#brutal", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim()
                     val greeting = rememberSaveable {
@@ -242,33 +238,35 @@ fun HomeScreen(
                     ) {
                         Text("$greeting, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), modifier = Modifier.weight(1f))
                         
-                        // Lottie Fire Streak
-                        val isStreakActiveToday = remember(profile.lastActiveDate) {
-                            profile.lastActiveDate == LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        }
-                        
-                        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.fire))
-                        val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever, isPlaying = isStreakActiveToday, speed = 0.5f)
-                        val dynamicProperties = rememberLottieDynamicProperties(
-                            rememberLottieDynamicProperty(
-                                property = LottieProperty.COLOR_FILTER,
-                                value = if (isStreakActiveToday) null else ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }),
-                                keyPath = arrayOf("**")
+                        // Lottie Fire Streak hibernated
+                        if (false) {
+                            val isStreakActiveToday = remember(profile.lastActiveDate) {
+                                profile.lastActiveDate == LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            }
+                            
+                            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.fire))
+                            val progress by animateLottieCompositionAsState(composition = composition, iterations = LottieConstants.IterateForever, isPlaying = isStreakActiveToday, speed = 0.5f)
+                            val dynamicProperties = rememberLottieDynamicProperties(
+                                rememberLottieDynamicProperty(
+                                    property = LottieProperty.COLOR_FILTER,
+                                    value = if (isStreakActiveToday) null else ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }),
+                                    keyPath = arrayOf("**")
+                                )
                             )
-                        )
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(AppSurfaceVariant())
-                                .clickable { showStreakSheet = true }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("${profile.currentStreak}", fontWeight = FontWeight.Bold, color = AppText())
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Box(modifier = Modifier.size(24.dp)) {
-                                LottieAnimation(composition = composition, progress = { if (isStreakActiveToday) progress else 0.5f }, modifier = Modifier.fillMaxSize(), dynamicProperties = dynamicProperties)
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(AppSurfaceVariant())
+                                    .clickable { showStreakSheet = true }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text("${profile.currentStreak}", fontWeight = FontWeight.Bold, color = AppText())
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Box(modifier = Modifier.size(24.dp)) {
+                                    LottieAnimation(composition = composition, progress = { if (isStreakActiveToday) progress else 0.5f }, modifier = Modifier.fillMaxSize(), dynamicProperties = dynamicProperties)
+                                }
                             }
                         }
                     }
@@ -329,14 +327,16 @@ fun HomeScreen(
                                     modifier = Modifier.clip(CircleShape).clickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         isPrivacyMode = !isPrivacyMode
+                                        sharedPref.edit().putBoolean("privacy_mode", isPrivacyMode).apply()
+                                        updateKumaWidget(context)
                                     }.padding(4.dp).size(20.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             val balPref = if (balance < 0) "- " else ""
                             AutoSizeText(
-                                text = "$balPref$curSym ${NumberFormat.getInstance(locale).format(animatedBalance.toLong())}", 
-                                modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), 
+                                text = "$balPref$curSym ${formatHide(animatedBalance.toLong())}", 
+                                modifier = Modifier, 
                                 fontSize = 42.sp, 
                                 fontWeight = FontWeight.Black, 
                                 color = AppText(), 
@@ -357,6 +357,7 @@ fun HomeScreen(
                         // QRIS Button
                         Box(
                             modifier = Modifier
+                                .weight(1f)
                                 .height(48.dp)
                                 .then(
                                     if (isBrutal) 
@@ -373,7 +374,7 @@ fun HomeScreen(
                                         android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                                .padding(horizontal = 16.dp),
+                                .padding(horizontal = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -383,22 +384,28 @@ fun HomeScreen(
                             }
                         }
                         
-                        Spacer(modifier = Modifier.width(12.dp))
-                        
+                        Spacer(modifier = Modifier.width(16.dp))
+
                         // Kuma Roulette Entry Point
                         Box(
                             modifier = Modifier
-                                .size(48.dp)
+                                .weight(1f)
+                                .height(48.dp)
                                 .then(
                                     if (isBrutal) 
                                         Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
                                     else 
-                                        Modifier.clip(CircleShape).background(AppPrimary().copy(alpha = 0.2f))
+                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
                                 )
-                                .clickable { onOpenRoulette() },
+                                .clickable { onOpenRoulette() }
+                                .padding(horizontal = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(24.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            }
                         }
                     }
 
@@ -423,14 +430,14 @@ fun HomeScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.ArrowUpward, null, tint = if(isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedInc.toLong())}", modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedInc.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
                                     }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text("Total Expenses", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        AutoSizeText(text = "$curSym ${NumberFormat.getInstance(locale).format(animatedExp.toLong())}", modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedExp.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Icon(Icons.Default.ArrowDownward, null, tint = if(isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
                                     }
@@ -464,7 +471,7 @@ fun HomeScreen(
                             LazyRow(
                                 state = reorderState.listState,
                                 modifier = Modifier.fillMaxWidth().reorderable(reorderState),
-                                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 12.dp),
+                                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 20.dp),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(walletOrder, { it }) { walletName ->
@@ -489,26 +496,42 @@ fun HomeScreen(
                                                         scaleY = pScale
                                                         alpha = 1f - (ratio * 0.4f)
                                                     }
+                                                    clip = false
                                                 }
                                                 .scale(cardScale)
                                                 .detectReorderAfterLongPress(reorderState)
+                                                .padding(end = 6.dp, bottom = 6.dp)
+                                                .glassCard(20.dp, com.bearbones.kumaflow.AppSurface())
                                                 .clickable { 
                                                     reconcileWalletName = walletName
                                                     showReconcileDialog = true
                                                 }
-                                                .padding(end = 6.dp, bottom = 6.dp)
-                                                .glassCard(20.dp, com.bearbones.kumaflow.AppSurface())
                                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
                                             val logoBitmap = com.bearbones.kumaflow.rememberWalletLogo(context = context, walletName = walletName)
                                             if (logoBitmap != null) {
-                                                androidx.compose.foundation.Image(
-                                                    bitmap = logoBitmap,
-                                                    contentDescription = walletName,
-                                                    modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.White, CircleShape),
-                                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                                                )
+                                                Box {
+                                                    androidx.compose.foundation.Image(
+                                                        bitmap = logoBitmap,
+                                                        contentDescription = walletName,
+                                                        modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.White, CircleShape),
+                                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                                    )
+                                                    if (sharedWalletNames.contains(walletName)) {
+                                                        Icon(
+                                                            Icons.Default.SyncAlt,
+                                                            contentDescription = "Shared",
+                                                            modifier = Modifier
+                                                                .size(16.dp)
+                                                                .align(Alignment.BottomEnd)
+                                                                .background(com.bearbones.kumaflow.AppPrimary(), CircleShape)
+                                                                .border(1.dp, Color.White, CircleShape)
+                                                                .padding(2.dp),
+                                                            tint = Color.White
+                                                        )
+                                                    }
+                                                }
                                             } else {
                                                 Box(
                                                     modifier = Modifier.size(42.dp).background(if (isPrideThemeActive) Color.White.copy(alpha=0.3f) else AppPrimary().copy(alpha = 0.15f), CircleShape),
@@ -520,7 +543,7 @@ fun HomeScreen(
                                             Spacer(modifier = Modifier.height(10.dp))
                                             Text(walletName, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.9f) else AppText().copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                             Spacer(modifier = Modifier.height(4.dp))
-                                            Text("$wBalPref$curSym ${NumberFormat.getInstance(locale).format(abs(amt))}", color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.alpha(if (isPrivacyMode) 0f else 1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                            Text("$wBalPref$curSym ${formatHide(abs(amt))}", color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -532,13 +555,7 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // --- CONTRIBUTION HEATMAP ---
-                    com.bearbones.kumaflow.ui.components.ContributionHeatmap(
-                        allTransactions = transactionsWithSplits,
-                        modifier = Modifier.fillMaxWidth()
-                    )
 
-                    Spacer(modifier = Modifier.height(32.dp))
 
                     com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
                         value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
@@ -864,6 +881,18 @@ fun HomeScreen(
                 }
             )
         }
+    }
+    
+    LaunchedEffect(Unit) {
+        com.bearbones.kumaflow.nfc.NfcTriggerManager.showNfcTrigger.collect {
+            showNfcReader = true
+        }
+    }
+
+    if (showNfcReader) {
+        com.bearbones.kumaflow.ui.screens.NfcReaderSheet(
+            onDismissRequest = { showNfcReader = false }
+        )
     }
 }
 
