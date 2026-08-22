@@ -570,6 +570,30 @@ class MainActivity : FragmentActivity() {
             }
 
             var isAuthenticated by rememberSaveable { mutableStateOf(false) }
+            
+            // Auto-lock after 3 minutes in background
+            DisposableEffect(lifecycleOwner) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                        val prefs = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().putLong("last_background_time", System.currentTimeMillis()).apply()
+                    } else if (event == androidx.lifecycle.Lifecycle.Event.ON_START) {
+                        val prefs = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+                        val lastTime = prefs.getLong("last_background_time", 0L)
+                        if (lastTime > 0L) {
+                            val diff = System.currentTimeMillis() - lastTime
+                            if (diff > 3 * 60 * 1000) { // 3 minutes
+                                isAuthenticated = false
+                            }
+                            prefs.edit().putLong("last_background_time", 0L).apply()
+                        }
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
 
             val systemDark = isSystemInDarkTheme()
             val isAmoled = userProfile?.isAmoledMode == true
