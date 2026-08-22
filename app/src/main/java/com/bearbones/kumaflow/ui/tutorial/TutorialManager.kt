@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow.ui.tutorial
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -102,7 +103,7 @@ fun TutorialOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(
+                    .kumaClickable(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null
                     ) { tutorialState.next() }

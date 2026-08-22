@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow.ui.screens
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -257,7 +258,7 @@ fun HistoryScreen(
                             if (com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current) Modifier.neobrutalism(isBrutal = true, backgroundColor = AppSurface(), cornerRadius = 16.dp, borderWidth = 2.dp, offset = 2.dp)
                             else Modifier.glassCard(16.dp, AppSurface())
                         )
-                        .clickable { com.bearbones.kumaflow.generatePDF(context, filteredTx.map { it.transaction }, profile, 0, 0) }
+                        .kumaClickable { com.bearbones.kumaflow.generatePDF(context, filteredTx.map { it.transaction }, profile, 0, 0) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
@@ -386,7 +387,7 @@ fun HistoryScreen(
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.kumaClickable {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val txsToDelete = allTransactions.filter { selectedTxs.contains(it.transaction.id) }
                             onBulkDelete(txsToDelete)
@@ -421,7 +422,7 @@ fun HistoryScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { 
+                                .kumaClickable { 
                                     if (opt == "Custom date") {
                                         showM3DatePicker = true
                                         showDateSheet = false
@@ -479,7 +480,7 @@ fun HistoryScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
                                     .glassCard(16.dp, if (isSelected) AppPrimary().copy(alpha = 0.2f) else AppSurface())
-                                    .clickable {
+                                    .kumaClickable {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         val newSet = selectedCategories.toMutableSet()
                                         if (isSelected) newSet.remove(cat) else newSet.add(cat)
@@ -545,7 +546,7 @@ fun HistoryScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
+                                .kumaClickable {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     val newSet = selectedWallets.toMutableSet()
                                     if (isSelected) newSet.remove(w) else newSet.add(w)
@@ -673,7 +674,7 @@ fun FilterChipCustom(text: String, isActive: Boolean, modifier: Modifier = Modif
                 else Modifier.glassCard(16.dp, if (isActive) AppPrimary().copy(alpha = 0.2f) else AppSurface())
             )
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .kumaClickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center

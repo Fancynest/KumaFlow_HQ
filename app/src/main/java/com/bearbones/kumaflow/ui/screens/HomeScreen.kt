@@ -134,6 +134,13 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        com.bearbones.kumaflow.utils.BirthdayUtils.showBirthdayNotification(context, AppStr.isId)
+    }
+
+    var showBirthdayMessage by remember { mutableStateOf(false) }
+    val displayName = remember(profile.userName) { profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#brutal", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim() }
+
     val todayFormatted = remember(profile.dateFormat, locale) {
         java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, locale))
     }
@@ -196,7 +203,6 @@ fun HomeScreen(
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                         // Wrapped banner removed
 
-                    val displayName = profile.userName.replace("#pride", "", ignoreCase = true).replace("#bear", "", ignoreCase = true).replace("#brutal", "", ignoreCase = true).replace("#OR", "", ignoreCase = true).trim()
                     val greeting = rememberSaveable {
                         val calNow = java.util.Calendar.getInstance()
                         val hour = calNow.get(java.util.Calendar.HOUR_OF_DAY)
@@ -237,6 +243,18 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("$greeting, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), modifier = Modifier.weight(1f))
+                        
+                        if (com.bearbones.kumaflow.utils.BirthdayUtils.isBirthdayToday(context)) {
+                            val comp by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.birthday))
+                            com.airbnb.lottie.compose.LottieAnimation(
+                                composition = comp,
+                                iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .clickable { showBirthdayMessage = true }
+                            )
+                        }
                         
                         // Lottie Fire Streak hibernated
                         if (false) {
@@ -843,6 +861,72 @@ fun HomeScreen(
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White
                         )
+                    }
+                }
+            }
+        }
+        
+        if (showBirthdayMessage) {
+            androidx.compose.ui.window.Dialog(
+                onDismissRequest = { showBirthdayMessage = false },
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)
+            ) {
+                Box(modifier = Modifier.fillMaxSize().background(AppBg()).padding(top = 24.dp)) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Header
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            com.bearbones.kumaflow.ui.components.KumaIconButton(onClick = { showBirthdayMessage = false }) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AppText())
+                            }
+                            Text(
+                                text = if (AppStr.isId) "Notifikasi" else "Notification",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppText(),
+                                modifier = Modifier.weight(1f).padding(end = 48.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        
+                        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            val bdayContent = remember(displayName, AppStr.isId) { com.bearbones.kumaflow.utils.BirthdayUtils.getBirthdayContent(context, AppStr.isId, displayName) }
+                            
+                            Text(
+                                text = bdayContent.title,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = AppText(),
+                                lineHeight = 40.sp
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            val sdf = java.text.SimpleDateFormat("dd MMM yyyy | HH:mm:ss", java.util.Locale(if(AppStr.isId) "id" else "en"))
+                            val dateStr = sdf.format(java.util.Date()) + if(AppStr.isId) " WIB" else ""
+                            Text(
+                                text = dateStr,
+                                fontSize = 12.sp,
+                                color = AppText().copy(alpha = 0.6f)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = AppText().copy(alpha = 0.2f))
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Text(
+                                text = bdayContent.message,
+                                fontSize = 16.sp,
+                                color = AppText(),
+                                lineHeight = 24.sp
+                            )
+                            
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }

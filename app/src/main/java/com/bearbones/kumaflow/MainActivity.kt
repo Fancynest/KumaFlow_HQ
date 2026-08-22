@@ -1,6 +1,7 @@
 @file:Suppress("SpellCheckingInspection", "UNUSED_PARAMETER", "unused", "CanBeVal", "DEPRECATION", "ScheduleExactAlarm")
 
 package com.bearbones.kumaflow
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -69,6 +70,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
@@ -226,10 +228,27 @@ fun Modifier.glassmorphic(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(radius)
             )
     } else {
+        val isDark = LocalIsDark.current
+        val frostedBg = if (isDark) {
+            AppSurfaceVariant().copy(alpha = 0.55f)
+        } else {
+            AppSurfaceVariant().copy(alpha = 0.65f)
+        }
+        val nonGlassBorder = if (isDark) {
+            Color.White.copy(alpha = 0.12f)
+        } else {
+            Color.Black.copy(alpha = 0.08f)
+        }
         this
+            .shadow(
+                elevation = if (isDark) 4.dp else 6.dp,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(radius),
+                ambientColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.12f),
+                spotColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.12f)
+            )
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(radius))
-            .background(AppSurfaceVariant())
-            .border(1.dp, if (LocalIsDark.current) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f), androidx.compose.foundation.shape.RoundedCornerShape(radius))
+            .background(frostedBg)
+            .border(0.5.dp, nonGlassBorder, androidx.compose.foundation.shape.RoundedCornerShape(radius))
     }
 }
 
@@ -287,7 +306,7 @@ fun Modifier.neobrutalism(
 
 @Composable
 fun Modifier.glassCard(
-    radius: androidx.compose.ui.unit.Dp = 16.dp,
+    radius: androidx.compose.ui.unit.Dp = 12.dp,
     fallbackColor: Color,
     useHaze: Boolean = false,
     forceColor: Boolean = false
@@ -305,15 +324,15 @@ fun Modifier.glassCard(
     val glassColor = if (forceColor) {
         fallbackColor
     } else if (LocalIsDark.current) {
-        Color(0xFF2C2C2E).copy(alpha = 0.5f)
+        Color(0xFF2C2C2E).copy(alpha = 0.60f)
     } else {
-        Color.White.copy(alpha = 0.6f)
+        Color.White.copy(alpha = 0.60f)
     }
 
     val shineGradient = remember {
         Brush.linearGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.15f),
+                Color.White.copy(alpha = 0.1f),
                 Color.Transparent,
                 Color.Transparent,
                 Color.White.copy(alpha = 0.05f)
@@ -323,14 +342,21 @@ fun Modifier.glassCard(
         )
     }
 
-    val borderGradient = remember {
-        Brush.linearGradient(
-            colors = listOf(Color.White.copy(alpha = 0.3f), Color.White.copy(alpha = 0.05f))
-        )
+    val isDark = LocalIsDark.current
+    val borderGradient = remember(isDark) {
+        if (isDark) {
+            Brush.linearGradient(
+                colors = listOf(Color(0x50808080), Color(0x50404040), Color(0x50808080))
+            )
+        } else {
+            Brush.linearGradient(
+                colors = listOf(Color.White.copy(alpha = 0.4f), Color.White.copy(alpha = 0.1f), Color.White.copy(alpha = 0.4f))
+            )
+        }
     }
 
     return if (LocalIsLiquidGlass.current) {
-        val tintAlpha = if (LocalIsPremiumGlassBlur.current) 0.2f else 0.1f
+        val tintAlpha = if (LocalIsPremiumGlassBlur.current) 0.45f else 0.35f
         val adjustedColor = glassColor.copy(alpha = (glassColor.alpha + tintAlpha).coerceAtMost(1f))
         
         val hazeModifier = if (useHaze) {
@@ -338,28 +364,57 @@ fun Modifier.glassCard(
                 Modifier.hazeChild(
                     state = LocalHazeState.current,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(radius),
-                    style = HazeStyle(blurRadius = 24.dp, backgroundColor = Color.Transparent, tint = dev.chrisbanes.haze.HazeTint(adjustedColor), noiseFactor = 0.15f)
+                    style = HazeStyle(blurRadius = 30.dp, backgroundColor = Color.Transparent, tint = dev.chrisbanes.haze.HazeTint(adjustedColor), noiseFactor = 0.15f)
                 )
             } else {
                 Modifier.hazeChild(
                     state = LocalHazeState.current,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(radius),
-                    style = HazeStyle(blurRadius = 8.dp, backgroundColor = Color.Transparent, tint = dev.chrisbanes.haze.HazeTint(adjustedColor), noiseFactor = 0.1f)
+                    style = HazeStyle(blurRadius = 20.dp, backgroundColor = Color.Transparent, tint = dev.chrisbanes.haze.HazeTint(adjustedColor), noiseFactor = 0.1f)
                 )
             }
         } else {
-            Modifier.background(adjustedColor)
+            // Frosted glass: background text is fully obscured, gradient subtly peeks through
+            val glassFallback = if (isDark) {
+                Color(0xFF2C2C2E).copy(alpha = 0.82f)
+            } else {
+                Color.White.copy(alpha = 0.88f)
+            }
+            Modifier.background(glassFallback)
         }
 
         this.clip(androidx.compose.foundation.shape.RoundedCornerShape(radius))
             .then(hazeModifier)
             .background(shineGradient)
-            .border(1.dp, borderGradient, androidx.compose.foundation.shape.RoundedCornerShape(radius))
+            .border(0.5.dp, borderGradient, androidx.compose.foundation.shape.RoundedCornerShape(radius))
     } else {
+        val frostedBg = if (isDark) {
+            fallbackColor.copy(alpha = 0.55f)
+        } else {
+            fallbackColor.copy(alpha = 0.65f)
+        }
+        val nonGlassBorder = remember(isDark) {
+            if (isDark) {
+                Brush.linearGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.04f), Color.White.copy(alpha = 0.12f))
+                )
+            } else {
+                Brush.linearGradient(
+                    colors = listOf(Color.Black.copy(alpha = 0.08f), Color.Black.copy(alpha = 0.03f), Color.Black.copy(alpha = 0.08f))
+                )
+            }
+        }
         this
+            .shadow(
+                elevation = if (isDark) 4.dp else 6.dp,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(radius),
+                ambientColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.12f),
+                spotColor = if (isDark) Color.Black.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.12f)
+            )
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(radius))
-            .background(fallbackColor)
-            .border(1.dp, if (LocalIsDark.current) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f), androidx.compose.foundation.shape.RoundedCornerShape(radius))
+            .background(frostedBg)
+            .background(shineGradient)
+            .border(0.5.dp, nonGlassBorder, androidx.compose.foundation.shape.RoundedCornerShape(radius))
     }
 }
 
@@ -414,7 +469,7 @@ fun MainScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val pagerState = rememberPagerState(pageCount = { 5 })
     val transactionListWithSplits by dao.getAllTransactionsWithSplits().collectAsState(initial = emptyList())
     val userProfile = userProfileState ?: UserProfile(userName = "User")
     var selectedItemIndex by remember { mutableIntStateOf(0) }
@@ -476,7 +531,12 @@ fun MainScreen(
         }
     }
 
-    val totalBalance by remember(walletBalances, forceUpdateTrigger) { derivedStateOf { walletBalances.values.sum() } }
+    val totalBalance by remember(walletBalances, userProfile.savingsWallets, forceUpdateTrigger) { 
+        derivedStateOf { 
+            val saveWallets = userProfile.savingsWallets.split(",").filter { it.isNotBlank() }.toSet()
+            walletBalances.filterKeys { it !in saveWallets }.values.sum() 
+        } 
+    }
     val totalIncome by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
     val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
 
@@ -622,7 +682,7 @@ fun MainScreen(
                             color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
                             shape = fabShape
                         )
-                        .clickable(
+                        .kumaClickable(
                             interactionSource = fabInteractionSource,
                             indication = null,
                             onClick = {
@@ -915,13 +975,21 @@ fun MainScreen(
                         },
                         clearSelection = { selectedTxs = emptySet() }
                     )
-                    2 -> ReportScreen(
+                    2 -> com.bearbones.kumaflow.ui.screens.SavingsScreen(
+                        profile = userProfile,
+                        dao = dao,
+                        paddingValues = paddingValues,
+                        walletBalances = walletBalances,
+                        onAddTransaction = { showBottomSheet = true; transactionToEdit = null },
+                        forceUpdateTrigger = forceUpdateTrigger
+                    )
+                    3 -> ReportScreen(
                         profile = userProfile, monthlyTransactions = monthlyTransactionsWithSplits.map { it.transaction }, allTransactions = transactionListWithSplits.map { it.transaction }, income = totalIncome, expenses = totalExpenses, balance = totalBalance, selectedMonth = selectedMonth, selectedYear = selectedYear,
                         paddingValues = paddingValues,
                         onMonthChange = { m, y -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); selectedMonth = m; selectedYear = y },
                         onOpenWrapped = onOpenWrapped
                     )
-                    3 -> SettingsScreen(
+                    4 -> SettingsScreen(
                         currentProfile = userProfile, monthlyTransactionsWithSplits = monthlyTransactionsWithSplits, allTransactionsWithSplits = transactionListWithSplits, dao = dao, selectedMonth = selectedMonth, selectedYear = selectedYear,
                         paddingValues = paddingValues,
                         onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) },
@@ -945,7 +1013,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f))
-                    .clickable(
+                    .kumaClickable(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null
                     ) { showBottomSheet = false },
@@ -971,7 +1039,7 @@ fun MainScreen(
                             exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + androidx.compose.animation.scaleOut(targetScale = 0.8f)
                         )
                         .offset { androidx.compose.ui.unit.IntOffset(0, animatedOffsetY.toInt()) }
-                        .clickable(
+                        .kumaClickable(
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                             indication = null
                         ) { /* Prevent click through */ }
@@ -1162,7 +1230,7 @@ fun TransactionBottomSheet(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(16.dp))
                     .background(if (txMode == 1) AppGreen() else Color.Transparent)
-                    .clickable { txMode = 1; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
+                    .kumaClickable { txMode = 1; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(AppStr.inc, color = if (txMode == 1) Color.White else AppText(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -1173,7 +1241,7 @@ fun TransactionBottomSheet(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(16.dp))
                     .background(if (txMode == 0) AppRed() else Color.Transparent)
-                    .clickable { txMode = 0; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
+                    .kumaClickable { txMode = 0; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(AppStr.exp, color = if (txMode == 0) Color.White else AppText(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -1185,7 +1253,7 @@ fun TransactionBottomSheet(
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (txMode == 2) Color(0xFF1976D2) else Color.Transparent)
-                        .clickable { txMode = 2; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
+                        .kumaClickable { txMode = 2; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(AppStr.mutasi, color = if (txMode == 2) Color.White else AppText(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -1215,7 +1283,7 @@ fun TransactionBottomSheet(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable {
+                    .kumaClickable {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         showM3DatePicker = true
                     }
@@ -1707,7 +1775,7 @@ fun TransactionBottomSheet(
                                     .padding(4.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (selectedIconKey == key) AppPrimary() else Color.Transparent)
-                                    .clickable {
+                                    .kumaClickable {
                                         selectedIconKey = key
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     }
@@ -2205,7 +2273,7 @@ fun SettingsGroupCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { onClick(label) }
+                        .kumaClickable { onClick(label) }
                         .padding(vertical = 14.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2256,9 +2324,11 @@ fun CustomBottomNav(
     val items = listOf(
         Pair(Icons.Rounded.Home, AppStr.home),
         Pair(Icons.Rounded.History, AppStr.hist),
+        Pair(Icons.Rounded.AccountBalanceWallet, if (AppStr.isId) "Tabungan" else "Savings"),
         Pair(Icons.Rounded.Equalizer, AppStr.rep),
         Pair(Icons.Rounded.Settings, AppStr.set)
     )
+    val itemCount = items.size
 
     BoxWithConstraints(
         modifier = Modifier
@@ -2271,8 +2341,8 @@ fun CustomBottomNav(
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    val segmentWidth = size.width / 4f
-                    val targetIndex = (change.position.x / segmentWidth).toInt().coerceIn(0, 3)
+                    val segmentWidth = size.width / itemCount.toFloat()
+                    val targetIndex = (change.position.x / segmentWidth).toInt().coerceIn(0, itemCount - 1)
                     if (targetIndex != pagerState.currentPage) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(targetIndex)
@@ -2281,8 +2351,8 @@ fun CustomBottomNav(
             }
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { offset ->
-                    val segmentWidth = size.width / 4f
-                    val targetIndex = (offset.x / segmentWidth).toInt().coerceIn(0, 3)
+                    val segmentWidth = size.width / itemCount.toFloat()
+                    val targetIndex = (offset.x / segmentWidth).toInt().coerceIn(0, itemCount - 1)
                     if (targetIndex != pagerState.currentPage) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(targetIndex)
@@ -2290,8 +2360,8 @@ fun CustomBottomNav(
                 })
             }
     ) {
-        val segmentWidth = maxWidth / 4
-        val exactPosition = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 3f)
+        val segmentWidth = maxWidth / itemCount
+        val exactPosition = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, (itemCount - 1).toFloat())
         val indicatorOffset = segmentWidth * exactPosition
 
         // Sliding Pill Frame

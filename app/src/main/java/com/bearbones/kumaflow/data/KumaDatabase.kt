@@ -103,7 +103,9 @@ data class UserProfile(
     val qrisHolderName: String = "",
     val bankName: String = "",
     val bankAccount: String = "",
-    val hasSeenTutorial: Boolean = false
+    val hasSeenTutorial: Boolean = false,
+    val savingsWallets: String = "",
+    val savingsGoals: String = "{}"
 )
 
 @Dao
@@ -495,6 +497,13 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN savingsWallets TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN savingsGoals TEXT NOT NULL DEFAULT '{}'")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -505,7 +514,7 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
         com.bearbones.kumaflow.duo.model.DuoPairing::class,
         com.bearbones.kumaflow.duo.model.DuoConflictLog::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -521,7 +530,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
                     .build()
                 INSTANCE = instance
                 instance

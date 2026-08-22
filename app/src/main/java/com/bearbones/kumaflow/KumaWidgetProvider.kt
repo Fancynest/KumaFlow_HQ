@@ -114,8 +114,9 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     } catch (_: Exception) {}
                 }
 
-                val totalBal = walletBalances.values.sum()
-                val top3Wallets = walletBalances.entries.toList().take(3)
+                val savingsWallets = profile.savingsWallets.split(",").filter { it.isNotBlank() }.toSet()
+                val totalBal = walletBalances.filterKeys { it !in savingsWallets }.values.sum()
+                val top3Wallets = walletBalances.filterKeys { it !in savingsWallets }.entries.toList().take(3)
 
                 fun formatWidget(value: Long, useAbs: Boolean = false): String {
                     val v = if (useAbs) abs(value) else value

@@ -39,7 +39,7 @@ import androidx.compose.ui.draw.clip
  */
 fun Modifier.bouncyScale(
     interactionSource: InteractionSource,
-    scaleDown: Float = 0.85f,
+    scaleDown: Float = 0.8f,
     disableHaptics: Boolean = false
 ): Modifier = composed {
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -68,6 +68,30 @@ fun Modifier.bouncyScale(
         scaleX = scale
         scaleY = scale
     }
+}
+
+/**
+ * A combined clickable modifier that automatically applies the bouncy scale effect.
+ */
+fun Modifier.kumaClickable(
+    interactionSource: androidx.compose.foundation.interaction.MutableInteractionSource? = null,
+    indication: androidx.compose.foundation.Indication? = null,
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: androidx.compose.ui.semantics.Role? = null,
+    onClick: () -> Unit
+): Modifier = composed {
+    val actualInteractionSource = interactionSource ?: androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val actualIndication = indication ?: androidx.compose.foundation.LocalIndication.current
+    this.then(Modifier.bouncyScale(actualInteractionSource))
+        .clickable(
+            interactionSource = actualInteractionSource,
+            indication = actualIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick
+        )
 }
 
 /**

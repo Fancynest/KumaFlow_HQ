@@ -164,7 +164,20 @@ fun SettingsScreen(
     var pinInput by remember { mutableStateOf("") }
     var targetInput by remember { mutableStateOf(currentProfile.monthlyTarget.toString()) }
     var isTurningOn by remember { mutableStateOf(true) }
-    var newName by remember { mutableStateOf(currentProfile.userName) }
+    var newName by remember(currentProfile.userName) { 
+        mutableStateOf(
+            currentProfile.userName
+                .replace("#pride", "", ignoreCase = true)
+                .replace("#bear", "", ignoreCase = true)
+                .replace("#brutal", "", ignoreCase = true)
+                .replace("#OR", "", ignoreCase = true)
+                .trim()
+        )
+    }
+    
+    val sharedPref = remember { context.getSharedPreferences("kumaflow_prefs", android.content.Context.MODE_PRIVATE) }
+    var newDob by remember { mutableStateOf(sharedPref.getString("user_dob", "") ?: "") }
+    var newEasterEgg by remember { mutableStateOf(sharedPref.getString("easter_egg_code", "") ?: "") }
     var isRestoring by remember { mutableStateOf(false) }
 
     LaunchedEffect(mainActivity?.pendingRestoreJson) {
@@ -1122,20 +1135,82 @@ fun SettingsScreen(
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.editProf, fontWeight = FontWeight.Bold) },
                 text = {
-                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
-                        value = newName,
-                        onValueChange = { newName = it },
-                        label = { Text(AppStr.usr) },
-                        modifier = Modifier.fillMaxWidth().glassCard(12.dp, AppSurfaceVariant()),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = getGlassTextFieldColors()
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text(AppStr.usr) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = getGlassTextFieldColors()
+                        )
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                            value = newDob.filter { it.isDigit() },
+                            onValueChange = { 
+                                newDob = it.filter { char -> char.isDigit() }.take(8)
+                            },
+                            label = { Text(AppStr.dobLbl) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            visualTransformation = { text ->
+                                val trimmed = if (text.text.length >= 8) text.text.substring(0..7) else text.text
+                                var out = ""
+                                for (i in trimmed.indices) {
+                                    out += trimmed[i]
+                                    if (i == 1 || i == 3) out += "-"
+                                }
+                                val offsetMapping = object : androidx.compose.ui.text.input.OffsetMapping {
+                                    override fun originalToTransformed(offset: Int): Int {
+                                        if (offset <= 1) return offset
+                                        if (offset <= 3) return offset + 1
+                                        if (offset <= 8) return offset + 2
+                                        return 10
+                                    }
+                                    override fun transformedToOriginal(offset: Int): Int {
+                                        if (offset <= 2) return offset
+                                        if (offset <= 5) return offset - 1
+                                        if (offset <= 10) return offset - 2
+                                        return 8
+                                    }
+                                }
+                                androidx.compose.ui.text.input.TransformedText(androidx.compose.ui.text.AnnotatedString(out), offsetMapping)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = getGlassTextFieldColors()
+                        )
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                            value = newEasterEgg.removePrefix("#"),
+                            onValueChange = { 
+                                val raw = it.replace("#", "")
+                                newEasterEgg = if (raw.isNotEmpty()) "#$raw" else ""
+                            },
+                            label = { Text(AppStr.easterEggLbl) },
+                            prefix = { Text("#") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = getGlassTextFieldColors()
+                        )
+                    }
                 },
                 confirmButton = {
                     com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
+                            val formattedDob = buildString {
+                                val d = newDob.filter { it.isDigit() }
+                                for (i in d.indices) {
+                                    append(d[i])
+                                    if (i == 1 || i == 3) append("-")
+                                }
+                            }
+                            sharedPref.edit()
+                                .putString("user_dob", formattedDob)
+                                .putString("easter_egg_code", newEasterEgg)
+                                .apply()
+                                
+                            val finalName = "$newName $newEasterEgg".trim()
+                            
                             scope.launch {
-                                dao.saveProfile(currentProfile.copy(userName = newName))
+                                dao.saveProfile(currentProfile.copy(userName = finalName))
                                 onForceUpdate()
                                 showEditProfileDialog = false
                             }

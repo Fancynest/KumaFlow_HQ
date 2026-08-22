@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow.ui.screens
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
@@ -142,7 +143,7 @@ fun RouletteBottomSheet(
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .background(if (selectedWallet == wName) AppPrimary() else Color.Transparent)
-                            .clickable { selectedWallet = wName }
+                            .kumaClickable { selectedWallet = wName }
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
@@ -286,7 +287,7 @@ fun RouletteBottomSheet(
                 modifier = Modifier
                     .size(250.dp)
                     .clip(CircleShape)
-                    .clickable(enabled = !isSpinning && options.isNotEmpty()) {
+                    .kumaClickable(enabled = !isSpinning && options.isNotEmpty()) {
                         isSpinning = true
                         scope.launch {
                             val duration = (spinDurationSeconds * 1000).toInt()

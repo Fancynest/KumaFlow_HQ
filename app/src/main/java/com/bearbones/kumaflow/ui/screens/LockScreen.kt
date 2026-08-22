@@ -305,9 +305,9 @@ fun MorphingKeypadButton(
     val hazeState = com.bearbones.kumaflow.LocalHazeState.current
 
     val glassColor = if (isDark) {
-        Color(0xFF2C2C2E).copy(alpha = 0.5f)
+        Color(0xFF2C2C2E).copy(alpha = 0.60f)
     } else {
-        Color.White.copy(alpha = 0.6f)
+        Color(0xFFE8E8EC).copy(alpha = 0.85f)
     }
 
     val shineGradient = remember {
@@ -343,7 +343,7 @@ fun MorphingKeypadButton(
             .background(Color.White)
             .border(2.dp, Color.Black, buttonShape)
     } else if (isLiquidGlass) {
-        val tintAlpha = if (isPremiumGlassBlur) 0.2f else 0.1f
+        val tintAlpha = if (isPremiumGlassBlur) 0.45f else 0.35f
         val adjustedColor = glassColor.copy(alpha = (glassColor.alpha + tintAlpha).coerceAtMost(1f))
         Modifier
             .clip(buttonShape)
@@ -351,7 +351,7 @@ fun MorphingKeypadButton(
                 state = hazeState,
                 shape = buttonShape,
                 style = dev.chrisbanes.haze.HazeStyle(
-                    blurRadius = if (isPremiumGlassBlur) 24.dp else 8.dp,
+                    blurRadius = if (isPremiumGlassBlur) 30.dp else 20.dp,
                     backgroundColor = Color.Transparent,
                     tint = dev.chrisbanes.haze.HazeTint(adjustedColor),
                     noiseFactor = if (isPremiumGlassBlur) 0.15f else 0.1f

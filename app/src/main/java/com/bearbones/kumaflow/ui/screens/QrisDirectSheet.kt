@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow.ui.screens
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -117,7 +118,7 @@ fun QrisDirectSheet(
             Surface(
                 color = AppSurfaceVariant(),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.clickable { onWithoutNominal() }
+                modifier = Modifier.kumaClickable { onWithoutNominal() }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

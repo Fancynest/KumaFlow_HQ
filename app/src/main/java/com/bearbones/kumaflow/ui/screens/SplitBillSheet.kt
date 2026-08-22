@@ -1,5 +1,6 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.bearbones.kumaflow.ui.screens
+import com.bearbones.kumaflow.utils.kumaClickable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -112,7 +113,7 @@ fun SplitBillSheet(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { viewModel.setMode(SplitMode.SAMA_RATA) }
+                        .kumaClickable { viewModel.setMode(SplitMode.SAMA_RATA) }
                         .background(if (state.mode == SplitMode.SAMA_RATA) AppPrimary() else AppSurfaceVariant())
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
@@ -126,7 +127,7 @@ fun SplitBillSheet(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { viewModel.setMode(SplitMode.TAHU_DIRI) }
+                        .kumaClickable { viewModel.setMode(SplitMode.TAHU_DIRI) }
                         .background(if (state.mode == SplitMode.TAHU_DIRI) AppPrimary() else AppSurfaceVariant())
                         .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
