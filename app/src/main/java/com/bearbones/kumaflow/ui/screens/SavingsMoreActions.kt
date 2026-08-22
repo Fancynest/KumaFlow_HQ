@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -390,6 +392,8 @@ fun SavingsSettingsSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
         ) {
             Text("Pengaturan Tabungan", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
@@ -425,12 +429,14 @@ fun SavingsSettingsSheet(
             if (goalEnabled) {
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = amountFormatted,
+                    value = editTargetStr,
                     onValueChange = { editTargetStr = it.filter { ch -> ch.isDigit() } },
                     label = { Text("Target Nominal") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     prefix = { Text("Rp ", color = AppText().copy(alpha = 0.6f)) },
+                    singleLine = true,
+                    visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AppPrimary(),
                         unfocusedBorderColor = AppText().copy(alpha = 0.3f),
@@ -483,12 +489,14 @@ fun SavingsSettingsSheet(
                 
                 // Amount to debit
                 OutlinedTextField(
-                    value = adAmountFormatted,
+                    value = autoDebitAmountStr,
                     onValueChange = { autoDebitAmountStr = it.filter { ch -> ch.isDigit() } },
                     label = { Text("Jumlah yang didebit") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     prefix = { Text("Rp ", color = AppText().copy(alpha = 0.6f)) },
+                    singleLine = true,
+                    visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AppPrimary(),
                         unfocusedBorderColor = AppText().copy(alpha = 0.3f),
