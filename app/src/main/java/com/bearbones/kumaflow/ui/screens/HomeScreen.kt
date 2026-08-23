@@ -7,6 +7,8 @@ import android.content.Context
 import android.widget.Toast
 import com.bearbones.kumaflow.ui.tutorial.tutorialTarget
 import com.bearbones.kumaflow.ui.tutorial.TutorialStep
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -466,106 +468,32 @@ fun HomeScreen(
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = if (isPrideThemeActive) Color.White.copy(alpha=0.2f) else AppText().copy(alpha = 0.1f))
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // Wallet Row
-                            val walletOrder = remember {
-                                mutableStateListOf(*profile.wallets.split(",").filter { it.isNotBlank() }.toTypedArray())
-                            }
-                            val currentWalletSet = remember(profile.wallets) {
-                                profile.wallets.split(",").filter { it.isNotBlank() }.toSet()
-                            }
-                            LaunchedEffect(currentWalletSet) {
-                                val displayedSet = walletOrder.toSet()
-                                if (displayedSet != currentWalletSet) {
-                                    walletOrder.clear()
-                                    walletOrder.addAll(profile.wallets.split(",").filter { it.isNotBlank() })
+                            // Wallet Stack
+                            var virtualWallets by remember { mutableStateOf<List<com.bearbones.kumaflow.VirtualWallet>>(emptyList()) }
+                            val dao = remember { com.bearbones.kumaflow.KumaDatabase.getDatabase(context).transactionDao() }
+                            val scope = rememberCoroutineScope()
+                            LaunchedEffect(Unit) {
+                                dao.observeAllVirtualWallets().collect {
+                                    virtualWallets = it
                                 }
                             }
-
-                            val reorderState = rememberReorderableLazyListState(
-                                onMove = { from, to -> walletOrder.apply { add(to.index, removeAt(from.index)) } },
-                                onDragEnd = { _, _ -> onUpdateProfile(profile.copy(wallets = walletOrder.joinToString(","))) }
-                            )
-
-                            LazyRow(
-                                state = reorderState.listState,
-                                modifier = Modifier.fillMaxWidth().reorderable(reorderState),
-                                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 20.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                items(walletOrder, { it }) { walletName ->
-                                    ReorderableItem(reorderState, key = walletName) { isDragging ->
-                                        val cardScale by androidx.compose.animation.core.animateFloatAsState(if (isDragging) 1.05f else 1f, label = "drag_scale")
-                                        val amt = walletBalances[walletName] ?: 0L
-                                        val wBalPref = if (amt < 0) "- " else ""
-                                        Column(
-                                            modifier = Modifier
-                                                .zIndex(if (isDragging) 1f else 0f)
-                                                .graphicsLayer {
-                                                    val layoutInfo = reorderState.listState.layoutInfo
-                                                    val itemInfo = layoutInfo.visibleItemsInfo.find { it.key == walletName }
-                                                    if (itemInfo != null) {
-                                                        val center = layoutInfo.viewportEndOffset / 2f
-                                                        val childCenter = itemInfo.offset + (itemInfo.size / 2f)
-                                                        val distance = kotlin.math.abs(center - childCenter)
-                                                        val maxDist = center.coerceAtLeast(1f)
-                                                        val ratio = (distance / maxDist).coerceIn(0f, 1f)
-                                                        val pScale = 1f - (ratio * 0.2f)
-                                                        scaleX = pScale
-                                                        scaleY = pScale
-                                                        alpha = 1f - (ratio * 0.4f)
-                                                    }
-                                                    clip = false
-                                                }
-                                                .scale(cardScale)
-                                                .detectReorderAfterLongPress(reorderState)
-                                                .padding(end = 6.dp, bottom = 6.dp)
-                                                .glassCard(20.dp, com.bearbones.kumaflow.AppSurface())
-                                                .clickable { 
-                                                    reconcileWalletName = walletName
-                                                    showReconcileDialog = true
-                                                }
-                                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            val logoBitmap = com.bearbones.kumaflow.rememberWalletLogo(context = context, walletName = walletName)
-                                            if (logoBitmap != null) {
-                                                Box {
-                                                    androidx.compose.foundation.Image(
-                                                        bitmap = logoBitmap,
-                                                        contentDescription = walletName,
-                                                        modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.White, CircleShape),
-                                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                                                    )
-                                                    if (sharedWalletNames.contains(walletName)) {
-                                                        Icon(
-                                                            Icons.Default.SyncAlt,
-                                                            contentDescription = "Shared",
-                                                            modifier = Modifier
-                                                                .size(16.dp)
-                                                                .align(Alignment.BottomEnd)
-                                                                .background(com.bearbones.kumaflow.AppPrimary(), CircleShape)
-                                                                .border(1.dp, Color.White, CircleShape)
-                                                                .padding(2.dp),
-                                                            tint = Color.White
-                                                        )
-                                                    }
-                                                }
-                                            } else {
-                                                Box(
-                                                    modifier = Modifier.size(42.dp).background(if (isPrideThemeActive) Color.White.copy(alpha=0.3f) else AppPrimary().copy(alpha = 0.15f), CircleShape),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(walletName.take(1).uppercase(), color = if (isPrideThemeActive) Color.White else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 20.sp)
-                                                }
-                                            }
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            Text(walletName, color = if (isPrideThemeActive) Color.White.copy(alpha = 0.9f) else AppText().copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            Text("$wBalPref$curSym ${formatHide(abs(amt))}", color = if (isPrideThemeActive) Color.White else AppText(), fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                        }
+                            
+                            WalletCardStack(
+                                wallets = virtualWallets,
+                                balances = walletBalances,
+                                currencySymbol = curSym,
+                                formatHide = { formatHide(it) },
+                                onWalletClick = { walletName ->
+                                    reconcileWalletName = walletName
+                                    showReconcileDialog = true
+                                },
+                                onOrderChange = { newOrder ->
+                                    scope.launch {
+                                        val updated = newOrder.mapIndexed { index, wallet -> wallet.copy(orderIndex = index) }
+                                        dao.upsertVirtualWallets(updated)
                                     }
                                 }
-                            }
+                            )
 
                             Spacer(modifier = Modifier.height(20.dp))
                         }

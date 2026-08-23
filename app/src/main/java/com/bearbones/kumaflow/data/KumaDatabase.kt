@@ -108,6 +108,14 @@ data class UserProfile(
     val savingsGoals: String = "{}"
 )
 
+@Entity(tableName = "virtual_wallets")
+data class VirtualWallet(
+    @PrimaryKey val name: String,
+    val orderIndex: Int,
+    val backgroundType: String,
+    val backgroundValue: String
+)
+
 @Dao
 interface TransactionDao {
     @Transaction
@@ -235,6 +243,25 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE transactionUuid = :uuid LIMIT 1")
     suspend fun getTransactionByUuid(uuid: String): KumaTransaction?
+    // --- Virtual Wallet Operations ---
+    @Query("SELECT * FROM virtual_wallets ORDER BY orderIndex ASC")
+    fun observeAllVirtualWallets(): Flow<List<VirtualWallet>>
+
+    @Query("SELECT * FROM virtual_wallets ORDER BY orderIndex ASC")
+    suspend fun getAllVirtualWallets(): List<VirtualWallet>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertVirtualWallet(wallet: VirtualWallet)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertVirtualWallets(wallets: List<VirtualWallet>)
+
+    @Query("DELETE FROM virtual_wallets WHERE name = :name")
+    suspend fun deleteVirtualWallet(name: String)
+
+    @Query("UPDATE virtual_wallets SET name = :newName WHERE name = :oldName")
+    suspend fun updateVirtualWalletName(oldName: String, newName: String)
+
     // -------------------------
 
     @Query("UPDATE transactions SET wallet = :newName WHERE wallet = :oldName")
@@ -504,6 +531,35 @@ val MIGRATION_26_27 = object : Migration(26, 27) {
     }
 }
 
+val MIGRATION_27_28 = object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `virtual_wallets` (
+                `name` TEXT NOT NULL,
+                `orderIndex` INTEGER NOT NULL,
+                `backgroundType` TEXT NOT NULL,
+                `backgroundValue` TEXT NOT NULL,
+                PRIMARY KEY(`name`)
+            )
+            """.trimIndent()
+        )
+        // Extract wallets from user_profile and insert into virtual_wallets
+        val cursor = db.query("SELECT wallets FROM user_profile LIMIT 1")
+        if (cursor.moveToFirst()) {
+            val walletsCsv = cursor.getString(0) ?: ""
+            val wallets = walletsCsv.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            for ((index, wallet) in wallets.withIndex()) {
+                db.execSQL(
+                    "INSERT OR IGNORE INTO `virtual_wallets` (`name`, `orderIndex`, `backgroundType`, `backgroundValue`) VALUES (?, ?, ?, ?)",
+                    arrayOf(wallet, index, "SOLID", "#2A2A2A")
+                )
+            }
+        }
+        cursor.close()
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -512,9 +568,10 @@ val MIGRATION_26_27 = object : Migration(26, 27) {
         TransactionFTS::class,
         com.bearbones.kumaflow.duo.model.WalletMetadata::class,
         com.bearbones.kumaflow.duo.model.DuoPairing::class,
-        com.bearbones.kumaflow.duo.model.DuoConflictLog::class
+        com.bearbones.kumaflow.duo.model.DuoConflictLog::class,
+        VirtualWallet::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -530,7 +587,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28)
                     .build()
                 INSTANCE = instance
                 instance
