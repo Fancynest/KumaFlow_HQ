@@ -844,13 +844,7 @@ fun HomeScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .then(
-                                if (realBalanceInput.isNotEmpty() && delta != 0L)
-                                    Modifier.expressiveElevation(12.dp, RoundedCornerShape(24.dp), baseColor = AppBg(), tintColor = AppPrimary())
-                                else
-                                    Modifier
-                            ),
+                            .height(56.dp),
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary()),
                         enabled = realBalanceInput.isNotEmpty() && delta != 0L
