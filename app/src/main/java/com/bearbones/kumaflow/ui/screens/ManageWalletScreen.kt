@@ -230,12 +230,9 @@ fun ManageWalletContent(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
         ) {
-            val isBrutal = LocalIsBrutal.current
             val baseFieldMod = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(if (isBrutal) 0.dp else 16.dp))
-                .background(if (isBrutal) Color.White else Color.Gray.copy(alpha = 0.1f))
-                .then(if (isBrutal) Modifier.border(3.dp, Color.Black) else Modifier)
+                .glassCard(16.dp, com.bearbones.kumaflow.AppSurfaceVariant())
                 .padding(16.dp)
 
             Box(modifier = baseFieldMod) {
