@@ -225,6 +225,13 @@ fun WalletCardStack(
                         val currentOffset = if (isDragged) baseOffset + dragOffsetY else targetOffset
 
                         val animatedOffset = remember { Animatable(baseOffset) }
+                        
+                        LaunchedEffect(isDragged, currentOffset) {
+                            if (isDragged) {
+                                animatedOffset.snapTo(currentOffset)
+                            }
+                        }
+
                         LaunchedEffect(index, isDragged, targetOffset) {
                             if (!isDragged) {
                                 animatedOffset.animateTo(
