@@ -21,4 +21,16 @@
     <string name="duo_desc_sync_old_history">Jika aktif, transaksi lama akan dikirim ke partner.</string>
     <string name="duo_btn_saving">Menyimpan...</string>
     <string name="duo_btn_done">Selesai</string>
+    <string name="manage_wallet_title_add">Tambah Dompet</string>
+    <string name="manage_wallet_title_edit">Edit Dompet</string>
+    <string name="manage_wallet_name">Nama dompet</string>
+    <string name="manage_wallet_card_number">Nomor kartu</string>
+    <string name="manage_wallet_notes">Catatan</string>
+    <string name="manage_wallet_appearance">Tampilan</string>
+    <string name="manage_wallet_important_note">Catatan penting</string>
+    <string name="manage_wallet_important_note_desc">Kartu dompet virtual ini dibuat secara manual. Pastikan nama kartu, nomor, dan catatan sesuai dengan kebutuhan pencatatan keuangan Anda di KumaFlow.</string>
+    <string name="manage_wallet_btn_add">Tambah</string>
+    <string name="manage_wallet_btn_save">Simpan</string>
+    <string name="manage_wallet_added">Ditambahkan</string>
+    <string name="manage_wallet_done">Selesai</string>
 </resources>

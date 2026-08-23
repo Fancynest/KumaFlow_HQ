@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.bearbones.kumaflow.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,20 +126,25 @@ fun ManageWalletContent(
     val isNewWallet = pagerState.currentPage == wallets.size
     val currentWallet = if (isNewWallet) null else wallets.getOrNull(pagerState.currentPage)
 
+    var editPageIndex by remember { mutableIntStateOf(pagerState.currentPage) }
+    
     LaunchedEffect(pagerState.currentPage, wallets) {
-        if (isNewWallet) {
-            name = ""
-            cardNumber = ""
-            notes = ""
-            bgType = "SOLID"
-            bgValue = "#D32F2F"
-        } else {
-            currentWallet?.let {
-                name = it.name
-                cardNumber = it.cardNumber
-                notes = it.notes
-                bgType = it.backgroundType
-                bgValue = it.backgroundValue
+        if (!pagerState.isScrollInProgress) {
+            editPageIndex = pagerState.currentPage
+            if (isNewWallet) {
+                name = ""
+                cardNumber = ""
+                notes = ""
+                bgType = "SOLID"
+                bgValue = "#D32F2F"
+            } else {
+                currentWallet?.let {
+                    name = it.name
+                    cardNumber = it.cardNumber
+                    notes = it.notes
+                    bgType = it.backgroundType
+                    bgValue = it.backgroundValue
+                }
             }
         }
     }
@@ -157,7 +164,7 @@ fun ManageWalletContent(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppText())
             }
             Text(
-                text = if (isNewWallet) "Add Wallet" else "Edit Wallet",
+                text = if (isNewWallet) stringResource(R.string.manage_wallet_title_add) else stringResource(R.string.manage_wallet_title_edit),
                 color = AppText(),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -173,11 +180,11 @@ fun ManageWalletContent(
             contentPadding = PaddingValues(horizontal = 32.dp),
             pageSpacing = 16.dp
         ) { page ->
-            val isCurrentPage = page == pagerState.currentPage
-            val previewType = if (isCurrentPage) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
-            val previewVal = if (isCurrentPage) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
-            val previewName = if (isCurrentPage) name else if (page == wallets.size) "New Wallet" else wallets[page].name
-            val previewNumber = if (isCurrentPage) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
+            val isActive = page == editPageIndex
+            val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
+            val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
+            val previewName = if (isActive) name else if (page == wallets.size) "New Wallet" else wallets[page].name
+            val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
 
             Box(
                 modifier = Modifier
@@ -237,7 +244,7 @@ fun ManageWalletContent(
 
             Box(modifier = baseFieldMod) {
                 Column {
-                    Text("Wallet name", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text(stringResource(R.string.manage_wallet_name), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
                     androidx.compose.foundation.text.BasicTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -247,7 +254,7 @@ fun ManageWalletContent(
                     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Card number", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text(stringResource(R.string.manage_wallet_card_number), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
                     androidx.compose.foundation.text.BasicTextField(
                         value = cardNumber,
                         onValueChange = { cardNumber = it },
@@ -257,7 +264,7 @@ fun ManageWalletContent(
                     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Notes", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text(stringResource(R.string.manage_wallet_notes), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
                     androidx.compose.foundation.text.BasicTextField(
                         value = notes,
                         onValueChange = { notes = it },
@@ -269,7 +276,7 @@ fun ManageWalletContent(
 
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text("Appearance", color = AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+            Text(stringResource(R.string.manage_wallet_appearance), color = AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
             
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -331,9 +338,9 @@ fun ManageWalletContent(
             
             Box(modifier = baseFieldMod) {
                 Column {
-                    Text("Important note", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(stringResource(R.string.manage_wallet_important_note), color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Kartu dompet virtual ini dibuat secara manual. Pastikan nama kartu, nomor, dan catatan sesuai dengan kebutuhan pencatatan keuangan Anda di KumaFlow.", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 20.sp)
+                    Text(stringResource(R.string.manage_wallet_important_note_desc), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 20.sp)
                 }
             }
 
@@ -369,7 +376,7 @@ fun ManageWalletContent(
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (isNewWallet) "Add" else "Save", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(if (isNewWallet) stringResource(R.string.manage_wallet_btn_add) else stringResource(R.string.manage_wallet_btn_save), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
@@ -435,7 +442,7 @@ fun WalletSuccessContent(
         }
         
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Added", color = AppText(), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.manage_wallet_added), color = AppText(), fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(32.dp))
 
         if (wallet != null) {
@@ -489,7 +496,7 @@ fun WalletSuccessContent(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Done", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.manage_wallet_done), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(16.dp).navigationBarsPadding())
     }

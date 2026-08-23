@@ -21,4 +21,16 @@
     <string name="duo_desc_sync_old_history">If checked, old transactions will be sent to partner.</string>
     <string name="duo_btn_saving">Saving...</string>
     <string name="duo_btn_done">Done</string>
+    <string name="manage_wallet_title_add">Add Wallet</string>
+    <string name="manage_wallet_title_edit">Edit Wallet</string>
+    <string name="manage_wallet_name">Wallet name</string>
+    <string name="manage_wallet_card_number">Card number</string>
+    <string name="manage_wallet_notes">Notes</string>
+    <string name="manage_wallet_appearance">Appearance</string>
+    <string name="manage_wallet_important_note">Important note</string>
+    <string name="manage_wallet_important_note_desc">This virtual wallet card is created manually. Ensure the card name, number, and notes fit your financial tracking needs in KumaFlow.</string>
+    <string name="manage_wallet_btn_add">Add</string>
+    <string name="manage_wallet_btn_save">Save</string>
+    <string name="manage_wallet_added">Added</string>
+    <string name="manage_wallet_done">Done</string>
 </resources>
