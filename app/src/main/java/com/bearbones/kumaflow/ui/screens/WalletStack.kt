@@ -294,7 +294,7 @@ fun WalletCardStack(
 
                             val cardHeightPx = with(density) { cardHeight.toPx() }
                             val targetOffset = when {
-                                isPopped && popState == 1 -> baseOffset - (cardHeightPx * 0.35f)
+                                isPopped && popState == 1 -> baseOffset - (cardHeightPx * 0.15f)
                                 isPopped && popState == 2 -> baseOffset - (cardHeightPx * 0.85f)
                                 else -> baseOffset
                             }
@@ -322,7 +322,7 @@ fun WalletCardStack(
                             }
 
                             val finalOffset = if (isDragged) currentOffset else animatedOffset.value
-                            val zIdx = if (isDragged || isPopped) 100f + index else index.toFloat()
+                            val zIdx = if (isDragged || (isPopped && popState == 2)) 100f + index else index.toFloat()
 
                             val animatedScale by animateFloatAsState(
                                 targetValue = if (isDragged) 1.05f else 1f,
@@ -331,10 +331,10 @@ fun WalletCardStack(
                                     stiffness = Spring.StiffnessMedium
                                 ), label = "cardScale"
                             )
-                        val animatedElevation by animateFloatAsState(
-                            targetValue = if (isDragged) 24f else if (isPopped) 30f else 4f,
-                            animationSpec = tween(300), label = "cardElevation"
-                        )
+                            val animatedElevation by animateFloatAsState(
+                                targetValue = if (isDragged) 24f else if (isPopped && popState == 2) 30f else if (isPopped && popState == 1) 8f else 4f,
+                                animationSpec = tween(300), label = "cardElevation"
+                            )
 
                         Box(
                             modifier = Modifier
