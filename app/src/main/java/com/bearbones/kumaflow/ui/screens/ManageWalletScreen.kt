@@ -128,22 +128,27 @@ fun ManageWalletContent(
 
     var editPageIndex by remember { mutableIntStateOf(pagerState.currentPage) }
     
-    LaunchedEffect(pagerState.currentPage, wallets) {
-        if (!pagerState.isScrollInProgress) {
-            editPageIndex = pagerState.currentPage
-            if (isNewWallet) {
-                name = ""
-                cardNumber = ""
-                notes = ""
-                bgType = "SOLID"
-                bgValue = "#D32F2F"
-            } else {
-                currentWallet?.let {
-                    name = it.name
-                    cardNumber = it.cardNumber
-                    notes = it.notes
-                    bgType = it.backgroundType
-                    bgValue = it.backgroundValue
+    LaunchedEffect(pagerState, wallets) {
+        androidx.compose.runtime.snapshotFlow { pagerState.isScrollInProgress }.collect { isScrolling ->
+            if (!isScrolling) {
+                val page = pagerState.currentPage
+                editPageIndex = page
+                val isNew = page == wallets.size
+                val w = if (isNew) null else wallets.getOrNull(page)
+                if (isNew) {
+                    name = ""
+                    cardNumber = ""
+                    notes = ""
+                    bgType = "SOLID"
+                    bgValue = "#D32F2F"
+                } else {
+                    w?.let {
+                        name = it.name
+                        cardNumber = it.cardNumber
+                        notes = it.notes
+                        bgType = it.backgroundType
+                        bgValue = it.backgroundValue
+                    }
                 }
             }
         }
