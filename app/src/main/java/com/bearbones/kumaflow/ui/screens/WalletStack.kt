@@ -167,7 +167,6 @@ fun WalletCardStack(
     var popState by remember { mutableIntStateOf(0) }
     var isReconcileHold by remember { mutableStateOf(false) }
 
-    if (orderedWallets.isEmpty()) return
 
     // Cards area: first card full + subsequent cards peek
     val cardsVisibleHeight = cardHeight + (cardPeek * (orderedWallets.size - 1).coerceAtLeast(0))
@@ -207,8 +206,34 @@ fun WalletCardStack(
                         .padding(horizontal = walletSidePadding)
                         .padding(top = 10.dp) // small gap from wallet top edge
                 ) {
-                    orderedWallets.forEachIndexed { index, wallet ->
-                        key(wallet.name) {
+                    if (orderedWallets.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(cardHeight)
+                                .drawBehind {
+                                    drawRoundRect(
+                                        color = walletBorderColor.copy(alpha = 0.5f),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                            width = 6f,
+                                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
+                                        ),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(40f, 40f)
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Empty Wallet",
+                                color = AppText().copy(alpha = 0.4f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    } else {
+                        orderedWallets.forEachIndexed { index, wallet ->
+                            key(wallet.name) {
                             val isDragged = draggedIndex == index
                             val isPopped = poppedCard == wallet.name
                             
@@ -412,9 +437,10 @@ fun WalletCardStack(
                         }
                         } // end Box(card)
                     } // end key
-                } // end forEachIndexed
-            } // end Box(cards padding box)
-        } // end Box(cards container)
+                        } // end forEachIndexed
+                    } // end if-else
+                } // end Box(cards padding box)
+            } // end Box(cards container)
 
             // === WALLET FRONT FLAP (with scoop) — sits at the bottom, on top of cards ===
             val flapShape = remember { WalletFlapShape(scoopWidth = 100.dp, scoopDepth = scoopDepth, cornerRadius = walletCorner) }
