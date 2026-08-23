@@ -1222,8 +1222,6 @@ fun SettingsScreen(
                 title = { Text(AppStr.theme) },
                 text = {
                     Column {
-                        val currentMonth = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)
-                        val isJune = currentMonth == java.util.Calendar.JUNE
                         val hasPride = currentProfile.userName.contains("#pride", ignoreCase = true)
                         val hasBear = currentProfile.userName.contains("#bear", ignoreCase = true)
                         val hasBrutal = currentProfile.userName.contains("#brutal", ignoreCase = true)
@@ -1234,15 +1232,13 @@ fun SettingsScreen(
                             2 to AppStr.themeDark
                         )
 
-                        if (isJune) {
-                            if (hasPride) {
-                                themeOptions.add(3 to "Pride Light \uD83C\uDFF3\uFE0F\u200D\uD83C\uDF08")
-                                themeOptions.add(4 to "Pride Dark \uD83C\uDFF3\uFE0F\u200D\uD83C\uDF08")
-                            }
-                            if (hasBear) {
-                                themeOptions.add(5 to "Bear Light \uD83D\uDC3B")
-                                themeOptions.add(6 to "Bear Dark \uD83D\uDC3B")
-                            }
+                        if (hasPride) {
+                            themeOptions.add(3 to "Pride Light 🏳️‍🌈")
+                            themeOptions.add(4 to "Pride Dark 🏳️‍🌈")
+                        }
+                        if (hasBear) {
+                            themeOptions.add(5 to "Bear Light 🐻")
+                            themeOptions.add(6 to "Bear Dark 🐻")
                         }
                         
                         if (hasBrutal) {

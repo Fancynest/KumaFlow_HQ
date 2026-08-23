@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.bearbones.kumaflow.R
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -43,6 +44,8 @@ import com.bearbones.kumaflow.AppBg
 import com.bearbones.kumaflow.AppPrimary
 import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.LocalIsDark
+import com.bearbones.kumaflow.LocalIsPride
+import com.bearbones.kumaflow.LocalIsBear
 import com.bearbones.kumaflow.VirtualWallet
 import com.bearbones.kumaflow.ui.components.KumaButton
 import com.bearbones.kumaflow.ui.theme.LocalIsBrutal
@@ -115,8 +118,17 @@ fun ManageWalletContent(
     val pagerState = rememberPagerState(pageCount = { wallets.size + 1 })
     
     val solidColors = listOf("#2A2A2A", "#D32F2F", "#1976D2", "#388E3C", "#FBC02D", "#7B1FA2", "#111111", "#0288D1")
-    val templateImages = listOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
-
+    val isAppPride = com.bearbones.kumaflow.LocalIsPride.current
+    val isAppBear = com.bearbones.kumaflow.LocalIsBear.current
+    val templateImages = remember(isAppPride, isAppBear) {
+        val list = mutableListOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
+        if (isAppPride) list.add("pride")
+        if (isAppBear) {
+            list.add("bear")
+            list.add("bear2")
+        }
+        list
+    }
     var name by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
@@ -203,19 +215,32 @@ fun ManageWalletContent(
                     )
             ) {
                 if (previewType == "TEMPLATE") {
-                    val resId = context.resources.getIdentifier(previewVal, "drawable", context.packageName)
-                    if (resId != 0) {
-                        Image(
-                            painter = painterResource(id = resId),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                        )
+                    val isPrideReq = previewVal == "pride"
+                    val isBearReq = previewVal == "bear" || previewVal == "bear2"
+                    val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
+                    val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                    
+                    val shouldRender = when {
+                        isPrideReq -> isPrideAllowed
+                        isBearReq -> isBearAllowed
+                        else -> true
+                    }
+                    
+                    if (shouldRender) {
+                        val resId = context.resources.getIdentifier(previewVal, "drawable", context.packageName)
+                        if (resId != 0) {
+                            Image(
+                                painter = painterResource(id = resId),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
+                            )
+                        }
                     }
                 }
                 Column(
@@ -399,8 +424,7 @@ fun WalletSuccessContent(
     val isDark = LocalIsDark.current
     val isBrutal = LocalIsBrutal.current
     
-    val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
-    val isPride = userName.contains("#pride", ignoreCase = true) && isJune
+    val isPride = userName.contains("#pride", ignoreCase = true)
     val isBear = userName.contains("#bear", ignoreCase = true)
     val isOR = userName.contains("#OR", ignoreCase = true)
 
@@ -463,19 +487,32 @@ fun WalletSuccessContent(
                     )
             ) {
                 if (wallet.backgroundType == "TEMPLATE") {
-                    val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
-                    if (resId != 0) {
-                        Image(
-                            painter = painterResource(id = resId),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                        )
+                    val isPrideReq = wallet.backgroundValue == "pride"
+                    val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
+                    val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
+                    val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                    
+                    val shouldRender = when {
+                        isPrideReq -> isPrideAllowed
+                        isBearReq -> isBearAllowed
+                        else -> true
+                    }
+                    
+                    if (shouldRender) {
+                        val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
+                        if (resId != 0) {
+                            Image(
+                                painter = painterResource(id = resId),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
+                            )
+                        }
                     }
                 }
                 Column(

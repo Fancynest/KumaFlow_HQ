@@ -29,6 +29,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import com.bearbones.kumaflow.LocalIsPride
+import com.bearbones.kumaflow.LocalIsBear
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -373,30 +375,42 @@ fun WalletCardStack(
                                     }
                                 }
                     ) {
-                        // Background image for TEMPLATE type
+                        // Draw template if applicable
                         if (wallet.backgroundType == "TEMPLATE") {
-                            val resId = context.resources.getIdentifier(
-                                wallet.backgroundValue, "drawable", context.packageName
-                            )
-                            if (resId != 0) {
-                                Image(
-                                    painter = painterResource(id = resId),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(
-                                                    Color.Black.copy(alpha = 0.2f),
-                                                    Color.Black.copy(alpha = 0.6f)
+                            val isPrideReq = wallet.backgroundValue == "pride"
+                            val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
+                            val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
+                            val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                            
+                            val shouldRender = when {
+                                isPrideReq -> isPrideAllowed
+                                isBearReq -> isBearAllowed
+                                else -> true
+                            }
+                            
+                            if (shouldRender) {
+                                val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
+                                if (resId != 0) {
+                                    Image(
+                                        painter = painterResource(id = resId),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    // Slight gradient overlay to ensure text is readable
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    listOf(
+                                                        Color.Black.copy(alpha = 0.2f),
+                                                        Color.Black.copy(alpha = 0.6f)
+                                                    )
                                                 )
                                             )
-                                        )
-                                )
+                                    )
+                                }
                             }
                         }
 

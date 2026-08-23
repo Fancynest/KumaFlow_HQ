@@ -606,7 +606,8 @@ class MainActivity : FragmentActivity() {
 
             val rawThemeMode = userProfile?.themeMode ?: 0
             val activeThemeMode = when {
-                rawThemeMode in 3..6 && isJune -> rawThemeMode
+                rawThemeMode in 3..4 && isPrideTriggered -> rawThemeMode
+                rawThemeMode in 5..6 && isBearTriggered -> rawThemeMode
                 rawThemeMode in 7..8 && isBrutalTriggered -> rawThemeMode
                 rawThemeMode > 2 -> 0
                 else -> rawThemeMode

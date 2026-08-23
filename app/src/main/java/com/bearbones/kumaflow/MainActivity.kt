@@ -2761,8 +2761,8 @@ fun checkAndApplyPrideEasterEgg(
         userName.isEmpty() -> normalIcon
         isBrutalEasterEgg -> brutalIcon
         isOR -> if (isGlass) orGlassIcon else orIcon
-        isJune && (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
-        isJune && (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon
+        (userName.contains("🌈") || userName.contains("#pride", ignoreCase = true)) -> if (isGlass) prideGlassIcon else prideIcon
+        (userName.contains("🐻") || userName.contains("#bear", ignoreCase = true)) -> if (isGlass) bearGlassIcon else bearIcon
         isGlass -> kumaGlassIcon
         else -> normalIcon
     }

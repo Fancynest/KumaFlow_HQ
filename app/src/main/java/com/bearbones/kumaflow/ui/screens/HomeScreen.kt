@@ -324,8 +324,7 @@ fun HomeScreen(
                     MonthYearSelector(selectedMonth, selectedYear, onMonthChange)
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
-                    val isPrideThemeActive = isJune && (profile.themeMode == 3 || profile.themeMode == 4)
+                    val isPrideThemeActive = (profile.themeMode == 3 || profile.themeMode == 4) && profile.userName.contains("#pride", ignoreCase = true)
                     val prideGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
                     val defaultSurfaceColor = AppSurfaceVariant()
 
