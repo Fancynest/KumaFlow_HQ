@@ -399,12 +399,10 @@ fun WalletCardStack(
 
                                             val rawCurrent = (freshBaseOffset + dragOffsetY) / peekPx
                                             val diff = rawCurrent - currentIndex
-                                            val targetIndex = if (diff > 0.6f) {
-                                                currentIndex + 1
-                                            } else if (diff < -0.6f) {
-                                                currentIndex - 1
+                                            val targetIndex = if (diff > 0) {
+                                                (rawCurrent - 0.1f).roundToInt()
                                             } else {
-                                                currentIndex
+                                                (rawCurrent + 0.1f).roundToInt()
                                             }.coerceIn(0, orderedWallets.size - 1)
 
                                             if (targetIndex != currentIndex) {
