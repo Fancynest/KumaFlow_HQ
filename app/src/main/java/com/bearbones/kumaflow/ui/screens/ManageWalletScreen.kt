@@ -614,8 +614,8 @@ fun WalletSuccessContent(
     ) {
         Spacer(modifier = Modifier.weight(0.3f))
         
-        // Add negative X offset because the Lottie asset is visually shifted to the right natively
-        Box(modifier = Modifier.size(150.dp).offset(x = (-3).dp)) {
+        // Add positive X offset to shift Lottie to the right so it aligns with the center of the text
+        Box(modifier = Modifier.size(150.dp).offset(x = 6.dp)) {
             LottieAnimation(
                 composition = composition,
                 progress = { progress },

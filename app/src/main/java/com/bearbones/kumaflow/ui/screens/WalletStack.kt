@@ -360,7 +360,6 @@ fun WalletCardStack(
                                 .pointerInput(wallet.name, popState, poppedCard) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = {
-                                            lastLongPressTime = System.currentTimeMillis()
                                             if (poppedCard == wallet.name && popState == 2) {
                                                 isReconcileHold = true
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -408,12 +407,14 @@ fun WalletCardStack(
                                             }
                                         },
                                         onDragEnd = {
+                                            lastLongPressTime = System.currentTimeMillis()
                                             draggedIndex = -1
                                             dragOffsetY = 0f
                                             if (!isReconcileHold) onOrderChange(orderedWallets)
                                             isReconcileHold = false
                                         },
                                         onDragCancel = {
+                                            lastLongPressTime = System.currentTimeMillis()
                                             draggedIndex = -1
                                             dragOffsetY = 0f
                                             isReconcileHold = false
@@ -421,7 +422,8 @@ fun WalletCardStack(
                                     )
                                 }
                                 .clickable {
-                                    if (System.currentTimeMillis() - lastLongPressTime < 500) return@clickable
+                                    // Prevent tap if a long press drag/hold just finished (within 300ms)
+                                    if (System.currentTimeMillis() - lastLongPressTime < 300) return@clickable
                                     
                                     if (poppedCard == wallet.name) {
                                         // If already popped (quarter or full), tapping unpops it
