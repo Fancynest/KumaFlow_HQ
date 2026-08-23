@@ -177,14 +177,15 @@ fun WalletCardStack(
     val totalWalletHeight = cardsVisibleHeight + flapHeight - flapOverlap
 
     // Wallet body colors
-    val walletColor = AppSurface()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val walletColor = if (isDark) Color(0xFF262626) else Color(0xFFEEEEEE)
     val walletBorderColor = AppText().copy(alpha = 0.08f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .padding(top = 100.dp) // Add padding so popped cards don't get clipped by the screen/parent above
+            // Removed top padding to eliminate the gap above the wallet
     ) {
         // === WALLET BODY (the beige/gray outer container) ===
         Box(
@@ -208,11 +209,12 @@ fun WalletCardStack(
                         .padding(top = 10.dp) // small gap from wallet top edge
                 ) {
                     orderedWallets.forEachIndexed { index, wallet ->
-                        val isDragged = draggedIndex == index
-                        val isPopped = poppedCard == wallet.name
-                        
-                        val peekPx = with(density) { cardPeek.toPx() }
-                        val baseOffset = index * peekPx
+                        key(wallet.name) {
+                            val isDragged = draggedIndex == index
+                            val isPopped = poppedCard == wallet.name
+                            
+                            val peekPx = with(density) { cardPeek.toPx() }
+                            val baseOffset = index * peekPx
 
                         val targetOffset = when {
                             isPopped && popState == 1 -> baseOffset - with(density) { 60.dp.toPx() }
@@ -393,10 +395,11 @@ fun WalletCardStack(
                                 maxLines = 1
                             )
                         }
-                    }
-                }
-            }
-        } // Close the TopUnboundedShape Box
+                        } // end Box(card)
+                    } // end key
+                } // end forEachIndexed
+            } // end Box(cards padding box)
+        } // end Box(cards container)
 
             // === WALLET FRONT FLAP (with scoop) — sits at the bottom, on top of cards ===
             val flapShape = remember { WalletFlapShape(scoopWidth = 100.dp, scoopDepth = scoopDepth, cornerRadius = walletCorner) }

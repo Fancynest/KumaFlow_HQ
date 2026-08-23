@@ -465,11 +465,13 @@ fun HomeScreen(
                             }
 
                             Spacer(modifier = Modifier.height(20.dp))
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), color = if (isPrideThemeActive) Color.White.copy(alpha=0.2f) else AppText().copy(alpha = 0.1f))
-                            Spacer(modifier = Modifier.height(20.dp))
+                        }
+                    }
 
-                            // Wallet Stack
-                            var virtualWallets by remember { mutableStateOf<List<com.bearbones.kumaflow.VirtualWallet>>(emptyList()) }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Wallet Stack
+                    var virtualWallets by remember { mutableStateOf<List<com.bearbones.kumaflow.VirtualWallet>>(emptyList()) }
                             val dao = remember { com.bearbones.kumaflow.KumaDatabase.getDatabase(context).transactionDao() }
                             val scope = rememberCoroutineScope()
                             LaunchedEffect(Unit) {
@@ -494,10 +496,6 @@ fun HomeScreen(
                                     }
                                 }
                             )
-
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
