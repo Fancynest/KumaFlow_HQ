@@ -176,9 +176,8 @@ fun WalletCardStack(
     val flapOverlap = 40.dp
     val totalWalletHeight = cardsVisibleHeight + flapHeight - flapOverlap
 
-    // Wallet body colors
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val walletColor = if (isDark) Color(0xFF262626) else Color(0xFFEEEEEE)
+    val isDark = com.bearbones.kumaflow.LocalIsDark.current
+    val walletColor = if (isDark) Color(0xFF3D3D3D) else Color(0xFFDCDCDC)
     val walletBorderColor = AppText().copy(alpha = 0.08f)
 
     Box(

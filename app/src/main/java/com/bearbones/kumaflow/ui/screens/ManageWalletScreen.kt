@@ -1,5 +1,6 @@
 package com.bearbones.kumaflow
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,9 +8,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -19,69 +25,172 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.SimpleColorFilter
+import com.airbnb.lottie.compose.*
+import com.bearbones.kumaflow.AppBg
+import com.bearbones.kumaflow.AppPrimary
+import com.bearbones.kumaflow.AppText
+import com.bearbones.kumaflow.LocalIsDark
 import com.bearbones.kumaflow.VirtualWallet
 import com.bearbones.kumaflow.ui.components.KumaButton
-import com.bearbones.kumaflow.ui.components.KumaOutlinedTextField
+import com.bearbones.kumaflow.ui.theme.LocalIsBrutal
+
+enum class WalletScreenRoute {
+    MANAGE, SUCCESS
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManageWalletSheet(
-    walletToEdit: VirtualWallet?,
+fun ManageWalletFullScreen(
+    virtualWallets: List<VirtualWallet>,
     onSave: (oldName: String?, wallet: VirtualWallet) -> Unit,
     onDelete: (VirtualWallet) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    userProfileName: String
+) {
+    var currentRoute by remember { mutableStateOf(WalletScreenRoute.MANAGE) }
+    var successWallet by remember { mutableStateOf<VirtualWallet?>(null) }
+    
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppBg())
+        ) {
+            AnimatedContent(targetState = currentRoute, label = "WalletRoute") { route ->
+                when (route) {
+                    WalletScreenRoute.MANAGE -> {
+                        ManageWalletContent(
+                            wallets = virtualWallets,
+                            onSave = { oldName, w -> 
+                                onSave(oldName, w)
+                                successWallet = w
+                                currentRoute = WalletScreenRoute.SUCCESS
+                            },
+                            onDelete = onDelete,
+                            onBack = onDismiss
+                        )
+                    }
+                    WalletScreenRoute.SUCCESS -> {
+                        WalletSuccessContent(
+                            wallet = successWallet,
+                            onDone = onDismiss,
+                            userName = userProfileName
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ManageWalletContent(
+    wallets: List<VirtualWallet>,
+    onSave: (String?, VirtualWallet) -> Unit,
+    onDelete: (VirtualWallet) -> Unit,
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf(walletToEdit?.name ?: "") }
-    var bgType by remember { mutableStateOf(walletToEdit?.backgroundType ?: "SOLID") }
-    var bgValue by remember { mutableStateOf(walletToEdit?.backgroundValue ?: "#2A2A2A") }
+    
+    val pagerState = rememberPagerState(pageCount = { wallets.size + 1 })
     
     val solidColors = listOf("#2A2A2A", "#D32F2F", "#1976D2", "#388E3C", "#FBC02D", "#7B1FA2", "#111111", "#0288D1")
-    val templateImages = listOf(
-        "minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card"
-    )
+    val templateImages = listOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = com.bearbones.kumaflow.AppBg(),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    var name by remember { mutableStateOf("") }
+    var cardNumber by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var bgType by remember { mutableStateOf("SOLID") }
+    var bgValue by remember { mutableStateOf("#D32F2F") }
+    
+    val isNewWallet = pagerState.currentPage == wallets.size
+    val currentWallet = if (isNewWallet) null else wallets.getOrNull(pagerState.currentPage)
+
+    LaunchedEffect(pagerState.currentPage, wallets) {
+        if (isNewWallet) {
+            name = ""
+            cardNumber = ""
+            notes = ""
+            bgType = "SOLID"
+            bgValue = "#D32F2F"
+        } else {
+            currentWallet?.let {
+                name = it.name
+                cardNumber = it.cardNumber
+                notes = it.notes
+                bgType = it.backgroundType
+                bgValue = it.backgroundValue
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppText())
+            }
             Text(
-                if (walletToEdit == null) "Add Wallet" else "Edit Wallet",
-                fontWeight = FontWeight.Bold,
+                text = if (isNewWallet) "Add Wallet" else "Edit Wallet",
+                color = AppText(),
                 fontSize = 20.sp,
-                color = com.bearbones.kumaflow.AppText(),
-                modifier = Modifier.padding(bottom = 24.dp)
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 8.dp)
             )
+        }
 
-            // Preview Card
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp),
+            contentPadding = PaddingValues(horizontal = 32.dp),
+            pageSpacing = 16.dp
+        ) { page ->
+            val previewType = if (page == wallets.size) bgType else wallets[page].backgroundType
+            val previewVal = if (page == wallets.size) bgValue else wallets[page].backgroundValue
+            val previewName = if (page == wallets.size) name else wallets[page].name
+            val previewNumber = if (page == wallets.size) cardNumber else wallets[page].cardNumber
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
-                        if (bgType == "SOLID") {
-                            try {
-                                Color(android.graphics.Color.parseColor(bgValue))
-                            } catch (e: Exception) { Color.DarkGray }
+                        if (previewType == "SOLID") {
+                            try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
                         } else Color.Gray
                     )
             ) {
-                if (bgType == "TEMPLATE") {
-                    val resId = context.resources.getIdentifier(bgValue, "drawable", context.packageName)
+                if (previewType == "TEMPLATE") {
+                    val resId = context.resources.getIdentifier(previewVal, "drawable", context.packageName)
                     if (resId != 0) {
                         Image(
                             painter = painterResource(id = resId),
@@ -89,7 +198,6 @@ fun ManageWalletSheet(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
-                        // Scrim
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -105,28 +213,64 @@ fun ManageWalletSheet(
                 ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("KumaFlow", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
-                        Text(name.ifBlank { "Wallet Name" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(previewName.ifBlank { "Wallet Name" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
-                    Text("Rp 0", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                    if (previewNumber.isNotBlank()) {
+                        Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.Gray.copy(alpha = 0.1f))
+                .padding(16.dp)
+            ) {
+                Column {
+                    Text("Wallet name", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Card number", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = cardNumber,
+                        onValueChange = { cardNumber = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Notes", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            KumaOutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Wallet Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
             
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text("Background Theme", color = com.bearbones.kumaflow.AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+            Text("Appearance", color = AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Solid Colors
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(solidColors) { colorHex ->
                     val isSelected = bgType == "SOLID" && bgValue == colorHex
@@ -135,7 +279,7 @@ fun ManageWalletSheet(
                             .size(50.dp)
                             .clip(CircleShape)
                             .background(Color(android.graphics.Color.parseColor(colorHex)))
-                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) com.bearbones.kumaflow.AppPrimary() else Color.Transparent, CircleShape)
+                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, CircleShape)
                             .clickable {
                                 bgType = "SOLID"
                                 bgValue = colorHex
@@ -147,11 +291,8 @@ fun ManageWalletSheet(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Nusantara Themes", color = com.bearbones.kumaflow.AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Templates
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(templateImages) { template ->
                     val isSelected = bgType == "TEMPLATE" && bgValue == template
@@ -162,7 +303,7 @@ fun ManageWalletSheet(
                             .height(50.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.Gray)
-                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) com.bearbones.kumaflow.AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
+                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
                             .clickable {
                                 bgType = "TEMPLATE"
                                 bgValue = template
@@ -176,8 +317,6 @@ fun ManageWalletSheet(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                        } else {
-                            Text("Missing", fontSize = 10.sp)
                         }
                         if (isSelected) {
                             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
@@ -187,46 +326,174 @@ fun ManageWalletSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.Gray.copy(alpha = 0.1f))
+                .padding(16.dp)
+            ) {
+                Column {
+                    Text("Important note", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Kartu dompet virtual ini dibuat secara manual. Pastikan nama kartu, nomor, dan catatan sesuai dengan kebutuhan pencatatan keuangan Anda di KumaFlow.", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 20.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                if (walletToEdit != null) {
+                if (!isNewWallet && currentWallet != null) {
                     KumaButton(
-                        onClick = { onDelete(walletToEdit) }, 
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        onClick = { onDelete(currentWallet) }, 
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        modifier = Modifier.weight(0.4f)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Delete, null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Delete", color = Color.White)
-                        }
+                        Icon(Icons.Default.Delete, null, tint = Color.White)
                     }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
-                
-                Spacer(modifier = Modifier.width(16.dp))
                 
                 KumaButton(
                     onClick = {
                         if (name.isNotBlank()) {
                             onSave(
-                                walletToEdit?.name,
+                                currentWallet?.name,
                                 VirtualWallet(
                                     name = name.trim(),
-                                    orderIndex = walletToEdit?.orderIndex ?: 0,
+                                    orderIndex = currentWallet?.orderIndex ?: wallets.size,
                                     backgroundType = bgType,
-                                    backgroundValue = bgValue
+                                    backgroundValue = bgValue,
+                                    cardNumber = cardNumber.trim(),
+                                    notes = notes.trim()
                                 )
                             )
                         }
                     },
-                    modifier = if (walletToEdit == null) Modifier.fillMaxWidth() else Modifier.weight(1f)
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("Save", color = Color.White)
+                    Text(if (isNewWallet) "Add" else "Save", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
         }
+    }
+}
+
+@Composable
+fun WalletSuccessContent(
+    wallet: VirtualWallet?,
+    onDone: () -> Unit,
+    userName: String
+) {
+    val context = LocalContext.current
+    val isDark = LocalIsDark.current
+    val isBrutal = LocalIsBrutal.current
+    
+    val isJune = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) == java.util.Calendar.JUNE
+    val isPride = userName.contains("#pride", ignoreCase = true) && isJune
+    val isBear = userName.contains("#bear", ignoreCase = true)
+    val isOR = userName.contains("#OR", ignoreCase = true)
+
+    val tickColor = when {
+        isOR -> Color(0xFFC2185B)
+        isBrutal -> Color(0xFF2ECC71)
+        isPride -> Color(0xFF9C27B0)
+        isBear -> Color(0xFF795548)
+        isDark -> Color(0xFF4FC3F7)
+        else -> Color(0xFF4CAF50)
+    }
+
+    val dynamicProperties = rememberLottieDynamicProperties(
+        rememberLottieDynamicProperty(
+            property = LottieProperty.COLOR_FILTER,
+            value = SimpleColorFilter(tickColor.toArgb()),
+            keyPath = arrayOf("**")
+        )
+    )
+
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.tick))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = 1
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        
+        Box(modifier = Modifier.size(150.dp)) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                dynamicProperties = dynamicProperties,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Added", color = AppText(), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
+
+        if (wallet != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        if (wallet.backgroundType == "SOLID") {
+                            try { Color(android.graphics.Color.parseColor(wallet.backgroundValue)) } catch (e: Exception) { Color.DarkGray }
+                        } else Color.Gray
+                    )
+            ) {
+                if (wallet.backgroundType == "TEMPLATE") {
+                    val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
+                    if (resId != 0) {
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("KumaFlow", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
+                        Text(wallet.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    }
+                    if (wallet.cardNumber.isNotBlank()) {
+                        Text(wallet.cardNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1.5f))
+
+        KumaButton(
+            onClick = onDone,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Done", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.bearbones.kumaflow.glassCard
 import com.bearbones.kumaflow.getGlassTextFieldColors
+import com.bearbones.kumaflow.ManageWalletFullScreen
 import com.bearbones.kumaflow.AppBg
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -761,70 +762,9 @@ fun SettingsScreen(
             }
         }
 
-        var walletToEdit by remember { mutableStateOf<com.bearbones.kumaflow.VirtualWallet?>(null) }
-        var isManageWalletSheetOpen by remember { mutableStateOf(false) }
-
         if (showWalletDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showWalletDialog = false
-                    onForceUpdate()
-                },
-                modifier = Modifier.glassCard(24.dp, AppSurface()),
-                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
-                title = { Text(AppStr.manageWallet, fontWeight = FontWeight.Bold) },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                            items(virtualWallets) { w ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("• ${w.name}", color = AppText(), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                    Row {
-                                        KumaIconButton(
-                                            onClick = {
-                                                walletToEdit = w
-                                                isManageWalletSheetOpen = true
-                                                showWalletDialog = false
-                                            },
-                                            modifier = Modifier.size(24.dp)
-                                        ) { KumaExpressiveIcon(Icons.Default.Edit, null, tint = AppPrimary(), containerColor = androidx.compose.ui.graphics.Color.Transparent) }
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        com.bearbones.kumaflow.ui.components.KumaButton(
-                            onClick = {
-                                walletToEdit = null
-                                isManageWalletSheetOpen = true
-                                showWalletDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(AppStr.addWallet, color = Color.White)
-                        }
-                    }
-                },
-                confirmButton = {
-                    KumaTextButton(
-                        onClick = {
-                            showWalletDialog = false
-                            onForceUpdate()
-                        }
-                    ) { Text(AppStr.close) }
-                }
-            )
-        }
-
-        if (isManageWalletSheetOpen) {
-            ManageWalletSheet(
-                walletToEdit = walletToEdit,
+            ManageWalletFullScreen(
+                virtualWallets = virtualWallets,
                 onSave = { oldName, wallet ->
                     scope.launch {
                         if (oldName != null && oldName != wallet.name) {
@@ -834,32 +774,24 @@ fun SettingsScreen(
                             dao.deleteVirtualWallet(oldName)
                         } else {
                             if (oldName == null) {
-                                // For new wallets, set orderIndex to end
                                 val newOrderIndex = if (virtualWallets.isEmpty()) 0 else virtualWallets.maxOf { it.orderIndex } + 1
                                 dao.upsertVirtualWallet(wallet.copy(orderIndex = newOrderIndex))
                             } else {
                                 dao.upsertVirtualWallet(wallet)
                             }
                         }
-                        isManageWalletSheetOpen = false
-                        showWalletDialog = true
+                        
+                        onForceUpdate()
                     }
                 },
-                onDelete = { wallet ->
-                    if (virtualWallets.size > 1) {
-                        scope.launch {
-                            dao.deleteVirtualWallet(wallet.name)
-                            isManageWalletSheetOpen = false
-                            showWalletDialog = true
-                        }
-                    } else {
-                        Toast.makeText(context, "Cannot delete last wallet", Toast.LENGTH_SHORT).show()
+                onDelete = { w ->
+                    scope.launch {
+                        dao.deleteVirtualWallet(w.name)
+                        onForceUpdate()
                     }
                 },
-                onDismiss = {
-                    isManageWalletSheetOpen = false
-                    showWalletDialog = true
-                }
+                onDismiss = { showWalletDialog = false },
+                userProfileName = currentProfile.userName
             )
         }
 
