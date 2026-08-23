@@ -292,44 +292,45 @@ fun WalletCardStack(
                             val peekPx = with(density) { cardPeek.toPx() }
                             val baseOffset = index * peekPx
 
-                        val targetOffset = when {
-                            isPopped && popState == 1 -> baseOffset - with(density) { 60.dp.toPx() }
-                            isPopped && popState == 2 -> baseOffset - with(density) { 150.dp.toPx() }
-                            else -> baseOffset
-                        }
-
-                        val currentOffset = if (isDragged) baseOffset + dragOffsetY else targetOffset
-
-                        val animatedOffset = remember { Animatable(baseOffset) }
-                        
-                        LaunchedEffect(isDragged, currentOffset) {
-                            if (isDragged) {
-                                animatedOffset.snapTo(currentOffset)
+                            val cardHeightPx = with(density) { cardHeight.toPx() }
+                            val targetOffset = when {
+                                isPopped && popState == 1 -> baseOffset - (cardHeightPx * 0.35f)
+                                isPopped && popState == 2 -> baseOffset - (cardHeightPx * 0.85f)
+                                else -> baseOffset
                             }
-                        }
 
-                        LaunchedEffect(index, isDragged, targetOffset) {
-                            if (!isDragged) {
-                                animatedOffset.animateTo(
-                                    targetOffset,
-                                    spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
+                            val currentOffset = if (isDragged) baseOffset + dragOffsetY else targetOffset
+
+                            val animatedOffset = remember { Animatable(baseOffset) }
+                            
+                            LaunchedEffect(isDragged, currentOffset) {
+                                if (isDragged) {
+                                    animatedOffset.snapTo(currentOffset)
+                                }
+                            }
+
+                            LaunchedEffect(index, isDragged, targetOffset) {
+                                if (!isDragged) {
+                                    animatedOffset.animateTo(
+                                        targetOffset,
+                                        spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMedium
+                                        )
                                     )
-                                )
+                                }
                             }
-                        }
 
-                        val finalOffset = if (isDragged) currentOffset else animatedOffset.value
-                        val zIdx = if (isDragged || isPopped) 100f + index else index.toFloat()
+                            val finalOffset = if (isDragged) currentOffset else animatedOffset.value
+                            val zIdx = if (isDragged || isPopped) 100f + index else index.toFloat()
 
-                        val animatedScale by animateFloatAsState(
-                            targetValue = if (isDragged) 1.05f else 1f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessMediumLow
-                            ), label = "cardScale"
-                        )
+                            val animatedScale by animateFloatAsState(
+                                targetValue = if (isDragged) 1.05f else 1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                ), label = "cardScale"
+                            )
                         val animatedElevation by animateFloatAsState(
                             targetValue = if (isDragged) 24f else if (isPopped) 30f else 4f,
                             animationSpec = tween(300), label = "cardElevation"
@@ -397,9 +398,14 @@ fun WalletCardStack(
                                             val freshBaseOffset = currentIndex * peekPx
 
                                             val rawCurrent = (freshBaseOffset + dragOffsetY) / peekPx
-                                            val targetIndex = rawCurrent
-                                                .roundToInt()
-                                                .coerceIn(0, orderedWallets.size - 1)
+                                            val diff = rawCurrent - currentIndex
+                                            val targetIndex = if (diff > 0.6f) {
+                                                currentIndex + 1
+                                            } else if (diff < -0.6f) {
+                                                currentIndex - 1
+                                            } else {
+                                                currentIndex
+                                            }.coerceIn(0, orderedWallets.size - 1)
 
                                             if (targetIndex != currentIndex) {
                                                 val newList = orderedWallets.toMutableList()
@@ -409,6 +415,8 @@ fun WalletCardStack(
                                                 
                                                 dragOffsetY -= (targetIndex - currentIndex) * peekPx
                                                 draggedIndex = targetIndex
+                                                
+                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             }
                                         },
                                         onDragEnd = {
