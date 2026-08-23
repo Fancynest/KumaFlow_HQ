@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow
+import androidx.compose.ui.draw.scale
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -394,7 +395,7 @@ fun WalletCardStack(
                                         painter = painterResource(id = resId),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
                                     )
                                     // Slight gradient overlay to ensure text is readable
                                     Box(

@@ -1,4 +1,5 @@
 package com.bearbones.kumaflow
+import androidx.compose.ui.draw.scale
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
@@ -233,7 +234,7 @@ fun ManageWalletContent(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
                             )
                             Box(
                                 modifier = Modifier
@@ -505,7 +506,7 @@ fun WalletSuccessContent(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
                             )
                             Box(
                                 modifier = Modifier
