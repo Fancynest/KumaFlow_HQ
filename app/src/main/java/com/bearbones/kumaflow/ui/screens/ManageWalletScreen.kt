@@ -169,19 +169,20 @@ fun ManageWalletContent(
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(240.dp),
+                .height(260.dp),
             contentPadding = PaddingValues(horizontal = 32.dp),
             pageSpacing = 16.dp
         ) { page ->
-            val previewType = if (page == wallets.size) bgType else wallets[page].backgroundType
-            val previewVal = if (page == wallets.size) bgValue else wallets[page].backgroundValue
-            val previewName = if (page == wallets.size) name else wallets[page].name
-            val previewNumber = if (page == wallets.size) cardNumber else wallets[page].cardNumber
+            val isCurrentPage = page == pagerState.currentPage
+            val previewType = if (isCurrentPage) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
+            val previewVal = if (isCurrentPage) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
+            val previewName = if (isCurrentPage) name else if (page == wallets.size) "New Wallet" else wallets[page].name
+            val previewNumber = if (isCurrentPage) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(230.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         if (previewType == "SOLID") {
@@ -229,12 +230,15 @@ fun ManageWalletContent(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
         ) {
-            Box(modifier = Modifier
+            val isBrutal = LocalIsBrutal.current
+            val baseFieldMod = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.Gray.copy(alpha = 0.1f))
+                .clip(RoundedCornerShape(if (isBrutal) 0.dp else 16.dp))
+                .background(if (isBrutal) Color.White else Color.Gray.copy(alpha = 0.1f))
+                .then(if (isBrutal) Modifier.border(3.dp, Color.Black) else Modifier)
                 .padding(16.dp)
-            ) {
+
+            Box(modifier = baseFieldMod) {
                 Column {
                     Text("Wallet name", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
                     androidx.compose.foundation.text.BasicTextField(
@@ -328,12 +332,7 @@ fun ManageWalletContent(
 
             Spacer(modifier = Modifier.height(24.dp))
             
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.Gray.copy(alpha = 0.1f))
-                .padding(16.dp)
-            ) {
+            Box(modifier = baseFieldMod) {
                 Column {
                     Text("Important note", color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -376,7 +375,7 @@ fun ManageWalletContent(
                     Text(if (isNewWallet) "Add" else "Save", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
         }
     }
 }
@@ -398,7 +397,7 @@ fun WalletSuccessContent(
 
     val tickColor = when {
         isOR -> Color(0xFFC2185B)
-        isBrutal -> Color(0xFF2ECC71)
+        isBrutal -> Color(0xFF000000)
         isPride -> Color(0xFF9C27B0)
         isBear -> Color(0xFF795548)
         isDark -> Color(0xFF4FC3F7)
@@ -416,7 +415,8 @@ fun WalletSuccessContent(
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.tick))
     val progress by animateLottieCompositionAsState(
         composition = composition,
-        iterations = 1
+        iterations = 1,
+        speed = 0.7f
     )
 
     Column(
@@ -445,7 +445,7 @@ fun WalletSuccessContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(230.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         if (wallet.backgroundType == "SOLID") {
@@ -494,6 +494,6 @@ fun WalletSuccessContent(
         ) {
             Text("Done", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp).navigationBarsPadding())
     }
 }
