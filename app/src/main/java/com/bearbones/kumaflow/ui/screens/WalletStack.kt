@@ -152,7 +152,7 @@ fun WalletCardStack(
 
     // Dimensions
     val cardHeight = 190.dp
-    val cardPeek = 48.dp          // How much each card peeks above the one below
+    val cardPeek = 72.dp          // Increased from 48.dp to give more touch area for easier selection/reordering
     val walletCorner = 28.dp
     val flapHeight = 100.dp       // The wallet front flap height (covers bottom of cards)
     val walletSidePadding = 12.dp // Padding inside wallet for cards
