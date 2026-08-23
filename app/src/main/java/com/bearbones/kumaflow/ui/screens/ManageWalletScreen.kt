@@ -81,6 +81,7 @@ fun ManageWalletFullScreen(
                 when (route) {
                     WalletScreenRoute.MANAGE -> {
                         ManageWalletContent(
+                            userName = userProfileName,
                             wallets = virtualWallets,
                             onSave = { oldName, w -> 
                                 onSave(oldName, w)
@@ -106,6 +107,7 @@ fun ManageWalletFullScreen(
 
 @Composable
 fun ManageWalletContent(
+    userName: String,
     wallets: List<VirtualWallet>,
     onSave: (String?, VirtualWallet) -> Unit,
     onDelete: (VirtualWallet) -> Unit,
@@ -116,8 +118,8 @@ fun ManageWalletContent(
     val pagerState = rememberPagerState(pageCount = { wallets.size + 1 })
     
     val solidColors = listOf("#2A2A2A", "#D32F2F", "#1976D2", "#388E3C", "#FBC02D", "#7B1FA2", "#111111", "#0288D1")
-    val isAppPride = LocalIsPride.current
-    val isAppBear = LocalIsBear.current
+    val isAppPride = userName.contains("#pride", ignoreCase = true)
+    val isAppBear = userName.contains("#bear", ignoreCase = true)
     val templateImages = remember(isAppPride, isAppBear) {
         val list = mutableListOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
         if (isAppPride) list.add("pride")
@@ -215,8 +217,8 @@ fun ManageWalletContent(
                 if (previewType == "TEMPLATE") {
                     val isPrideReq = previewVal == "pride"
                     val isBearReq = previewVal == "bear" || previewVal == "bear2"
-                    val isPrideAllowed = LocalIsPride.current
-                    val isBearAllowed = LocalIsBear.current
+                    val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
+                    val isBearAllowed = userName.contains("#bear", ignoreCase = true)
                     
                     val shouldRender = when {
                         isPrideReq -> isPrideAllowed
@@ -487,8 +489,8 @@ fun WalletSuccessContent(
                 if (wallet.backgroundType == "TEMPLATE") {
                     val isPrideReq = wallet.backgroundValue == "pride"
                     val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
-                    val isPrideAllowed = LocalIsPride.current
-                    val isBearAllowed = LocalIsBear.current
+                    val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
+                    val isBearAllowed = userName.contains("#bear", ignoreCase = true)
                     
                     val shouldRender = when {
                         isPrideReq -> isPrideAllowed

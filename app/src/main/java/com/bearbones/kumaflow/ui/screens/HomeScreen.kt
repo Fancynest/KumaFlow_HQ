@@ -480,6 +480,7 @@ fun HomeScreen(
                             }
                             
                             WalletCardStack(
+                                userName = profile.userName,
                                 wallets = virtualWallets,
                                 balances = walletBalances,
                                 currencySymbol = curSym,

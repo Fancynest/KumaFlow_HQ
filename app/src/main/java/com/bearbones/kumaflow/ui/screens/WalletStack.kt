@@ -139,6 +139,7 @@ class TopUnboundedShape(private val cornerRadius: Dp) : Shape {
 
 @Composable
 fun WalletCardStack(
+    userName: String,
     wallets: List<VirtualWallet>,
     balances: Map<String, Long>,
     currencySymbol: String,
@@ -377,8 +378,8 @@ fun WalletCardStack(
                         if (wallet.backgroundType == "TEMPLATE") {
                             val isPrideReq = wallet.backgroundValue == "pride"
                             val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
-                            val isPrideAllowed = LocalIsPride.current
-                            val isBearAllowed = LocalIsBear.current
+                            val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
+                            val isBearAllowed = userName.contains("#bear", ignoreCase = true)
                             
                             val shouldRender = when {
                                 isPrideReq -> isPrideAllowed
