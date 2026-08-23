@@ -157,6 +157,7 @@ fun WalletCardStack(
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
     val tiltState = rememberTiltState()
+    var lastLongPressTime by remember { mutableStateOf(0L) }
 
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -359,6 +360,7 @@ fun WalletCardStack(
                                 .pointerInput(wallet.name, popState, poppedCard) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = {
+                                            lastLongPressTime = System.currentTimeMillis()
                                             if (poppedCard == wallet.name && popState == 2) {
                                                 isReconcileHold = true
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -419,6 +421,8 @@ fun WalletCardStack(
                                     )
                                 }
                                 .clickable {
+                                    if (System.currentTimeMillis() - lastLongPressTime < 500) return@clickable
+                                    
                                     if (poppedCard == wallet.name) {
                                         // If already popped (quarter or full), tapping unpops it
                                         poppedCard = null
