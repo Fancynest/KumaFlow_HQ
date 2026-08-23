@@ -69,7 +69,7 @@ fun SavingsMoreSheet(
                 .padding(24.dp)
         ) {
             Text(
-                text = "Lainnya",
+                text = if (AppStr.isId) "Lainnya" else "Others",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppText()
@@ -86,7 +86,7 @@ fun SavingsMoreSheet(
             ) {
                 Icon(Icons.Filled.Receipt, contentDescription = null, tint = AppPrimary())
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Lihat Riwayat Transaksi", color = AppText(), fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text(if (AppStr.isId) "Lihat Riwayat Transaksi" else "View Transaction History", color = AppText(), fontSize = 16.sp, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = AppText().copy(alpha = 0.5f))
             }
             Divider(color = AppText().copy(alpha = 0.1f))
@@ -101,7 +101,7 @@ fun SavingsMoreSheet(
             ) {
                 Icon(Icons.Filled.Settings, contentDescription = null, tint = AppPrimary())
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Pengaturan Tabungan", color = AppText(), fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text(if (AppStr.isId) "Pengaturan Tabungan" else "Savings Settings", color = AppText(), fontSize = 16.sp, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = AppText().copy(alpha = 0.5f))
             }
             Divider(color = AppText().copy(alpha = 0.1f))
@@ -116,7 +116,7 @@ fun SavingsMoreSheet(
             ) {
                 Icon(Icons.Filled.HeartBroken, contentDescription = null, tint = Color.Red)
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Tutup Tabungan", color = Color.Red, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                Text(if (AppStr.isId) "Tutup Tabungan" else "Close Savings", color = Color.Red, fontSize = 16.sp, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = AppText().copy(alpha = 0.5f))
             }
             
@@ -146,7 +146,9 @@ fun SavingsHistorySheet(
     var selectedMonth by remember { mutableStateOf(currentDate.monthValue) }
     var selectedYear by remember { mutableStateOf(currentDate.year) }
     
-    val months = listOf("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember")
+    val monthsId = listOf("Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember")
+    val monthsEn = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+    val months = if (AppStr.isId) monthsId else monthsEn
     var showMonthPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -178,12 +180,12 @@ fun SavingsHistorySheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Riwayat Transaksi", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
+                Text(if (AppStr.isId) "Riwayat Transaksi" else "Transaction History", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
                 var showDownloadMenu by remember { mutableStateOf(false) }
                 
                 Box {
                     IconButton(onClick = { showDownloadMenu = true }) {
-                        Icon(Icons.Filled.Download, contentDescription = "Unduh Riwayat", tint = AppPrimary())
+                        Icon(Icons.Filled.Download, contentDescription = if (AppStr.isId) "Unduh Riwayat" else "Download History", tint = AppPrimary())
                     }
                     DropdownMenu(
                         expanded = showDownloadMenu,
@@ -191,7 +193,7 @@ fun SavingsHistorySheet(
                         modifier = Modifier.background(AppSurface())
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Unduh sebagai CSV", color = AppText()) },
+                            text = { Text(if (AppStr.isId) "Unduh sebagai CSV" else "Download as CSV", color = AppText()) },
                             onClick = {
                                 showDownloadMenu = false
                                 scope.launch {
@@ -200,7 +202,7 @@ fun SavingsHistorySheet(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Unduh sebagai PDF", color = AppText()) },
+                            text = { Text(if (AppStr.isId) "Unduh sebagai PDF" else "Download as PDF", color = AppText()) },
                             onClick = {
                                 showDownloadMenu = false
                                 scope.launch {
@@ -219,7 +221,7 @@ fun SavingsHistorySheet(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Cari...", color = AppText().copy(alpha = 0.5f)) },
+                placeholder = { Text(if (AppStr.isId) "Cari..." else "Search...", color = AppText().copy(alpha = 0.5f)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = AppText().copy(alpha = 0.5f)) },
                 singleLine = true,
                 shape = RoundedCornerShape(24.dp),
@@ -395,14 +397,14 @@ fun SavingsSettingsSheet(
                 .verticalScroll(rememberScrollState())
                 .imePadding()
         ) {
-            Text("Pengaturan Tabungan", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
+            Text(if (AppStr.isId) "Pengaturan Tabungan" else "Savings Settings", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
             // Edit Name
             OutlinedTextField(
                 value = editName,
                 onValueChange = { editName = it },
-                label = { Text("Nama Tabungan") },
+                label = { Text(if (AppStr.isId) "Nama Tabungan" else "Savings Name") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AppPrimary(),
@@ -417,8 +419,8 @@ fun SavingsSettingsSheet(
             // Goal
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Atur Goal", fontWeight = FontWeight.Bold, color = AppText())
-                    Text("Mimpi kamu akan terwujud ketika mencapai goal", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                    Text(if (AppStr.isId) "Atur Goal" else "Set Goal", fontWeight = FontWeight.Bold, color = AppText())
+                    Text(if (AppStr.isId) "Mimpi kamu akan terwujud ketika mencapai goal" else "Your dreams will come true when you reach your goal", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
                 }
                 Switch(
                     checked = goalEnabled,
@@ -431,10 +433,10 @@ fun SavingsSettingsSheet(
                 OutlinedTextField(
                     value = editTargetStr,
                     onValueChange = { editTargetStr = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Target Nominal") },
+                    label = { Text(if (AppStr.isId) "Target Nominal" else "Target Amount") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    prefix = { Text("Rp ", color = AppText().copy(alpha = 0.6f)) },
+                    prefix = { Text(if (AppStr.isId) "Rp " else "${profile.currency} ", color = AppText().copy(alpha = 0.6f)) },
                     singleLine = true,
                     visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -452,7 +454,7 @@ fun SavingsSettingsSheet(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Autodebit", fontWeight = FontWeight.Bold, color = AppText())
-                    Text("Tentukan waktu penarikan otomatis dari Rekening Utama", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                    Text(if (AppStr.isId) "Tentukan waktu penarikan otomatis dari Rekening Utama" else "Set automatic withdrawal time from Main Account", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
                 }
                 Switch(
                     checked = autoDebitEnabled,
@@ -464,12 +466,25 @@ fun SavingsSettingsSheet(
             if (autoDebitEnabled) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                val displayFreq = if (AppStr.isId) autoDebitFreq else {
+                    autoDebitFreq.replace("Harian", "Daily")
+                        .replace("Mingguan", "Weekly")
+                        .replace("Bulanan", "Monthly")
+                        .replace("Senin", "Monday")
+                        .replace("Selasa", "Tuesday")
+                        .replace("Rabu", "Wednesday")
+                        .replace("Kamis", "Thursday")
+                        .replace("Jumat", "Friday")
+                        .replace("Sabtu", "Saturday")
+                        .replace("Minggu", "Sunday")
+                }
+                
                 // Frekuensi
                 OutlinedTextField(
-                    value = autoDebitFreq,
+                    value = displayFreq,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Frekuensi") },
+                    label = { Text(if (AppStr.isId) "Frekuensi" else "Frequency") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showFreqSheet = true },
@@ -491,10 +506,10 @@ fun SavingsSettingsSheet(
                 OutlinedTextField(
                     value = autoDebitAmountStr,
                     onValueChange = { autoDebitAmountStr = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Jumlah yang didebit") },
+                    label = { Text(if (AppStr.isId) "Jumlah yang didebit" else "Amount to debit") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    prefix = { Text("Rp ", color = AppText().copy(alpha = 0.6f)) },
+                    prefix = { Text(if (AppStr.isId) "Rp " else "${profile.currency} ", color = AppText().copy(alpha = 0.6f)) },
                     singleLine = true,
                     visualTransformation = com.bearbones.kumaflow.ThousandSeparatorTransformation(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -558,7 +573,7 @@ fun SavingsSettingsSheet(
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
             ) {
-                Text("Simpan", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(if (AppStr.isId) "Simpan" else "Save", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(48.dp))
         }
@@ -606,13 +621,19 @@ fun SavingsAutodebitFreqSheet(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            Text("Kapan waktu autodebit tabungan kamu?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AppText())
+            Text(if (AppStr.isId) "Kapan waktu autodebit tabungan kamu?" else "When should the autodebit happen?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
             // Segmented Control
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 listOf("Harian", "Mingguan", "Bulanan").forEach { tab ->
                     val isSelected = selectedTab == tab
+                    val tabDisplay = if (AppStr.isId) tab else when(tab) {
+                        "Harian" -> "Daily"
+                        "Mingguan" -> "Weekly"
+                        "Bulanan" -> "Monthly"
+                        else -> tab
+                    }
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -624,7 +645,7 @@ fun SavingsAutodebitFreqSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = tab,
+                            text = tabDisplay,
                             color = if (isSelected) AppPrimary() else AppText().copy(alpha = 0.5f),
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
@@ -638,14 +659,24 @@ fun SavingsAutodebitFreqSheet(
                 Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(androidx.compose.material.icons.Icons.Filled.Lightbulb, contentDescription = null, tint = AppPrimary())
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Kamu akan diautodebit setiap hari", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    Text(if (AppStr.isId) "Kamu akan diautodebit setiap hari" else "You will be autodebited every day", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
                 }
             } else if (selectedTab == "Mingguan") {
-                Text("Setiap hari apa?", fontWeight = FontWeight.Bold, color = AppText())
+                Text(if (AppStr.isId) "Setiap hari apa?" else "On what day?", fontWeight = FontWeight.Bold, color = AppText())
                 Spacer(modifier = Modifier.height(16.dp))
                 androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.height(200.dp)) {
                     items(days) { day ->
                         val isSelected = selectedDay == day
+                        val dayDisplay = if (AppStr.isId) day else when(day) {
+                            "Senin" -> "Monday"
+                            "Selasa" -> "Tuesday"
+                            "Rabu" -> "Wednesday"
+                            "Kamis" -> "Thursday"
+                            "Jumat" -> "Friday"
+                            "Sabtu" -> "Saturday"
+                            "Minggu" -> "Sunday"
+                            else -> day
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -655,12 +686,12 @@ fun SavingsAutodebitFreqSheet(
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(day, color = if (isSelected) AppPrimary() else AppText(), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                            Text(dayDisplay, color = if (isSelected) AppPrimary() else AppText(), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
                         }
                     }
                 }
             } else if (selectedTab == "Bulanan") {
-                Text("Setiap tanggal berapa?", fontWeight = FontWeight.Bold, color = AppText())
+                Text(if (AppStr.isId) "Setiap tanggal berapa?" else "On what date?", fontWeight = FontWeight.Bold, color = AppText())
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Grid of dates 1-31
@@ -708,7 +739,7 @@ fun SavingsAutodebitFreqSheet(
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
             ) {
-                Text("Pilih", fontWeight = FontWeight.Bold)
+                Text(if (AppStr.isId) "Pilih" else "Select", fontWeight = FontWeight.Bold)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -718,7 +749,7 @@ fun SavingsAutodebitFreqSheet(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(24.dp)
             ) {
-                Text("Hapus", color = AppText())
+                Text(if (AppStr.isId) "Hapus" else "Delete", color = AppText())
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -747,15 +778,15 @@ fun SavingsCloseDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppSurface(),
-        title = { Text("Tutup", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 24.sp) },
+        title = { Text(if (AppStr.isId) "Tutup" else "Close", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 24.sp) },
         text = {
             Column {
-                Text("Yakin mau tutup tabungan kamu?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AppText())
+                Text(if (AppStr.isId) "Yakin mau tutup tabungan kamu?" else "Are you sure you want to close your savings?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = AppText())
                 Spacer(modifier = Modifier.height(8.dp))
                 if (balance > 0) {
-                    Text("Dana sebesar $curSym $balanceStr akan masuk ke $defaultMainWallet kamu.", color = AppText().copy(alpha = 0.7f))
+                    Text(if (AppStr.isId) "Dana sebesar $curSym $balanceStr akan masuk ke $defaultMainWallet kamu." else "The fund of $curSym $balanceStr will be transferred to your $defaultMainWallet.", color = AppText().copy(alpha = 0.7f))
                 } else {
-                    Text("Tabungan ini akan dihapus secara permanen.", color = AppText().copy(alpha = 0.7f))
+                    Text(if (AppStr.isId) "Tabungan ini akan dihapus secara permanen." else "This savings will be permanently deleted.", color = AppText().copy(alpha = 0.7f))
                 }
             }
         },
@@ -768,8 +799,8 @@ fun SavingsCloseDialog(
                             val dateStr = dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                             val timeStr = dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                             
-                            val txOut = KumaTransaction(id = 0, name = "Penutupan Tabungan $goalName", date = dateStr, amount = balance.toString(), isIncome = false, category = "Transfer", wallet = goalName, timestamp = timeStr)
-                            val txIn = KumaTransaction(id = 0, name = "Penutupan Tabungan $goalName", date = dateStr, amount = balance.toString(), isIncome = true, category = "Transfer", wallet = defaultMainWallet, timestamp = timeStr)
+                            val txOut = KumaTransaction(id = 0, name = if(AppStr.isId) "Penutupan Tabungan $goalName" else "Savings Closure $goalName", date = dateStr, amount = balance.toString(), isIncome = false, category = "Transfer", wallet = goalName, timestamp = timeStr)
+                            val txIn = KumaTransaction(id = 0, name = if(AppStr.isId) "Penutupan Tabungan $goalName" else "Savings Closure $goalName", date = dateStr, amount = balance.toString(), isIncome = true, category = "Transfer", wallet = defaultMainWallet, timestamp = timeStr)
                             
                             dao.insertFullTransaction(txOut, emptyList())
                             dao.insertFullTransaction(txIn, emptyList())
@@ -792,7 +823,7 @@ fun SavingsCloseDialog(
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
             ) {
-                Text("Yakin", fontWeight = FontWeight.Bold)
+                Text(if (AppStr.isId) "Yakin" else "Confirm", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -801,7 +832,7 @@ fun SavingsCloseDialog(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(24.dp)
             ) {
-                Text("Batal", color = AppText())
+                Text(if (AppStr.isId) "Batal" else "Cancel", color = AppText())
             }
         }
     )
