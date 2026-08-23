@@ -29,8 +29,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import com.bearbones.kumaflow.LocalIsPride
-import com.bearbones.kumaflow.LocalIsBear
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -379,8 +377,8 @@ fun WalletCardStack(
                         if (wallet.backgroundType == "TEMPLATE") {
                             val isPrideReq = wallet.backgroundValue == "pride"
                             val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
-                            val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
-                            val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                            val isPrideAllowed = LocalIsPride.current
+                            val isBearAllowed = LocalIsBear.current
                             
                             val shouldRender = when {
                                 isPrideReq -> isPrideAllowed

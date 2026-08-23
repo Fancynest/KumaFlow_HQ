@@ -44,8 +44,6 @@ import com.bearbones.kumaflow.AppBg
 import com.bearbones.kumaflow.AppPrimary
 import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.LocalIsDark
-import com.bearbones.kumaflow.LocalIsPride
-import com.bearbones.kumaflow.LocalIsBear
 import com.bearbones.kumaflow.VirtualWallet
 import com.bearbones.kumaflow.ui.components.KumaButton
 import com.bearbones.kumaflow.ui.theme.LocalIsBrutal
@@ -118,8 +116,8 @@ fun ManageWalletContent(
     val pagerState = rememberPagerState(pageCount = { wallets.size + 1 })
     
     val solidColors = listOf("#2A2A2A", "#D32F2F", "#1976D2", "#388E3C", "#FBC02D", "#7B1FA2", "#111111", "#0288D1")
-    val isAppPride = com.bearbones.kumaflow.LocalIsPride.current
-    val isAppBear = com.bearbones.kumaflow.LocalIsBear.current
+    val isAppPride = LocalIsPride.current
+    val isAppBear = LocalIsBear.current
     val templateImages = remember(isAppPride, isAppBear) {
         val list = mutableListOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
         if (isAppPride) list.add("pride")
@@ -217,8 +215,8 @@ fun ManageWalletContent(
                 if (previewType == "TEMPLATE") {
                     val isPrideReq = previewVal == "pride"
                     val isBearReq = previewVal == "bear" || previewVal == "bear2"
-                    val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
-                    val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                    val isPrideAllowed = LocalIsPride.current
+                    val isBearAllowed = LocalIsBear.current
                     
                     val shouldRender = when {
                         isPrideReq -> isPrideAllowed
@@ -489,8 +487,8 @@ fun WalletSuccessContent(
                 if (wallet.backgroundType == "TEMPLATE") {
                     val isPrideReq = wallet.backgroundValue == "pride"
                     val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
-                    val isPrideAllowed = com.bearbones.kumaflow.LocalIsPride.current
-                    val isBearAllowed = com.bearbones.kumaflow.LocalIsBear.current
+                    val isPrideAllowed = LocalIsPride.current
+                    val isBearAllowed = LocalIsBear.current
                     
                     val shouldRender = when {
                         isPrideReq -> isPrideAllowed
