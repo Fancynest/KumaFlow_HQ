@@ -239,12 +239,20 @@ fun SavingsScreen(
 
             if (savingsWallets.isEmpty()) {
                 item {
-                    Text(
-                        text = if (isId) "Belum ada tabungan. Yuk mulai nabung!" else "No savings yet. Start saving now!",
-                        color = AppText().copy(alpha = 0.5f),
-                        modifier = Modifier.padding(top = 32.dp).fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val composition by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.beruang_kosong))
+                        val progress by com.airbnb.lottie.compose.animateLottieCompositionAsState(composition = composition, iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever)
+                        com.airbnb.lottie.compose.LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.size(150.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (isId) "Belum ada tabungan. Yuk mulai nabung!" else "No savings yet. Start saving now!",
+                            color = AppText().copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
