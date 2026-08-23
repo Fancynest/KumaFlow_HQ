@@ -62,25 +62,25 @@ class WalletFlapShape(
 
         val path = Path().apply {
             // Start at top-left
-            moveTo(0f, sd)
+            moveTo(0f, 0f)
 
-            // Left side — line up to where scoop starts, then curve into scoop
-            lineTo(scoopLeft, sd)
+            // Left side — line up to where scoop starts
+            lineTo(scoopLeft, 0f)
 
-            // Scoop curve (concave going UP from the flap top edge)
+            // Scoop curve (concave going DOWN into the flap)
             cubicTo(
-                scoopLeft + sw * 0.2f, sd,      // control point 1
-                scoopLeft + sw * 0.2f, 0f,       // control point 2
-                size.width / 2f, 0f               // apex of scoop
+                scoopLeft + sw * 0.2f, 0f,      // control point 1
+                scoopLeft + sw * 0.2f, sd,       // control point 2 (down)
+                size.width / 2f, sd               // apex of scoop (down)
             )
             cubicTo(
-                scoopRight - sw * 0.2f, 0f,      // control point 3
-                scoopRight - sw * 0.2f, sd,       // control point 4
-                scoopRight, sd                     // end of scoop
+                scoopRight - sw * 0.2f, sd,      // control point 3 (down)
+                scoopRight - sw * 0.2f, 0f,       // control point 4
+                scoopRight, 0f                     // end of scoop (back at 0)
             )
 
             // Continue to top-right
-            lineTo(size.width, sd)
+            lineTo(size.width, 0f)
 
             // Right side down
             lineTo(size.width, size.height - cr)
@@ -105,7 +105,7 @@ class WalletFlapShape(
             )
 
             // Left side back up
-            lineTo(0f, sd)
+            lineTo(0f, 0f)
 
             close()
         }
@@ -128,10 +128,10 @@ fun WalletCardStack(
     val coroutineScope = rememberCoroutineScope()
 
     // Dimensions
-    val cardHeight = 110.dp
-    val cardPeek = 28.dp          // How much each card peeks above the one below
+    val cardHeight = 190.dp
+    val cardPeek = 48.dp          // How much each card peeks above the one below
     val walletCorner = 28.dp
-    val flapHeight = 80.dp        // The wallet front flap height (covers bottom of cards)
+    val flapHeight = 100.dp       // The wallet front flap height (covers bottom of cards)
     val walletSidePadding = 12.dp // Padding inside wallet for cards
     val scoopDepth = 32.dp
 
@@ -146,7 +146,7 @@ fun WalletCardStack(
     val cardsVisibleHeight = cardHeight + (cardPeek * (orderedWallets.size - 1).coerceAtLeast(0))
     // The wallet body extends: cards area visible at top + flap covering bottom
     // The flap overlaps the bottom part of the last card
-    val flapOverlap = 20.dp
+    val flapOverlap = 40.dp
     val totalWalletHeight = cardsVisibleHeight + flapHeight - flapOverlap
 
     // Wallet body colors
