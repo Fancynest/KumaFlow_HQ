@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -270,7 +271,7 @@ fun ManageWalletContent(
         val configuration = androidx.compose.ui.platform.LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val pagerPageWidth = screenWidth - 64.dp // 32.dp padding on each side
-        val cardPreviewHeight = pagerPageWidth / 1.86f
+        val cardPreviewHeight = pagerPageWidth / 1.6f
         val pagerHeight = cardPreviewHeight + 30.dp
 
         HorizontalPager(
@@ -287,18 +288,43 @@ fun ManageWalletContent(
             val previewName = if (isActive) name else if (page == wallets.size) "New Wallet" else wallets[page].name
             val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
 
+            val solidColor = if (previewType == "SOLID") {
+                try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
+            } else Color.Gray
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (previewType == "SOLID") {
-                            try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
-                        } else Color.Gray
-                    )
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
+                    .background(solidColor)
             ) {
-                if (previewType == "TEMPLATE") {
+                if (previewType == "GRADIENT") {
+                    val parts = previewVal.split(",")
+                    if (parts.size >= 2) {
+                        var startColor = Color.Gray
+                        var endColor = Color.DarkGray
+                        var valid = false
+                        try {
+                            startColor = Color(android.graphics.Color.parseColor(parts[0].trim()))
+                            endColor = Color(android.graphics.Color.parseColor(parts[1].trim()))
+                            valid = true
+                        } catch (e: Exception) {}
+                        
+                        if (valid) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = listOf(startColor, endColor)
+                                        )
+                                    )
+                            )
+                        }
+                    }
+                } else if (previewType == "TEMPLATE") {
                     val isPrideReq = previewVal == "pride"
                     val isBearReq = previewVal == "bear" || previewVal == "bear2"
                     val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
@@ -319,11 +345,6 @@ fun ManageWalletContent(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                            )
                         }
                     }
                 } else if (previewType == "CUSTOM") {
@@ -337,23 +358,69 @@ fun ManageWalletContent(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                            )
                         }
                     }
                 }
+
+                // Scrim overlays for text legibility
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.TopCenter)
+                        .background(Brush.verticalGradient(
+                            colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
+                        ))
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
+                        ))
+                )
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("KumaFlow", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
-                        Text(previewName.ifBlank { "Wallet Name" }, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .background(Color.White, CircleShape)
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = Icons.Filled.AccountBalanceWallet,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2A2A2A)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                previewName.ifBlank { "Wallet Name" },
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                        Text(
+                            "KumaFlow",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 10.sp
+                        )
                     }
                     if (previewNumber.isNotBlank()) {
                         Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
@@ -632,20 +699,45 @@ fun WalletSuccessContent(
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
             val cardPreviewWidth = screenWidth - 48.dp // 24.dp padding on each side of the Column
-            val cardPreviewHeight = cardPreviewWidth / 1.86f
+            val cardPreviewHeight = cardPreviewWidth / 1.6f
+
+            val solidColor = if (wallet.backgroundType == "SOLID") {
+                try { Color(android.graphics.Color.parseColor(wallet.backgroundValue)) } catch (e: Exception) { Color.DarkGray }
+            } else Color.Gray
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (wallet.backgroundType == "SOLID") {
-                            try { Color(android.graphics.Color.parseColor(wallet.backgroundValue)) } catch (e: Exception) { Color.DarkGray }
-                        } else Color.Gray
-                    )
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
+                    .background(solidColor)
             ) {
-                if (wallet.backgroundType == "TEMPLATE") {
+                if (wallet.backgroundType == "GRADIENT") {
+                    val parts = wallet.backgroundValue.split(",")
+                    if (parts.size >= 2) {
+                        var startColor = Color.Gray
+                        var endColor = Color.DarkGray
+                        var valid = false
+                        try {
+                            startColor = Color(android.graphics.Color.parseColor(parts[0].trim()))
+                            endColor = Color(android.graphics.Color.parseColor(parts[1].trim()))
+                            valid = true
+                        } catch (e: Exception) {}
+                        
+                        if (valid) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = listOf(startColor, endColor)
+                                        )
+                                    )
+                            )
+                        }
+                    }
+                } else if (wallet.backgroundType == "TEMPLATE") {
                     val isPrideReq = wallet.backgroundValue == "pride"
                     val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
                     val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
@@ -666,11 +758,6 @@ fun WalletSuccessContent(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                            )
                         }
                     }
                 } else if (wallet.backgroundType == "CUSTOM") {
@@ -678,25 +765,72 @@ fun WalletSuccessContent(
                     val bitmap = remember(file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                     if (bitmap != null) {
                         Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
-                        )
                     }
                 }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.TopCenter)
+                        .background(Brush.verticalGradient(
+                            colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
+                        ))
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
+                        ))
+                )
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("KumaFlow", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
-                        Text(wallet.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .background(Color.White, CircleShape)
+                                    .padding(4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = Icons.Filled.AccountBalanceWallet,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2A2A2A)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                wallet.name,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                        Text(
+                            "KumaFlow",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 10.sp
+                        )
                     }
                     if (wallet.cardNumber.isNotBlank()) {
                         Text(wallet.cardNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
+                    } else {
+                        Spacer(modifier = Modifier.weight(0.5f))
                     }
                 }
             }

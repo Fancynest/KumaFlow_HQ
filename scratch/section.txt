@@ -1,0 +1,149 @@
+MonthYearSelector(selectedMonth, selectedYear, onMonthChange)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    val isPrideThemeActive = (profile.themeMode == 3 || profile.themeMode == 4) && profile.userName.contains("#pride", ignoreCase = true)
+                    val prideGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
+                    val defaultSurfaceColor = AppSurfaceVariant()
+
+                    val animatedBalance by androidx.compose.animation.core.animateFloatAsState(targetValue = abs(balance).toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "bal")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().tutorialTarget(TutorialStep.HOME_SUMMARY),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(AppStr.totalBalanceTitle, color = AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Toggle Privacy",
+                                    tint = AppText().copy(alpha = 0.8f),
+                                    modifier = Modifier.clip(CircleShape).clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        isPrivacyMode = !isPrivacyMode
+                                        sharedPref.edit().putBoolean("privacy_mode", isPrivacyMode).apply()
+                                        updateKumaWidget(context)
+                                    }.padding(4.dp).size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val balPref = if (balance < 0) "- " else ""
+                            AutoSizeText(
+                                text = "$balPref$curSym ${formatHide(animatedBalance.toLong())}", 
+                                modifier = Modifier, 
+                                fontSize = 42.sp, 
+                                fontWeight = FontWeight.Black, 
+                                color = AppText(), 
+                                minimumFallbackSize = 24.sp
+                            )
+                        }
+                    } // End of Balance Row
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Action Buttons (Below Total Balance)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+                        
+                        // QRIS Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .then(
+                                    if (isBrutal) 
+                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
+                                    else 
+                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
+                                )
+                                .clickable { 
+                                    if (profile.qrisFilePath.isNotEmpty()) {
+                                        qrisDirectAmount = 0L
+                                        qrisDirectMessage = ""
+                                        showQrisDirectResult = true 
+                                    } else {
+                                        android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Kuma Roulette Entry Point
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .then(
+                                    if (isBrutal) 
+                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
+                                    else 
+                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
+                                )
+                                .clickable { onOpenRoulette() }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- NEW FINANCIAL HUB CARD ---
+                    Box(
+                        modifier = if (isPrideThemeActive) {
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(prideGradient).tutorialTarget(TutorialStep.HOME_WALLETS)
+                        } else {
+                            Modifier.fillMaxWidth().glassCard(32.dp, defaultSurfaceColor, useHaze = true).tutorialTarget(TutorialStep.HOME_WALLETS)
+                        }
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)) {
+                            // Income & Expense Summary
+                            val animatedInc by androidx.compose.animation.core.animateFloatAsState(targetValue = income.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "inc")
+                            val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "exp")
+                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column {
+                                    Text("Total Income", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.ArrowUpward, null, tint = if(isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedInc.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                    }
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("Total Expenses", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedExp.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(Icons.Default.ArrowDownward, null, tint = if(isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    

@@ -10,9 +10,13 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -341,13 +345,14 @@ fun WalletCardStack(
                                     scaleX = animatedScale
                                     scaleY = animatedScale
                                     shadowElevation = animatedElevation
-                                    shape = RoundedCornerShape(14.dp)
+                                    shape = RoundedCornerShape(24.dp)
                                     clip = true
                                     // Parallax 3D tilt effect from gyroscope
                                     rotationY = tiltState.value.x * 8f  // subtle left/right tilt
                                     rotationX = -tiltState.value.y * 4f // subtle forward/back tilt
                                     cameraDistance = 12f * density.density
                                 }
+                                .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                                 .background(
                                     if (wallet.backgroundType == "SOLID") {
                                         try {
@@ -438,8 +443,31 @@ fun WalletCardStack(
                                     }
                                 }
                     ) {
-                        // Draw template if applicable
-                        if (wallet.backgroundType == "TEMPLATE") {
+                        if (wallet.backgroundType == "GRADIENT") {
+                            val parts = wallet.backgroundValue.split(",")
+                            if (parts.size >= 2) {
+                                var startColor = Color.Gray
+                                var endColor = Color.DarkGray
+                                var valid = false
+                                try {
+                                    startColor = Color(android.graphics.Color.parseColor(parts[0].trim()))
+                                    endColor = Color(android.graphics.Color.parseColor(parts[1].trim()))
+                                    valid = true
+                                } catch (e: Exception) {}
+                                
+                                if (valid) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.linearGradient(
+                                                    colors = listOf(startColor, endColor)
+                                                )
+                                            )
+                                    )
+                                }
+                            }
+                        } else if (wallet.backgroundType == "TEMPLATE") {
                             val isPrideReq = wallet.backgroundValue == "pride"
                             val isBearReq = wallet.backgroundValue == "bear" || wallet.backgroundValue == "bear2"
                             val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
@@ -460,19 +488,6 @@ fun WalletCardStack(
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
                                     )
-                                    // Slight gradient overlay to ensure text is readable
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        Color.Black.copy(alpha = 0.2f),
-                                                        Color.Black.copy(alpha = 0.6f)
-                                                    )
-                                                )
-                                            )
-                                    )
                                 }
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
@@ -480,11 +495,6 @@ fun WalletCardStack(
                             val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                             if (bitmap != null) {
                                 Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.2f), Color.Black.copy(alpha = 0.6f))))
-                                )
                             }
                         }
 
@@ -519,6 +529,26 @@ fun WalletCardStack(
                                 }
                         )
 
+                        // Scrim overlays for text legibility
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .align(Alignment.TopCenter)
+                                .background(Brush.verticalGradient(
+                                    colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
+                                ))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .align(Alignment.BottomCenter)
+                                .background(Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
+                                ))
+                        )
+
                         // Card text content
                         val amt = balances[wallet.name] ?: 0L
                         val prefix = if (amt < 0) "- " else ""
@@ -526,7 +556,7 @@ fun WalletCardStack(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 18.dp, vertical = 12.dp),
+                                .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(
@@ -534,15 +564,31 @@ fun WalletCardStack(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    wallet.name,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(26.dp)
+                                            .background(Color.White, CircleShape)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        androidx.compose.material3.Icon(
+                                            imageVector = Icons.Filled.AccountBalanceWallet,
+                                            contentDescription = null,
+                                            tint = Color(0xFF2A2A2A) // Dark gray
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        wallet.name,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp
+                                    )
+                                }
                                 Text(
                                     "KumaFlow",
-                                    color = Color.White.copy(alpha = 0.4f),
+                                    color = Color.White.copy(alpha = 0.5f),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 10.sp
                                 )
