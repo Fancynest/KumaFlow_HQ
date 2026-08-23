@@ -233,7 +233,7 @@ fun ManageWalletContent(
                             Image(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.FillBounds,
                                 modifier = Modifier.fillMaxSize()
                             )
                             Box(
@@ -353,7 +353,7 @@ fun ManageWalletContent(
                             Image(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.FillBounds,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -505,7 +505,7 @@ fun WalletSuccessContent(
                             Image(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.FillBounds,
                                 modifier = Modifier.fillMaxSize()
                             )
                             Box(

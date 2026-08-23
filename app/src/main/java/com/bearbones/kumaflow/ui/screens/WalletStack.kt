@@ -394,7 +394,7 @@ fun WalletCardStack(
                                     Image(
                                         painter = painterResource(id = resId),
                                         contentDescription = null,
-                                        contentScale = ContentScale.Crop,
+                                        contentScale = ContentScale.FillBounds,
                                         modifier = Modifier.fillMaxSize()
                                     )
                                     // Slight gradient overlay to ensure text is readable
