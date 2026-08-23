@@ -113,6 +113,29 @@ class WalletFlapShape(
     }
 }
 
+class TopUnboundedShape(private val cornerRadius: Dp) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val cr = with(density) { cornerRadius.toPx() }
+        val path = Path().apply {
+            moveTo(-10000f, -10000f) 
+            lineTo(size.width + 10000f, -10000f) 
+            lineTo(size.width + 10000f, size.height - cr)
+            arcTo(
+                rect = Rect(size.width - cr * 2, size.height - cr * 2, size.width, size.height),
+                startAngleDegrees = 0f, sweepAngleDegrees = 90f, forceMoveTo = false
+            )
+            lineTo(cr, size.height)
+            arcTo(
+                rect = Rect(0f, size.height - cr * 2, cr * 2, size.height),
+                startAngleDegrees = 90f, sweepAngleDegrees = 90f, forceMoveTo = false
+            )
+            lineTo(-10000f, size.height - cr)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
 @Composable
 fun WalletCardStack(
     wallets: List<VirtualWallet>,
@@ -135,10 +158,14 @@ fun WalletCardStack(
     val walletSidePadding = 12.dp // Padding inside wallet for cards
     val scoopDepth = 32.dp
 
-    // Drag state
+    // Drag and Pop state
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffsetY by remember { mutableStateOf(0f) }
     var orderedWallets by remember(wallets) { mutableStateOf(wallets) }
+
+    var poppedCard by remember { mutableStateOf<String?>(null) }
+    var popState by remember { mutableIntStateOf(0) }
+    var isReconcileHold by remember { mutableStateOf(false) }
 
     if (orderedWallets.isEmpty()) return
 
@@ -157,106 +184,151 @@ fun WalletCardStack(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
+            .padding(top = 100.dp) // Add padding so popped cards don't get clipped by the screen/parent above
     ) {
         // === WALLET BODY (the beige/gray outer container) ===
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(totalWalletHeight)
-                .shadow(6.dp, RoundedCornerShape(walletCorner))
-                .clip(RoundedCornerShape(walletCorner))
-                .background(walletColor)
+                .shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
+                .background(walletColor, RoundedCornerShape(walletCorner))
         ) {
-            // === CARDS stacked inside, aligned to top ===
+            // === CARDS CONTAINER (clipped at bottom, open at top) ===
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = walletSidePadding)
-                    .padding(top = 10.dp) // small gap from wallet top edge
+                    .fillMaxSize()
+                    .clip(TopUnboundedShape(walletCorner))
             ) {
-                orderedWallets.forEachIndexed { index, wallet ->
-                    val isDragged = draggedIndex == index
-                    val peekPx = with(density) { cardPeek.toPx() }
-                    val baseOffset = index * peekPx
+                // Cards stacked inside
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = walletSidePadding)
+                        .padding(top = 10.dp) // small gap from wallet top edge
+                ) {
+                    orderedWallets.forEachIndexed { index, wallet ->
+                        val isDragged = draggedIndex == index
+                        val isPopped = poppedCard == wallet.name
+                        
+                        val peekPx = with(density) { cardPeek.toPx() }
+                        val baseOffset = index * peekPx
 
-                    val currentOffset = if (isDragged) baseOffset + dragOffsetY else baseOffset
-
-                    val animatedOffset = remember { Animatable(baseOffset) }
-                    LaunchedEffect(index, isDragged, baseOffset) {
-                        if (!isDragged) {
-                            animatedOffset.animateTo(
-                                baseOffset,
-                                spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMedium
-                                )
-                            )
+                        val targetOffset = when {
+                            isPopped && popState == 1 -> baseOffset - with(density) { 60.dp.toPx() }
+                            isPopped && popState == 2 -> baseOffset - with(density) { 150.dp.toPx() }
+                            else -> baseOffset
                         }
-                    }
 
-                    val finalOffset = if (isDragged) currentOffset else animatedOffset.value
-                    val zIdx = if (isDragged) 100f else index.toFloat()
+                        val currentOffset = if (isDragged) baseOffset + dragOffsetY else targetOffset
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(cardHeight)
-                            .zIndex(zIdx)
-                            .offset(y = with(density) { finalOffset.toDp() })
-                            .graphicsLayer {
-                                if (isDragged) {
-                                    scaleX = 1.03f
-                                    scaleY = 1.03f
-                                    shadowElevation = 20f
-                                }
-                            }
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                if (wallet.backgroundType == "SOLID") {
-                                    try {
-                                        Color(android.graphics.Color.parseColor(wallet.backgroundValue))
-                                    } catch (e: Exception) {
-                                        Color(0xFF2A2A2A)
-                                    }
-                                } else Color(0xFF2A2A2A)
-                            )
-                            .pointerInput(wallet.name) {
-                                detectDragGesturesAfterLongPress(
-                                    onDragStart = {
-                                        draggedIndex = index
-                                        dragOffsetY = 0f
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    },
-                                    onDrag = { change, dragAmount ->
-                                        change.consume()
-                                        dragOffsetY += dragAmount.y
-
-                                        val rawCurrent = (baseOffset + dragOffsetY) / peekPx
-                                        val targetIndex = rawCurrent
-                                            .roundToInt()
-                                            .coerceIn(0, orderedWallets.size - 1)
-
-                                        if (targetIndex != draggedIndex) {
-                                            val newList = orderedWallets.toMutableList()
-                                            val dragItem = newList.removeAt(draggedIndex)
-                                            newList.add(targetIndex, dragItem)
-                                            orderedWallets = newList
-                                            dragOffsetY -= (targetIndex - draggedIndex) * peekPx
-                                            draggedIndex = targetIndex
-                                        }
-                                    },
-                                    onDragEnd = {
-                                        draggedIndex = -1
-                                        dragOffsetY = 0f
-                                        onOrderChange(orderedWallets)
-                                    },
-                                    onDragCancel = {
-                                        draggedIndex = -1
-                                        dragOffsetY = 0f
-                                    }
+                        val animatedOffset = remember { Animatable(baseOffset) }
+                        LaunchedEffect(index, isDragged, targetOffset) {
+                            if (!isDragged) {
+                                animatedOffset.animateTo(
+                                    targetOffset,
+                                    spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
                                 )
                             }
-                            .clickable { onWalletClick(wallet.name) }
+                        }
+
+                        val finalOffset = if (isDragged) currentOffset else animatedOffset.value
+                        val zIdx = if (isDragged || isPopped) 100f + index else index.toFloat()
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(cardHeight)
+                                .zIndex(zIdx)
+                                .offset(y = with(density) { finalOffset.toDp() })
+                                .graphicsLayer {
+                                    if (isDragged) {
+                                        scaleX = 1.03f
+                                        scaleY = 1.03f
+                                        shadowElevation = 20f
+                                    } else if (isPopped) {
+                                        shadowElevation = 30f
+                                    }
+                                }
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (wallet.backgroundType == "SOLID") {
+                                        try {
+                                            Color(android.graphics.Color.parseColor(wallet.backgroundValue))
+                                        } catch (e: Exception) {
+                                            Color(0xFF2A2A2A)
+                                        }
+                                    } else Color(0xFF2A2A2A)
+                                )
+                                .pointerInput(wallet.name, popState, poppedCard) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = {
+                                            if (poppedCard == wallet.name && popState == 2) {
+                                                isReconcileHold = true
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                onWalletClick(wallet.name)
+                                            } else {
+                                                isReconcileHold = false
+                                                draggedIndex = index
+                                                dragOffsetY = 0f
+                                                poppedCard = null
+                                                popState = 0
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            if (isReconcileHold) return@detectDragGesturesAfterLongPress
+                                            
+                                            change.consume()
+                                            dragOffsetY += dragAmount.y
+
+                                            val rawCurrent = (baseOffset + dragOffsetY) / peekPx
+                                            val targetIndex = rawCurrent
+                                                .roundToInt()
+                                                .coerceIn(0, orderedWallets.size - 1)
+
+                                            if (targetIndex != draggedIndex) {
+                                                val newList = orderedWallets.toMutableList()
+                                                val dragItem = newList.removeAt(draggedIndex)
+                                                newList.add(targetIndex, dragItem)
+                                                orderedWallets = newList
+                                                dragOffsetY -= (targetIndex - draggedIndex) * peekPx
+                                                draggedIndex = targetIndex
+                                            }
+                                        },
+                                        onDragEnd = {
+                                            draggedIndex = -1
+                                            dragOffsetY = 0f
+                                            if (!isReconcileHold) onOrderChange(orderedWallets)
+                                            isReconcileHold = false
+                                        },
+                                        onDragCancel = {
+                                            draggedIndex = -1
+                                            dragOffsetY = 0f
+                                            isReconcileHold = false
+                                        }
+                                    )
+                                }
+                                .clickable {
+                                    if (poppedCard == wallet.name) {
+                                        if (popState == 1) {
+                                            popState = 2
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        }
+                                        else if (popState == 2) {
+                                            poppedCard = null
+                                            popState = 0
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        }
+                                    } else {
+                                        poppedCard = wallet.name
+                                        popState = 1
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                }
                     ) {
                         // Background image for TEMPLATE type
                         if (wallet.backgroundType == "TEMPLATE") {
@@ -324,6 +396,7 @@ fun WalletCardStack(
                     }
                 }
             }
+        } // Close the TopUnboundedShape Box
 
             // === WALLET FRONT FLAP (with scoop) — sits at the bottom, on top of cards ===
             val flapShape = remember { WalletFlapShape(scoopWidth = 100.dp, scoopDepth = scoopDepth, cornerRadius = walletCorner) }
