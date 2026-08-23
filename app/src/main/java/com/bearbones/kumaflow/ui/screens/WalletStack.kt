@@ -1,5 +1,9 @@
 package com.bearbones.kumaflow
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.asImageBitmap
+import com.bearbones.kumaflow.ui.components.rememberTiltState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -152,13 +156,20 @@ fun WalletCardStack(
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
+    val tiltState = rememberTiltState()
 
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    
     // Dimensions
-    val cardHeight = 190.dp
-    val cardPeek = 72.dp          // Increased from 48.dp to give more touch area for easier selection/reordering
+    val walletSidePadding = 12.dp // Padding inside wallet for cards
+    // The parent Column in HomeScreen has 24.dp horizontal padding.
+    // The Wallet Body will have 0 extra horizontal padding to match Total Balance.
+    val cardWidth = screenWidth - 48.dp - (walletSidePadding * 2)
+    val cardHeight = cardWidth / 1.86f // Maintain nice aspect ratio
+    val cardPeek = 48.dp
     val walletCorner = 28.dp
     val flapHeight = 100.dp       // The wallet front flap height (covers bottom of cards)
-    val walletSidePadding = 12.dp // Padding inside wallet for cards
     val scoopDepth = 32.dp
 
     // Drag and Pop state
@@ -172,7 +183,12 @@ fun WalletCardStack(
 
 
     // Cards area: first card full + subsequent cards peek
-    val cardsVisibleHeight = cardHeight + (cardPeek * (orderedWallets.size - 1).coerceAtLeast(0))
+    // When empty, fake 3 cards but with a smaller peek distance so the slots aren't too far apart
+    val emptySlotCount = 3
+    val emptyCardPeek = 48.dp
+    val effectiveCardCount = if (orderedWallets.isEmpty()) emptySlotCount else orderedWallets.size
+    val effectiveCardPeek = if (orderedWallets.isEmpty()) emptyCardPeek else cardPeek
+    val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount - 1).coerceAtLeast(0))
     // The wallet body extends: cards area visible at top + flap covering bottom
     // The flap overlaps the bottom part of the last card
     val flapOverlap = 40.dp
@@ -185,9 +201,9 @@ fun WalletCardStack(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            // Removed top padding to eliminate the gap above the wallet
+            // Removed 16.dp padding so it exactly matches the width of the Total Balance card
     ) {
+        val stitchColor = AppText().copy(alpha = 0.25f)
         // === WALLET BODY (the beige/gray outer container) ===
         Box(
             modifier = Modifier
@@ -195,6 +211,26 @@ fun WalletCardStack(
                 .height(totalWalletHeight)
                 .shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
                 .background(walletColor, RoundedCornerShape(walletCorner))
+                .drawWithContent {
+                    drawContent()
+                    if (orderedWallets.isEmpty()) {
+                        // Stitching around the entire wallet body
+                        val inset = 8.dp.toPx()
+                        val cr = walletCorner.toPx()
+                        drawRoundRect(
+                            color = stitchColor,
+                            topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                            size = androidx.compose.ui.geometry.Size(size.width - inset * 2, size.height - inset * 2),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(cr - inset, cr - inset),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 3f,
+                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                    floatArrayOf(12f, 8f), 0f
+                                )
+                            )
+                        )
+                    }
+                }
         ) {
             // === CARDS CONTAINER (clipped at bottom, open at top) ===
             Box(
@@ -210,19 +246,27 @@ fun WalletCardStack(
                         .padding(top = 10.dp) // small gap from wallet top edge
                 ) {
                     if (orderedWallets.isEmpty()) {
+                        // Draw horizontal slot lines at the same positions where card peeks would be
+                        val slotLineColor = AppText().copy(alpha = 0.35f) // Made darker
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(cardHeight)
+                                .height(cardHeight + emptyCardPeek * (emptySlotCount - 1))
                                 .drawBehind {
-                                    drawRoundRect(
-                                        color = walletBorderColor.copy(alpha = 0.5f),
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                            width = 6f,
-                                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
-                                        ),
-                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(40f, 40f)
-                                    )
+                                    val peekPx = emptyCardPeek.toPx()
+                                    // Gap from edges so it doesn't touch the stitching
+                                    val linePadding = 16.dp.toPx()
+                                    // Draw lines at each "card peek" boundary
+                                    for (i in 1 until emptySlotCount) {
+                                        val y = i * peekPx
+                                        drawLine(
+                                            color = slotLineColor,
+                                            start = androidx.compose.ui.geometry.Offset(linePadding, y),
+                                            end = androidx.compose.ui.geometry.Offset(size.width - linePadding, y),
+                                            strokeWidth = 6f, // Made thicker
+                                            cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                        )
+                                    }
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -264,8 +308,8 @@ fun WalletCardStack(
                                 animatedOffset.animateTo(
                                     targetOffset,
                                     spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessLow
+                                        dampingRatio = Spring.DampingRatioLowBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
                                     )
                                 )
                             }
@@ -274,6 +318,18 @@ fun WalletCardStack(
                         val finalOffset = if (isDragged) currentOffset else animatedOffset.value
                         val zIdx = if (isDragged || isPopped) 100f + index else index.toFloat()
 
+                        val animatedScale by animateFloatAsState(
+                            targetValue = if (isDragged) 1.05f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioLowBouncy,
+                                stiffness = Spring.StiffnessMediumLow
+                            ), label = "cardScale"
+                        )
+                        val animatedElevation by animateFloatAsState(
+                            targetValue = if (isDragged) 24f else if (isPopped) 30f else 4f,
+                            animationSpec = tween(300), label = "cardElevation"
+                        )
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -281,15 +337,16 @@ fun WalletCardStack(
                                 .zIndex(zIdx)
                                 .offset(y = with(density) { finalOffset.toDp() })
                                 .graphicsLayer {
-                                    if (isDragged) {
-                                        scaleX = 1.03f
-                                        scaleY = 1.03f
-                                        shadowElevation = 20f
-                                    } else if (isPopped) {
-                                        shadowElevation = 30f
-                                    }
+                                    scaleX = animatedScale
+                                    scaleY = animatedScale
+                                    shadowElevation = animatedElevation
+                                    shape = RoundedCornerShape(14.dp)
+                                    clip = true
+                                    // Parallax 3D tilt effect from gyroscope
+                                    rotationY = tiltState.value.x * 8f  // subtle left/right tilt
+                                    rotationX = -tiltState.value.y * 4f // subtle forward/back tilt
+                                    cameraDistance = 12f * density.density
                                 }
-                                .clip(RoundedCornerShape(14.dp))
                                 .background(
                                     if (wallet.backgroundType == "SOLID") {
                                         try {
@@ -306,6 +363,10 @@ fun WalletCardStack(
                                                 isReconcileHold = true
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 onWalletClick(wallet.name)
+                                            } else if (poppedCard == wallet.name && popState == 1) {
+                                                isReconcileHold = true
+                                                popState = 2
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             } else {
                                                 isReconcileHold = false
                                                 val startIndex = orderedWallets.indexOf(wallet)
@@ -359,16 +420,12 @@ fun WalletCardStack(
                                 }
                                 .clickable {
                                     if (poppedCard == wallet.name) {
-                                        if (popState == 1) {
-                                            popState = 2
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        }
-                                        else if (popState == 2) {
-                                            poppedCard = null
-                                            popState = 0
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        }
+                                        // If already popped (quarter or full), tapping unpops it
+                                        poppedCard = null
+                                        popState = 0
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     } else {
+                                        // Tapping unpopped card pops it to quarter (1)
                                         poppedCard = wallet.name
                                         popState = 1
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -394,7 +451,7 @@ fun WalletCardStack(
                                     Image(
                                         painter = painterResource(id = resId),
                                         contentDescription = null,
-                                        contentScale = ContentScale.FillBounds,
+                                        contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
                                     )
                                     // Slight gradient overlay to ensure text is readable
@@ -412,7 +469,49 @@ fun WalletCardStack(
                                     )
                                 }
                             }
+                        } else if (wallet.backgroundType == "CUSTOM") {
+                            val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
+                            val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                            if (bitmap != null) {
+                                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.2f), Color.Black.copy(alpha = 0.6f))))
+                                )
+                            }
                         }
+
+                        // === Holographic/iridescent overlay — shifts with gyroscope tilt ===
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = 0.12f } // very subtle
+                                .drawBehind {
+                                    val tilt = tiltState.value
+                                    // Shift the gradient start/end based on tilt
+                                    val holoOffsetX = tilt.x * 0.5f + 0.5f // 0..1
+                                    val holoOffsetY = tilt.y * 0.5f + 0.5f // 0..1
+                                    
+                                    val brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFFFF6EC7), // pink
+                                            Color(0xFF7DF9FF), // cyan
+                                            Color(0xFFB19CD9), // purple
+                                            Color(0xFF77DD77), // green
+                                            Color(0xFFFFD700), // gold
+                                            Color(0xFFFF6EC7)  // pink again for loop
+                                        ),
+                                        start = androidx.compose.ui.geometry.Offset(
+                                            holoOffsetX * size.width, holoOffsetY * size.height
+                                        ),
+                                        end = androidx.compose.ui.geometry.Offset(
+                                            (1f - holoOffsetX) * size.width, (1f - holoOffsetY) * size.height
+                                        )
+                                    )
+                                    drawRect(brush = brush, size = size)
+                                }
+                        )
 
                         // Card text content
                         val amt = balances[wallet.name] ?: 0L
@@ -459,6 +558,7 @@ fun WalletCardStack(
 
             // === WALLET FRONT FLAP (with scoop) — sits at the bottom, on top of cards ===
             val flapShape = remember { WalletFlapShape(scoopWidth = 100.dp, scoopDepth = scoopDepth, cornerRadius = walletCorner) }
+            val stitchColor = AppText().copy(alpha = 0.25f)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -467,6 +567,72 @@ fun WalletCardStack(
                     .zIndex(200f)  // Always on top of cards
                     .clip(flapShape)
                     .background(walletColor)
+                    .drawWithContent {
+                        drawContent()
+                        // Dashed stitching line along the flap edge (inset a few px)
+                        val inset = 8.dp.toPx()
+                        val sw = 100.dp.toPx()
+                        val sd = scoopDepth.toPx()
+                        val cr = walletCorner.toPx()
+                        val scoopLeft = (size.width - sw) / 2f
+                        val scoopRight = (size.width + sw) / 2f
+
+                        val stitchPath = androidx.compose.ui.graphics.Path().apply {
+                            // Start top-left (inset)
+                            moveTo(inset, inset)
+                            // Top edge to scoop start
+                            lineTo(scoopLeft, inset)
+                            // Scoop curve (shifted down by inset)
+                            cubicTo(
+                                scoopLeft + sw * 0.2f, inset,
+                                scoopLeft + sw * 0.2f, sd + inset,
+                                size.width / 2f, sd + inset
+                            )
+                            cubicTo(
+                                scoopRight - sw * 0.2f, sd + inset,
+                                scoopRight - sw * 0.2f, inset,
+                                scoopRight, inset
+                            )
+                            // Top edge to top-right
+                            lineTo(size.width - inset, inset)
+                            // Right side down
+                            lineTo(size.width - inset, size.height - cr)
+                            // Bottom-right corner
+                            arcTo(
+                                rect = androidx.compose.ui.geometry.Rect(
+                                    size.width - cr * 2 + inset, size.height - cr * 2 + inset,
+                                    size.width - inset, size.height - inset
+                                ),
+                                startAngleDegrees = 0f,
+                                sweepAngleDegrees = 90f,
+                                forceMoveTo = false
+                            )
+                            // Bottom edge
+                            lineTo(cr, size.height - inset)
+                            // Bottom-left corner
+                            arcTo(
+                                rect = androidx.compose.ui.geometry.Rect(
+                                    inset, size.height - cr * 2 + inset,
+                                    cr * 2 - inset, size.height - inset
+                                ),
+                                startAngleDegrees = 90f,
+                                sweepAngleDegrees = 90f,
+                                forceMoveTo = false
+                            )
+                            // Left side up
+                            lineTo(inset, inset)
+                        }
+                        drawPath(
+                            path = stitchPath,
+                            color = stitchColor,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 3f,
+                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                    floatArrayOf(12f, 8f), 0f
+                                )
+                            )
+                        )
+                    }
             )
         }
     }

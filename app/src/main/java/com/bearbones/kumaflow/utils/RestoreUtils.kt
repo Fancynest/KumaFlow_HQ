@@ -102,5 +102,23 @@ object RestoreUtils {
 
         val dao = KumaDatabase.getDatabase(context).transactionDao()
         dao.restoreDatabase(finalProfile, txsWithSplits)
+        
+        // Restore custom card images
+        val customCardsArr = root.optJSONArray("customCards")
+        if (customCardsArr != null) {
+            val customCardsDir = File(context.filesDir, "custom_cards").apply { mkdirs() }
+            for (i in 0 until customCardsArr.length()) {
+                try {
+                    val cardObj = customCardsArr.getJSONObject(i)
+                    val name = cardObj.getString("name")
+                    val data = cardObj.getString("data")
+                    val bytes = Base64.decode(data, Base64.DEFAULT)
+                    val file = File(customCardsDir, name)
+                    FileOutputStream(file).use { it.write(bytes) }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 }

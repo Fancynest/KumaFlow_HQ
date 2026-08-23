@@ -648,7 +648,7 @@ fun SettingsScreen(
                         AppStr.appVer -> showVersionDialog = true
                         AppStr.priv -> showPrivacyDialog = true
                         AppStr.trms -> showTermsDialog = true
-                        AppStr.contDev -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/6285173220524")))
+                        AppStr.contDev -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/kumaflow")))
                     }
                 }
             }

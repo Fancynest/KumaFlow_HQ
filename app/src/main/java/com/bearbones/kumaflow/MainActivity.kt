@@ -2174,6 +2174,27 @@ fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<
         }
         root.put("profile", pJson)
 
+        // Backup custom card images
+        val customCardsDir = java.io.File(context.filesDir, "custom_cards")
+        if (customCardsDir.exists()) {
+            val cardsArr = JSONArray()
+            customCardsDir.listFiles()?.forEach { file ->
+                try {
+                    val bytes = file.readBytes()
+                    val base64Str = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+                    cardsArr.put(JSONObject().apply {
+                        put("name", file.name)
+                        put("data", base64Str)
+                    })
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            if (cardsArr.length() > 0) {
+                root.put("customCards", cardsArr)
+            }
+        }
+
         val tArr = JSONArray()
         txsWithSplits.forEach { obj ->
             val tJson = JSONObject().apply {
