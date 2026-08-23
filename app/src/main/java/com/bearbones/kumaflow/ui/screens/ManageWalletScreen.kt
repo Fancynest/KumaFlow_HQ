@@ -234,7 +234,7 @@ fun ManageWalletContent(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
+                                modifier = Modifier.fillMaxSize()
                             )
                             Box(
                                 modifier = Modifier
@@ -506,7 +506,7 @@ fun WalletSuccessContent(
                                 painter = painterResource(id = resId),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
+                                modifier = Modifier.fillMaxSize()
                             )
                             Box(
                                 modifier = Modifier

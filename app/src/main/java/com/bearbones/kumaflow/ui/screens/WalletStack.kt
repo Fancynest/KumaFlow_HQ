@@ -395,7 +395,7 @@ fun WalletCardStack(
                                         painter = painterResource(id = resId),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize().scale(if (isPrideReq || isBearReq) 1.25f else 1f)
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                     // Slight gradient overlay to ensure text is readable
                                     Box(
