@@ -1940,26 +1940,28 @@ class ThousandSeparatorTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
         val originalText = text.text
         if (originalText.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
-        val locale = Locale.forLanguageTag("id-ID")
         val formattedText = try {
-            NumberFormat.getInstance(locale).format(originalText.toLong())
+            NumberFormat.getInstance(Locale.getDefault()).format(originalText.toLong())
         } catch (_: Exception) {
             originalText
         }
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 if (offset <= 0) return 0
-                val originalBefore = originalText.substring(0, offset)
-                val transformedBefore = try {
-                    NumberFormat.getInstance(locale).format(originalBefore.toLong())
-                } catch (_: Exception) {
-                    originalBefore
+                var transformedOffset = 0
+                var digitsSeen = 0
+                while (digitsSeen < offset && transformedOffset < formattedText.length) {
+                    if (formattedText[transformedOffset].isDigit()) {
+                        digitsSeen++
+                    }
+                    transformedOffset++
                 }
-                return transformedBefore.length
+                return transformedOffset
             }
             override fun transformedToOriginal(offset: Int): Int {
-                val digitsOnly = formattedText.substring(0, offset.coerceAtMost(formattedText.length)).replace(".", "")
-                return digitsOnly.length.coerceAtMost(originalText.length)
+                if (offset <= 0) return 0
+                val textBeforeCursor = formattedText.substring(0, offset.coerceAtMost(formattedText.length))
+                return textBeforeCursor.filter { it.isDigit() }.length.coerceAtMost(originalText.length)
             }
         }
         return TransformedText(AnnotatedString(formattedText), offsetMapping)
