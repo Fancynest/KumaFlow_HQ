@@ -274,7 +274,10 @@ fun WalletCardStack(
                                                 onWalletClick(wallet.name)
                                             } else {
                                                 isReconcileHold = false
-                                                draggedIndex = index
+                                                val startIndex = orderedWallets.indexOf(wallet)
+                                                if (startIndex != -1) {
+                                                    draggedIndex = startIndex
+                                                }
                                                 dragOffsetY = 0f
                                                 poppedCard = null
                                                 popState = 0
@@ -287,17 +290,23 @@ fun WalletCardStack(
                                             change.consume()
                                             dragOffsetY += dragAmount.y
 
-                                            val rawCurrent = (baseOffset + dragOffsetY) / peekPx
+                                            val currentIndex = orderedWallets.indexOf(wallet)
+                                            if (currentIndex == -1) return@detectDragGesturesAfterLongPress
+                                            
+                                            val freshBaseOffset = currentIndex * peekPx
+
+                                            val rawCurrent = (freshBaseOffset + dragOffsetY) / peekPx
                                             val targetIndex = rawCurrent
                                                 .roundToInt()
                                                 .coerceIn(0, orderedWallets.size - 1)
 
-                                            if (targetIndex != draggedIndex) {
+                                            if (targetIndex != currentIndex) {
                                                 val newList = orderedWallets.toMutableList()
-                                                val dragItem = newList.removeAt(draggedIndex)
+                                                val dragItem = newList.removeAt(currentIndex)
                                                 newList.add(targetIndex, dragItem)
                                                 orderedWallets = newList
-                                                dragOffsetY -= (targetIndex - draggedIndex) * peekPx
+                                                
+                                                dragOffsetY -= (targetIndex - currentIndex) * peekPx
                                                 draggedIndex = targetIndex
                                             }
                                         },
