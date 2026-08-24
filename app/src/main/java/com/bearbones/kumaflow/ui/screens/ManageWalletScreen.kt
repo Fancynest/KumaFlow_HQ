@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -159,6 +160,7 @@ fun ManageWalletContent(
     onEditCustom: (File) -> Unit
 ) {
     val context = LocalContext.current
+    val tiltState = com.bearbones.kumaflow.ui.components.rememberTiltState()
     
     val pagerState = rememberPagerState(initialPage = if (initialPage > wallets.size) wallets.size else initialPage, pageCount = { wallets.size + 1 })
     
@@ -182,6 +184,7 @@ fun ManageWalletContent(
     val customCardsDir = remember { File(context.filesDir, "custom_cards").apply { mkdirs() } }
     var customCards by remember { mutableStateOf(customCardsDir.listFiles()?.toList() ?: emptyList()) }
     var fileToDelete by remember { mutableStateOf<File?>(null) }
+    var walletToDelete by remember { mutableStateOf<VirtualWallet?>(null) }
     
     var name by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
@@ -207,6 +210,26 @@ fun ManageWalletContent(
             },
             dismissButton = {
                 TextButton(onClick = { fileToDelete = null }) { Text("Cancel", color = AppText()) }
+            },
+            containerColor = AppSurface(),
+            titleContentColor = AppText(),
+            textContentColor = AppText()
+        )
+    }
+
+    if (walletToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { walletToDelete = null },
+            title = { Text(if (userName.contains(Regex("^\\+62|\\b62\\d{9,13}$"))) "Hapus Kartu?" else "Delete Card?") },
+            text = { Text(if (userName.contains(Regex("^\\+62|\\b62\\d{9,13}$"))) "Yakin ingin menghapus kartu ini? Aksi ini tidak dapat dibatalkan." else "Are you sure you want to delete this card? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    walletToDelete?.let { onDelete(it) }
+                    walletToDelete = null
+                }) { Text(if (userName.contains(Regex("^\\+62|\\b62\\d{9,13}$"))) "Hapus" else "Delete", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { walletToDelete = null }) { Text(if (userName.contains(Regex("^\\+62|\\b62\\d{9,13}$"))) "Batal" else "Cancel", color = AppText()) }
             },
             containerColor = AppSurface(),
             titleContentColor = AppText(),
@@ -296,6 +319,11 @@ fun ManageWalletContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
+                    .graphicsLayer {
+                        rotationY = tiltState.value.x * 12f
+                        rotationX = -tiltState.value.y * 12f
+                        cameraDistance = 50000f
+                    }
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                     .background(solidColor)
@@ -599,7 +627,7 @@ fun ManageWalletContent(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 if (!isNewWallet && currentWallet != null) {
                     KumaButton(
-                        onClick = { onDelete(currentWallet) }, 
+                        onClick = { walletToDelete = currentWallet }, 
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         modifier = Modifier.weight(0.4f)
                     ) {
@@ -705,10 +733,17 @@ fun WalletSuccessContent(
                 try { Color(android.graphics.Color.parseColor(wallet.backgroundValue)) } catch (e: Exception) { Color.DarkGray }
             } else Color.Gray
 
+            val tiltState = com.bearbones.kumaflow.ui.components.rememberTiltState()
+            
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
+                    .graphicsLayer {
+                        rotationY = tiltState.value.x * 12f
+                        rotationX = -tiltState.value.y * 12f
+                        cameraDistance = 50000f
+                    }
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                     .background(solidColor)
