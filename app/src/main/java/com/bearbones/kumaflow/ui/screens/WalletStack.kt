@@ -348,10 +348,19 @@ fun WalletCardStack(
                                     shadowElevation = animatedElevation
                                     shape = RoundedCornerShape(24.dp)
                                     clip = true
-                                    // Parallax 3D tilt effect from gyroscope
-                                    rotationY = tiltState.value.x * 8f  // subtle left/right tilt
-                                    rotationX = -tiltState.value.y * 4f // subtle forward/back tilt
-                                    cameraDistance = 12f * density.density
+                                    // 3D tilt — full effect only on FULL state, subtle on PEEK, none on RESTING
+                                    val tiltMultiplier = when {
+                                        isPopped && popState == 2 -> 1f
+                                        isPopped && popState == 1 -> 0.3f
+                                        else -> 0.15f
+                                    }
+                                    val tilt = tiltState.value
+                                    rotationY = tilt.x * 12f * tiltMultiplier
+                                    rotationX = -tilt.y * 8f * tiltMultiplier
+                                    cameraDistance = 8000f * density.density
+                                    // Dynamic shadow offset — shifts opposite to tilt direction
+                                    translationX = -tilt.x * 2f * tiltMultiplier
+                                    translationY = -tilt.y * 2f * tiltMultiplier
                                 }
                                 .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                                 .background(
@@ -504,34 +513,27 @@ fun WalletCardStack(
                             }
                         }
 
-                        // === Holographic/iridescent overlay — shifts with gyroscope tilt ===
+                        // === Specular gloss sweep — diagonal white highlight that shifts with tilt ===
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer { alpha = 0.12f } // very subtle
                                 .drawBehind {
                                     val tilt = tiltState.value
-                                    // Shift the gradient start/end based on tilt
-                                    val holoOffsetX = tilt.x * 0.5f + 0.5f // 0..1
-                                    val holoOffsetY = tilt.y * 0.5f + 0.5f // 0..1
-                                    
-                                    val brush = Brush.linearGradient(
+                                    // Gloss position shifts with tilt
+                                    val glossCenterX = (0.5f + tilt.x * 0.6f) * size.width
+                                    val glossCenterY = (0.5f + tilt.y * 0.6f) * size.height
+                                    val glossRadius = size.width * 0.7f
+
+                                    val glossBrush = Brush.radialGradient(
                                         colors = listOf(
-                                            Color(0xFFFF6EC7), // pink
-                                            Color(0xFF7DF9FF), // cyan
-                                            Color(0xFFB19CD9), // purple
-                                            Color(0xFF77DD77), // green
-                                            Color(0xFFFFD700), // gold
-                                            Color(0xFFFF6EC7)  // pink again for loop
+                                            Color.White.copy(alpha = 0.15f),
+                                            Color.White.copy(alpha = 0.05f),
+                                            Color.Transparent
                                         ),
-                                        start = androidx.compose.ui.geometry.Offset(
-                                            holoOffsetX * size.width, holoOffsetY * size.height
-                                        ),
-                                        end = androidx.compose.ui.geometry.Offset(
-                                            (1f - holoOffsetX) * size.width, (1f - holoOffsetY) * size.height
-                                        )
+                                        center = androidx.compose.ui.geometry.Offset(glossCenterX, glossCenterY),
+                                        radius = glossRadius
                                     )
-                                    drawRect(brush = brush, size = size)
+                                    drawRect(brush = glossBrush, size = size)
                                 }
                         )
 
@@ -555,13 +557,20 @@ fun WalletCardStack(
                                 ))
                         )
 
-                        // Card text content
+                        // Card text content — parallax layer (foreground shifts more than bg)
                         val amt = balances[wallet.name] ?: 0L
                         val prefix = if (amt < 0) "- " else ""
 
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
+                                .graphicsLayer {
+                                    // Text layer sits "closer" to the viewer — shifts more
+                                    val tilt = tiltState.value
+                                    val parallaxMult = if (isPopped && popState == 2) 1.2f else 0.4f
+                                    translationX = tilt.x * 8f * parallaxMult
+                                    translationY = tilt.y * 5f * parallaxMult
+                                }
                                 .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -581,7 +590,7 @@ fun WalletCardStack(
                                         androidx.compose.material3.Icon(
                                             imageVector = Icons.Filled.AccountBalanceWallet,
                                             contentDescription = null,
-                                            tint = Color(0xFF2A2A2A) // Dark gray
+                                            tint = Color(0xFF2A2A2A)
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
