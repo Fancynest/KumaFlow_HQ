@@ -15,7 +15,7 @@ data class TiltState(
 )
 
 @Composable
-fun rememberTiltState(): State<TiltState> {
+fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
     val context = LocalContext.current
     val tiltState = remember { mutableStateOf(TiltState()) }
 
@@ -38,11 +38,13 @@ fun rememberTiltState(): State<TiltState> {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         // Prefer GAME_ROTATION_VECTOR (no magnetometer interference)
-        // Fall back to ROTATION_VECTOR, then GRAVITY, then ACCELEROMETER
+        // Fall back to ROTATION_VECTOR
         val rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
             ?: sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         val gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
-            ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        
+        // Always get accelerometer for shake detection
+        val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         // Reusable arrays — no allocations in onSensorChanged
         val rotMatrix = FloatArray(9)
@@ -61,6 +63,8 @@ fun rememberTiltState(): State<TiltState> {
             // Gravity fallback values
             private var gravX = 0f
             private var gravY = 0f
+
+            private var lastShakeTime = 0L
 
             override fun onSensorChanged(event: SensorEvent) {
                 when (event.sensor.type) {
@@ -92,7 +96,7 @@ fun rememberTiltState(): State<TiltState> {
                         tiltState.value = TiltState(x = smoothX, y = smoothY)
                     }
 
-                    Sensor.TYPE_GRAVITY, Sensor.TYPE_ACCELEROMETER -> {
+                    Sensor.TYPE_GRAVITY -> {
                         // Only used if no rotation vector sensor
                         if (rotationSensor != null) return
 
@@ -113,6 +117,44 @@ fun rememberTiltState(): State<TiltState> {
 
                         tiltState.value = TiltState(x = gravX, y = gravY)
                     }
+                    
+                    Sensor.TYPE_ACCELEROMETER -> {
+                        // 1. Shake detection
+                        if (onShake != null) {
+                            val gX = event.values[0] / SensorManager.GRAVITY_EARTH
+                            val gY = event.values[1] / SensorManager.GRAVITY_EARTH
+                            val gZ = event.values[2] / SensorManager.GRAVITY_EARTH
+                            val gForce = Math.sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
+                            
+                            // 2.2g is a good shake threshold
+                            if (gForce > 2.2f) {
+                                val now = System.currentTimeMillis()
+                                if (now - lastShakeTime > 1000) {
+                                    lastShakeTime = now
+                                    onShake.invoke()
+                                }
+                            }
+                        }
+                        
+                        // 2. Fallback for tilt if both rotation and gravity fail
+                        if (rotationSensor == null && gravitySensor == null) {
+                            val rawX = (event.values[0] / 9.8f).coerceIn(-1f, 1f)
+                            val rawY = (event.values[1] / 9.8f).coerceIn(-1f, 1f)
+
+                            if (baselinePitch.isNaN()) {
+                                baselinePitch = rawY * 12f
+                                baselineRoll = rawX * 12f
+                            }
+
+                            val deltaX = rawX - (baselineRoll / 12f)
+                            val deltaY = rawY - (baselinePitch / 12f)
+
+                            gravX += (deltaX.coerceIn(-1f, 1f) - gravX) * alpha
+                            gravY += (deltaY.coerceIn(-1f, 1f) - gravY) * alpha
+
+                            tiltState.value = TiltState(x = gravX, y = gravY)
+                        }
+                    }
                 }
             }
 
@@ -124,6 +166,9 @@ fun rememberTiltState(): State<TiltState> {
             sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
         }
         gravitySensor?.let {
+            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+        }
+        accelSensor?.let {
             sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
         }
 

@@ -160,7 +160,7 @@ fun WalletCardStack(
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
-    val tiltState = rememberTiltState()
+
     var lastLongPressTime by remember { mutableStateOf(0L) }
 
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
@@ -185,6 +185,14 @@ fun WalletCardStack(
     var poppedCard by remember { mutableStateOf<String?>(null) }
     var popState by remember { mutableIntStateOf(0) }
     var isReconcileHold by remember { mutableStateOf(false) }
+    
+    val tiltState = rememberTiltState(onShake = {
+        if (popState == 2) {
+            poppedCard = null
+            popState = 0
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    })
 
 
     // Cards area: first card full + subsequent cards peek
@@ -356,8 +364,8 @@ fun WalletCardStack(
                                     }
                                     val tilt = tiltState.value
                                     rotationY = tilt.x * 12f * tiltMultiplier
-                                    rotationX = -tilt.y * 8f * tiltMultiplier
-                                    cameraDistance = 8000f * density.density
+                                    rotationX = -tilt.y * 12f * tiltMultiplier
+                                    cameraDistance = 50000f
                                     // Dynamic shadow offset — shifts opposite to tilt direction
                                     translationX = -tilt.x * 2f * tiltMultiplier
                                     translationY = -tilt.y * 2f * tiltMultiplier
