@@ -354,7 +354,7 @@ fun sendSavingsNotification(context: Context, isAdding: Boolean, goalName: Strin
     }
 
     val builder = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_launcher_foreground)
+        .setSmallIcon(R.drawable.ic_kuma_notif)
         .setContentTitle(title)
         .setContentText(text)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
