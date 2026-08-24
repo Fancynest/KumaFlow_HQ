@@ -145,8 +145,15 @@ object BirthdayUtils {
         val title = if (isId) "\uD83C\uDF89 Selamat bertambah usia!" else "\uD83C\uDF89 Happy Birthday!"
         val text = if (isId) "Ada kado kecil berupa pesan dari kami di dalam." else "We have a little gift inside for you."
 
+        val largeIconBitmap = android.graphics.BitmapFactory.decodeResource(
+            context.resources,
+            com.bearbones.kumaflow.R.drawable.ic_kumaflow_logo
+        )
+
         val builder = androidx.core.app.NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(com.bearbones.kumaflow.R.drawable.ic_kuma_notif)
+            .setSmallIcon(com.bearbones.kumaflow.R.drawable.ic_notification_small)
+            .setLargeIcon(largeIconBitmap)
+            .setColor(androidx.core.content.ContextCompat.getColor(context, com.bearbones.kumaflow.R.color.kumaflow_notification_accent))
             .setContentTitle(title)
             .setContentText(text)
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)

@@ -11,4 +11,5 @@
     <color name="widget_card_color">#2C2C2C</color>
     <color name="widget_text_primary">#FFFFFF</color>
     <color name="widget_text_secondary">#A0A0A0</color>
+    <color name="kumaflow_notification_accent">#FF7A1A</color>
 </resources>

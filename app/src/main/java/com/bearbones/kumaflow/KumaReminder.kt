@@ -108,8 +108,15 @@ class KumaReminder : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val largeIconBitmap = android.graphics.BitmapFactory.decodeResource(
+            context.resources,
+            R.drawable.ic_kumaflow_logo
+        )
+
         val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_kuma_notif)
+            .setSmallIcon(R.drawable.ic_notification_small)
+            .setLargeIcon(largeIconBitmap)
+            .setColor(androidx.core.content.ContextCompat.getColor(context, R.color.kumaflow_notification_accent))
             .setContentTitle(randomMsg.first)
             .setContentText(randomMsg.second)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

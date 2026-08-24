@@ -353,8 +353,15 @@ fun sendSavingsNotification(context: Context, isAdding: Boolean, goalName: Strin
         if (isId) "Penarikan dana dari $goalName $curSym $amtStr berhasil!" else "Successfully withdrawn $curSym $amtStr from $goalName!"
     }
 
+    val largeIconBitmap = android.graphics.BitmapFactory.decodeResource(
+        context.resources,
+        R.drawable.ic_kumaflow_logo
+    )
+
     val builder = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_kuma_notif)
+        .setSmallIcon(R.drawable.ic_notification_small)
+        .setLargeIcon(largeIconBitmap)
+        .setColor(androidx.core.content.ContextCompat.getColor(context, R.color.kumaflow_notification_accent))
         .setContentTitle(title)
         .setContentText(text)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
