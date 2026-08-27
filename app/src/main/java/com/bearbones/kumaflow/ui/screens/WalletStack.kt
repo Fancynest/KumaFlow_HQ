@@ -419,8 +419,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     }
                                     
                                     val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
+                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
                                     
                                     rotationY = tx * 15f * tiltMultiplier
                                     rotationX = -ty * 15f * tiltMultiplier
@@ -562,12 +564,14 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                             
                             val bgParallax = Modifier
-                                .fillMaxSize(1.1f)
+                                .fillMaxSize(1.15f)
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
+                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
                                     translationX = tx * 15f * density.density
                                     translationY = ty * 15f * density.density
                                 }
@@ -584,12 +588,14 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
                             val bgParallax = Modifier
-                                .fillMaxSize(1.1f)
+                                .fillMaxSize(1.15f)
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
+                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
                                     translationX = tx * 15f * density.density
                                     translationY = ty * 15f * density.density
                                 }
@@ -611,8 +617,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     
                                     try {
                                         val tilt = tiltState.value
-                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                        val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                        val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                        val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
+                                        val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
                                         // Gloss position shifts opposite to tilt to simulate specular reflection
                                         val glossCenterX = (0.5f - tx * 0.8f) * w
                                         val glossCenterY = (0.5f - ty * 0.8f) * h
@@ -663,8 +671,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     // Text layer sits "closer" to the viewer — shifts more
                                     
                                     val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
+                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
                                     val parallaxMult = if (isPopped && popState == 2) 1.2f else 0.5f
                                     translationX = tx * 14f * parallaxMult
                                     translationY = ty * 10f * parallaxMult
