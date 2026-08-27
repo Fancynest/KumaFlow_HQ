@@ -162,6 +162,7 @@ fun WalletCardStack(
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
 
     var lastLongPressTime by remember { mutableStateOf(0L) }
 
@@ -226,11 +227,28 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
             modifier = Modifier
                 .fillMaxWidth()
                 .height(totalWalletHeight)
-                .shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
-                .background(walletColor, RoundedCornerShape(walletCorner))
+                .let {
+                    if (isBrutal) {
+                        it.drawBehind {
+                            val shadowOffset = 6.dp.toPx()
+                            val corner = walletCorner.toPx()
+                            drawRoundRect(
+                                color = Color.Black,
+                                topLeft = androidx.compose.ui.geometry.Offset(shadowOffset, shadowOffset),
+                                size = size,
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
+                            )
+                        }
+                        .background(walletColor, RoundedCornerShape(walletCorner))
+                        .border(3.dp, Color.Black, RoundedCornerShape(walletCorner))
+                    } else {
+                        it.shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
+                          .background(walletColor, RoundedCornerShape(walletCorner))
+                    }
+                }
                 .drawWithContent {
                     drawContent()
-                    if (orderedWallets.isEmpty() && size.width > 0f && size.height > 0f && !size.width.isNaN() && !size.height.isNaN()) {
+                    if (!isBrutal && orderedWallets.isEmpty() && size.width > 0f && size.height > 0f && !size.width.isNaN() && !size.height.isNaN()) {
                         // Stitching around the entire wallet body
                         val inset = 8.dp.toPx()
                         val cr = walletCorner.toPx()
@@ -299,6 +317,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                     } else {
                         if (orderedWallets.size == 1) {
                             for (i in 1..2) {
+                                val ghostBorderColor = if (isBrutal) Color.Black else AppText().copy(alpha = 0.1f)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth(1f - (i * 0.04f))
@@ -306,8 +325,14 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                         .align(Alignment.TopCenter)
                                         .offset(y = cardPeek * i)
                                         .zIndex(-i.toFloat())
-                                        .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(24.dp))
-                                        .background(AppText().copy(alpha = 0.03f), RoundedCornerShape(24.dp))
+                                        .let {
+                                            if (isBrutal) {
+                                                it.neobrutalism(isBrutal = true, cornerRadius = 24.dp, borderWidth = 2.dp, backgroundColor = Color.Transparent, offset = 0.dp)
+                                            } else {
+                                                it.border(1.dp, ghostBorderColor, RoundedCornerShape(24.dp))
+                                                  .background(AppText().copy(alpha = 0.03f), RoundedCornerShape(24.dp))
+                                            }
+                                        }
                                 )
                             }
                         }
@@ -370,7 +395,19 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .height(cardHeight)
                                 .zIndex(zIdx)
                                 .offset(y = with(density) { finalOffset.toDp() })
-                                .shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
+                                .let {
+                                    if (isBrutal) {
+                                        it.neobrutalism(
+                                            isBrutal = true,
+                                            cornerRadius = 24.dp,
+                                            borderWidth = 3.dp,
+                                            offset = 4.dp + (animatedElevation * 0.2f).dp,
+                                            backgroundColor = Color.Transparent
+                                        )
+                                    } else {
+                                        it.shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
+                                    }
+                                }
                                 .graphicsLayer {
                                     scaleX = animatedScale
                                     scaleY = animatedScale
@@ -700,69 +737,80 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                     .drawWithContent {
                         drawContent()
                         if (size.width <= 0f || size.height <= 0f || size.width.isNaN() || size.height.isNaN()) return@drawWithContent
-                        // Dashed stitching line along the flap edge (inset a few px)
-                        val inset = 8.dp.toPx()
-                        val sw = 100.dp.toPx()
-                        val sd = scoopDepth.toPx()
-                        val cr = walletCorner.toPx()
-                        val scoopLeft = (size.width - sw) / 2f
-                        val scoopRight = (size.width + sw) / 2f
-
-                        val stitchPath = androidx.compose.ui.graphics.Path().apply {
-                            // Start top-left (inset)
-                            moveTo(inset, inset)
-                            // Top edge to scoop start
-                            lineTo(scoopLeft, inset)
-                            // Scoop curve (shifted down by inset)
-                            cubicTo(
-                                scoopLeft + sw * 0.2f, inset,
-                                scoopLeft + sw * 0.2f, sd + inset,
-                                size.width / 2f, sd + inset
-                            )
-                            cubicTo(
-                                scoopRight - sw * 0.2f, sd + inset,
-                                scoopRight - sw * 0.2f, inset,
-                                scoopRight, inset
-                            )
-                            // Top edge to top-right
-                            lineTo(size.width - inset, inset)
-                            // Right side down
-                            lineTo(size.width - inset, size.height - cr)
-                            // Bottom-right corner
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(
-                                    size.width - cr * 2 + inset, size.height - cr * 2 + inset,
-                                    size.width - inset, size.height - inset
-                                ),
-                                startAngleDegrees = 0f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
-                            // Bottom edge
-                            lineTo(cr, size.height - inset)
-                            // Bottom-left corner
-                            arcTo(
-                                rect = androidx.compose.ui.geometry.Rect(
-                                    inset, size.height - cr * 2 + inset,
-                                    cr * 2 - inset, size.height - inset
-                                ),
-                                startAngleDegrees = 90f,
-                                sweepAngleDegrees = 90f,
-                                forceMoveTo = false
-                            )
-                            // Left side up
-                            lineTo(inset, inset)
-                        }
-                        drawPath(
-                            path = stitchPath,
-                            color = stitchColor,
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                width = 3f,
-                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                    floatArrayOf(12f, 8f), 0f
+                        
+                        if (isBrutal) {
+                            drawOutline(
+                                outline = flapShape.createOutline(size, layoutDirection, this),
+                                color = Color.Black,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = 6.dp.toPx() // Double width because the clip cuts it in half
                                 )
                             )
-                        )
+                        } else {
+                            // Dashed stitching line along the flap edge (inset a few px)
+                            val inset = 8.dp.toPx()
+                            val sw = 100.dp.toPx()
+                            val sd = scoopDepth.toPx()
+                            val cr = walletCorner.toPx()
+                            val scoopLeft = (size.width - sw) / 2f
+                            val scoopRight = (size.width + sw) / 2f
+    
+                            val stitchPath = androidx.compose.ui.graphics.Path().apply {
+                                // Start top-left (inset)
+                                moveTo(inset, inset)
+                                // Top edge to scoop start
+                                lineTo(scoopLeft, inset)
+                                // Scoop curve (shifted down by inset)
+                                cubicTo(
+                                    scoopLeft + sw * 0.2f, inset,
+                                    scoopLeft + sw * 0.2f, sd + inset,
+                                    size.width / 2f, sd + inset
+                                )
+                                cubicTo(
+                                    scoopRight - sw * 0.2f, sd + inset,
+                                    scoopRight - sw * 0.2f, inset,
+                                    scoopRight, inset
+                                )
+                                // Top edge to top-right
+                                lineTo(size.width - inset, inset)
+                                // Right side down
+                                lineTo(size.width - inset, size.height - cr)
+                                // Bottom-right corner
+                                arcTo(
+                                    rect = androidx.compose.ui.geometry.Rect(
+                                        size.width - cr * 2 + inset, size.height - cr * 2 + inset,
+                                        size.width - inset, size.height - inset
+                                    ),
+                                    startAngleDegrees = 0f,
+                                    sweepAngleDegrees = 90f,
+                                    forceMoveTo = false
+                                )
+                                // Bottom edge
+                                lineTo(cr, size.height - inset)
+                                // Bottom-left corner
+                                arcTo(
+                                    rect = androidx.compose.ui.geometry.Rect(
+                                        inset, size.height - cr * 2 + inset,
+                                        cr * 2 - inset, size.height - inset
+                                    ),
+                                    startAngleDegrees = 90f,
+                                    sweepAngleDegrees = 90f,
+                                    forceMoveTo = false
+                                )
+                                // Left side up
+                                lineTo(inset, inset)
+                            }
+                            drawPath(
+                                path = stitchPath,
+                                color = stitchColor,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = 3f,
+                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                                        floatArrayOf(12f, 8f), 0f
+                                    )
+                                )
+                            )
+                        }
                     }
             )
         }
