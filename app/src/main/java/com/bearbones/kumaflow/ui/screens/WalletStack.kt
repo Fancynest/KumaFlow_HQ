@@ -317,7 +317,6 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                     } else {
                         if (orderedWallets.size == 1) {
                             for (i in 1..2) {
-                                val ghostBorderColor = if (isBrutal) Color.Black else AppText().copy(alpha = 0.1f)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth(1f - (i * 0.04f))
@@ -325,14 +324,8 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                         .align(Alignment.TopCenter)
                                         .offset(y = cardPeek * i)
                                         .zIndex(-i.toFloat())
-                                        .let {
-                                            if (isBrutal) {
-                                                it.neobrutalism(isBrutal = true, cornerRadius = 24.dp, borderWidth = 2.dp, backgroundColor = Color.Transparent, offset = 0.dp)
-                                            } else {
-                                                it.border(1.dp, ghostBorderColor, RoundedCornerShape(24.dp))
-                                                  .background(AppText().copy(alpha = 0.03f), RoundedCornerShape(24.dp))
-                                            }
-                                        }
+                                        .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                                        .background(AppText().copy(alpha = 0.03f), RoundedCornerShape(24.dp))
                                 )
                             }
                         }
@@ -395,19 +388,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .height(cardHeight)
                                 .zIndex(zIdx)
                                 .offset(y = with(density) { finalOffset.toDp() })
-                                .let {
-                                    if (isBrutal) {
-                                        it.neobrutalism(
-                                            isBrutal = true,
-                                            cornerRadius = 24.dp,
-                                            borderWidth = 3.dp,
-                                            offset = 4.dp + (animatedElevation * 0.2f).dp,
-                                            backgroundColor = Color.Transparent
-                                        )
-                                    } else {
-                                        it.shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
-                                    }
-                                }
+                                .shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
                                 .graphicsLayer {
                                     scaleX = animatedScale
                                     scaleY = animatedScale
