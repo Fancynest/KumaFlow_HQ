@@ -527,16 +527,6 @@ fun ManageWalletContent(
                         textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
                     )
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Card Label", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = cardLabel,
-                        onValueChange = { cardLabel = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
-                    )
                 }
             }
 
