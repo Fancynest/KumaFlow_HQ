@@ -254,7 +254,18 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                     )
                 }
                 .background(walletColor, RoundedCornerShape(walletCorner))
-                .border(3.dp, Color.Black, RoundedCornerShape(walletCorner))
+                .drawBehind {
+                    val corner = walletCorner.toPx()
+                    val stroke = 3.dp.toPx()
+                    val inset = stroke / 2f
+                    drawRoundRect(
+                        color = Color.Black,
+                        topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                        size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner - inset, corner - inset),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke)
+                    )
+                }
         } else {
             walletBodyModifier
                 .shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
