@@ -158,11 +158,25 @@ fun WalletCardStack(
     onWalletClick: (String) -> Unit,
     onOrderChange: (List<VirtualWallet>) -> Unit
 ) {
+    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
+    WalletCardStackImpl(userName, wallets, balances, currencySymbol, formatHide, onWalletClick, onOrderChange, isBrutal)
+}
+
+@Composable
+fun WalletCardStackImpl(
+    userName: String,
+    wallets: List<VirtualWallet>,
+    balances: Map<String, Long>,
+    currencySymbol: String,
+    formatHide: (Long) -> String,
+    onWalletClick: (String) -> Unit,
+    onOrderChange: (List<VirtualWallet>) -> Unit,
+    isBrutal: Boolean
+) {
     val context = LocalContext.current
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
-    val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
 
     var lastLongPressTime by remember { mutableStateOf(0L) }
 
