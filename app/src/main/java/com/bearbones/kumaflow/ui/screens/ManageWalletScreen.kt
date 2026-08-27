@@ -26,6 +26,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -189,6 +190,7 @@ fun ManageWalletContent(
     var name by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var cardLabel by remember { mutableStateOf("ACCESS CARD") }
     var bgType by remember { mutableStateOf("SOLID") }
     var bgValue by remember { mutableStateOf("#D32F2F") }
     
@@ -253,6 +255,7 @@ fun ManageWalletContent(
                     name = ""
                     cardNumber = ""
                     notes = ""
+                    cardLabel = "ACCESS CARD"
                     bgType = "SOLID"
                     bgValue = "#D32F2F"
                 } else {
@@ -260,6 +263,7 @@ fun ManageWalletContent(
                         name = it.name
                         cardNumber = it.cardNumber
                         notes = it.notes
+                        cardLabel = it.cardLabel
                         bgType = it.backgroundType
                         bgValue = it.backgroundValue
                     }
@@ -308,7 +312,7 @@ fun ManageWalletContent(
             val isActive = page == editPageIndex
             val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
             val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
-            val previewName = if (isActive) name else if (page == wallets.size) "New Wallet" else wallets[page].name
+            val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
             val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
 
             val solidColor = if (previewType == "SOLID") {
@@ -319,10 +323,16 @@ fun ManageWalletContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
+                    .shadow(12.dp, RoundedCornerShape(24.dp))
                     .graphicsLayer {
-                        rotationY = tiltState.value.x * 12f
-                        rotationX = -tiltState.value.y * 12f
+                        val tx = if (tiltState.value.x.isNaN() || tiltState.value.x.isInfinite()) 0f else tiltState.value.x
+                        val ty = if (tiltState.value.y.isNaN() || tiltState.value.y.isInfinite()) 0f else tiltState.value.y
+                        
+                        rotationY = tx * 12f
+                        rotationX = -ty * 12f
                         cameraDistance = 50000f
+                        shape = RoundedCornerShape(24.dp)
+                        clip = true
                     }
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
@@ -390,70 +400,89 @@ fun ManageWalletContent(
                     }
                 }
 
-                // Scrim overlays for text legibility
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .align(Alignment.TopCenter)
-                        .background(Brush.verticalGradient(
-                            colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
-                        ))
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .align(Alignment.BottomCenter)
-                        .background(Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
-                        ))
-                )
+                if (page == wallets.size && !isActive) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("New Card", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                    }
+                } else {
+                    // Scrim overlays for text legibility
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .align(Alignment.TopCenter)
+                            .background(Brush.verticalGradient(
+                                colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
+                            ))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
+                            ))
+                    )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 18.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 18.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .background(Color.White, CircleShape)
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = Icons.Filled.AccountBalanceWallet,
-                                    contentDescription = null,
-                                    tint = Color(0xFF2A2A2A)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(26.dp)
+                                        .background(Color.White, CircleShape)
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Filled.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2A2A2A)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (previewName.isBlank()) "" else previewName,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                previewName.ifBlank { "Wallet Name" },
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
+                                "KumaFlow",
+                                color = Color.White.copy(alpha = 0.5f),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 10.sp
                             )
                         }
-                        Text(
-                            "KumaFlow",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 10.sp
-                        )
-                    }
-                    if (previewNumber.isNotBlank()) {
-                        Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
-                    } else {
-                        Spacer(modifier = Modifier.weight(0.5f))
+                        if (previewNumber.isNotBlank()) {
+                            Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
+                        } else {
+                            Spacer(modifier = Modifier.weight(0.5f))
+                        }
                     }
                 }
             }
@@ -495,6 +524,16 @@ fun ManageWalletContent(
                     androidx.compose.foundation.text.BasicTextField(
                         value = notes,
                         onValueChange = { notes = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+                    )
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Card Label", color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = cardLabel,
+                        onValueChange = { cardLabel = it },
                         textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                     )
@@ -647,7 +686,8 @@ fun ManageWalletContent(
                                     backgroundType = bgType,
                                     backgroundValue = bgValue,
                                     cardNumber = cardNumber.trim(),
-                                    notes = notes.trim()
+                                    notes = notes.trim(),
+                                    cardLabel = cardLabel.trim().ifBlank { "ACCESS CARD" }
                                 )
                             )
                         }
@@ -739,10 +779,16 @@ fun WalletSuccessContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
+                    .shadow(12.dp, RoundedCornerShape(24.dp))
                     .graphicsLayer {
-                        rotationY = tiltState.value.x * 12f
-                        rotationX = -tiltState.value.y * 12f
+                        val tx = if (tiltState.value.x.isNaN() || tiltState.value.x.isInfinite()) 0f else tiltState.value.x
+                        val ty = if (tiltState.value.y.isNaN() || tiltState.value.y.isInfinite()) 0f else tiltState.value.y
+                        
+                        rotationY = tx * 12f
+                        rotationX = -ty * 12f
                         cameraDistance = 50000f
+                        shape = RoundedCornerShape(24.dp)
+                        clip = true
                     }
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))

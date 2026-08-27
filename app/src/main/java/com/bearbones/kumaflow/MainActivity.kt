@@ -710,7 +710,7 @@ fun MainScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(
-            top = paddingValues.calculateTopPadding(),
+            bottom = paddingValues.calculateBottomPadding(),
             start = paddingValues.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
             end = paddingValues.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
         )) {
@@ -1085,7 +1085,7 @@ fun MainScreen(
                 text = { Text(AppStr.backupReminderMsg) },
                 confirmButton = {
                     KumaButton(
-                        onClick = { showBackupReminder = false; backupAppToJSON(context, userProfile, transactionListWithSplits) },
+                        onClick = { showBackupReminder = false; backupAppToJSON(context) },
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                     ) { Text(AppStr.backupNow, color = Color.White) }
                 },
@@ -2123,109 +2123,141 @@ fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserPr
     }
 }
 
-fun backupAppToJSON(context: Context, profile: UserProfile, txsWithSplits: List<TransactionWithSplits>) {
-    if (txsWithSplits.isEmpty()) {
-        Toast.makeText(context, AppStr.noTx, Toast.LENGTH_SHORT).show()
-        return
-    }
-    try {
-        val root = JSONObject()
-        root.put("backupVersion", 6)
+fun backupAppToJSON(context: Context) {
+    // Launch Coroutine to perform DB read and file IO off the main thread
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        try {
+            val dao = KumaDatabase.getDatabase(context).transactionDao()
+            val profile = dao.getProfileSync() ?: return@launch
+            val txsWithSplits = dao.getAllTransactionsWithSplitsSync()
 
-        val pJson = JSONObject().apply {
-            put("userName", profile.userName)
-            put("isAppLocked", profile.isAppLocked)
-            put("appPin", profile.appPin)
-            put("currency", profile.currency)
-            put("dateFormat", profile.dateFormat)
-            put("monthlyTarget", profile.monthlyTarget)
-            put("themeMode", profile.themeMode)
-            put("isReminderOn", profile.isReminderOn)
-            put("reminderTimes", profile.reminderTimes)
-            put("useCarryOver", profile.useCarryOver)
-            put("expenseCats", profile.expenseCats)
-            put("incomeCats", profile.incomeCats)
-            put("wallets", profile.wallets)
-            put("categoryTargets", profile.categoryTargets)
-            put("isAmoledMode", profile.isAmoledMode)
-            put("categoryIcons", profile.categoryIcons)
-            put("isLiquidGlass", profile.isLiquidGlass)
-            put("isPremiumGlassBlur", profile.isPremiumGlassBlur)
-            put("currentStreak", profile.currentStreak)
-            put("lastActiveDate", profile.lastActiveDate)
-            put("freezeCount", profile.freezeCount)
-            put("lastMilestoneNotified", profile.lastMilestoneNotified)
-            put("qrisFilePath", profile.qrisFilePath)
-            put("qrisHolderName", profile.qrisHolderName)
-            put("bankName", profile.bankName)
-            put("bankAccount", profile.bankAccount)
-            if (profile.qrisFilePath.isNotEmpty()) {
-                try {
-                    val file = java.io.File(profile.qrisFilePath)
-                    if (file.exists()) {
+            if (txsWithSplits.isEmpty()) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(context, AppStr.noTx, Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+            val root = JSONObject()
+            root.put("backupVersion", 7) // Incremented backup version
+
+            val pJson = JSONObject().apply {
+                put("userName", profile.userName)
+                put("isAppLocked", profile.isAppLocked)
+                put("appPin", profile.appPin)
+                put("currency", profile.currency)
+                put("dateFormat", profile.dateFormat)
+                put("monthlyTarget", profile.monthlyTarget)
+                put("themeMode", profile.themeMode)
+                put("isReminderOn", profile.isReminderOn)
+                put("reminderTimes", profile.reminderTimes)
+                put("useCarryOver", profile.useCarryOver)
+                put("expenseCats", profile.expenseCats)
+                put("incomeCats", profile.incomeCats)
+                put("wallets", profile.wallets)
+                put("categoryTargets", profile.categoryTargets)
+                put("isAmoledMode", profile.isAmoledMode)
+                put("categoryIcons", profile.categoryIcons)
+                put("isLiquidGlass", profile.isLiquidGlass)
+                put("isPremiumGlassBlur", profile.isPremiumGlassBlur)
+                put("currentStreak", profile.currentStreak)
+                put("lastActiveDate", profile.lastActiveDate)
+                put("freezeCount", profile.freezeCount)
+                put("lastMilestoneNotified", profile.lastMilestoneNotified)
+                put("savingsWallets", profile.savingsWallets)
+                put("savingsGoals", profile.savingsGoals)
+                put("qrisFilePath", profile.qrisFilePath)
+                put("qrisHolderName", profile.qrisHolderName)
+                put("bankName", profile.bankName)
+                put("bankAccount", profile.bankAccount)
+                if (profile.qrisFilePath.isNotEmpty()) {
+                    try {
+                        val file = java.io.File(profile.qrisFilePath)
+                        if (file.exists()) {
+                            val bytes = file.readBytes()
+                            val base64Str = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
+                            put("qrisBase64", base64Str)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+            root.put("profile", pJson)
+
+            // Backup custom card images
+            val customCardsDir = java.io.File(context.filesDir, "custom_cards")
+            if (customCardsDir.exists()) {
+                val cardsArr = JSONArray()
+                customCardsDir.listFiles()?.forEach { file ->
+                    try {
                         val bytes = file.readBytes()
                         val base64Str = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
-                        put("qrisBase64", base64Str)
+                        cardsArr.put(JSONObject().apply {
+                            put("name", file.name)
+                            put("data", base64Str)
+                        })
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                }
+                if (cardsArr.length() > 0) {
+                    root.put("customCards", cardsArr)
                 }
             }
-        }
-        root.put("profile", pJson)
-
-        // Backup custom card images
-        val customCardsDir = java.io.File(context.filesDir, "custom_cards")
-        if (customCardsDir.exists()) {
-            val cardsArr = JSONArray()
-            customCardsDir.listFiles()?.forEach { file ->
-                try {
-                    val bytes = file.readBytes()
-                    val base64Str = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
-                    cardsArr.put(JSONObject().apply {
-                        put("name", file.name)
-                        put("data", base64Str)
-                    })
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            if (cardsArr.length() > 0) {
-                root.put("customCards", cardsArr)
-            }
-        }
-
-        val tArr = JSONArray()
-        txsWithSplits.forEach { obj ->
-            val tJson = JSONObject().apply {
-                put("name", obj.transaction.name)
-                put("date", obj.transaction.date)
-                put("amount", obj.transaction.amount)
-                put("isIncome", obj.transaction.isIncome)
-                put("category", obj.transaction.category)
-                put("wallet", obj.transaction.wallet)
-                put("timestamp", obj.transaction.timestamp)
-                put("message", obj.transaction.message)
-                put("isEdited", obj.transaction.isEdited)
-            }
-            if (obj.splits.isNotEmpty()) {
-                val splitArr = JSONArray()
-                obj.splits.forEach { s ->
-                    splitArr.put(JSONObject().apply {
-                        put("w", s.splitWallet)
-                        put("a", s.splitAmount)
+            
+            val virtualWallets = dao.getAllVirtualWallets()
+            if (virtualWallets.isNotEmpty()) {
+                val vwArr = JSONArray()
+                virtualWallets.forEach { vw ->
+                    vwArr.put(JSONObject().apply {
+                        put("name", vw.name)
+                        put("orderIndex", vw.orderIndex)
+                        put("backgroundType", vw.backgroundType)
+                        put("backgroundValue", vw.backgroundValue)
+                        put("cardNumber", vw.cardNumber)
+                        put("notes", vw.notes)
+                        put("cardLabel", vw.cardLabel)
                     })
                 }
-                tJson.put("splits", splitArr)
+                root.put("virtualWallets", vwArr)
             }
-            tArr.put(tJson)
-        }
 
-        root.put("transactions", tArr)
-        val filename = "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
-        saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray())
-    } catch (_: Exception) {
-        Toast.makeText(context, AppStr.failBak, Toast.LENGTH_SHORT).show()
+            val tArr = JSONArray()
+            txsWithSplits.forEach { obj ->
+                val tJson = JSONObject().apply {
+                    put("name", obj.transaction.name)
+                    put("date", obj.transaction.date)
+                    put("amount", obj.transaction.amount)
+                    put("isIncome", obj.transaction.isIncome)
+                    put("category", obj.transaction.category)
+                    put("wallet", obj.transaction.wallet)
+                    put("timestamp", obj.transaction.timestamp)
+                    put("message", obj.transaction.message)
+                    put("isEdited", obj.transaction.isEdited)
+                }
+                if (obj.splits.isNotEmpty()) {
+                    val splitArr = JSONArray()
+                    obj.splits.forEach { s ->
+                        splitArr.put(JSONObject().apply {
+                            put("w", s.splitWallet)
+                            put("a", s.splitAmount)
+                        })
+                    }
+                    tJson.put("splits", splitArr)
+                }
+                tArr.put(tJson)
+            }
+
+            root.put("transactions", tArr)
+            val filename = "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray())
+            }
+        } catch (_: Exception) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                Toast.makeText(context, AppStr.failBak, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
 

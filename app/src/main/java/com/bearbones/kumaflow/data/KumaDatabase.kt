@@ -89,7 +89,7 @@ data class UserProfile(
     val useCarryOver: Boolean = false,
     val expenseCats: String = "Food,Shopping,Health,Transport,Education,Entertainment,Others",
     val incomeCats: String = "Financial,Others",
-    val wallets: String = "Cash,Bank BCA,GoPay",
+    val wallets: String = "",
     val categoryTargets: String = "{}",
     val isAmoledMode: Boolean = false,
     val categoryIcons: String = "{}",
@@ -103,7 +103,7 @@ data class UserProfile(
     val qrisHolderName: String = "",
     val bankName: String = "",
     val bankAccount: String = "",
-    val hasSeenTutorial: Boolean = false,
+    val hasSeenTutorial: Boolean = true,
     val savingsWallets: String = "",
     val savingsGoals: String = "{}"
 )
@@ -115,7 +115,8 @@ data class VirtualWallet(
     val backgroundType: String,
     val backgroundValue: String,
     val cardNumber: String = "",
-    val notes: String = ""
+    val notes: String = "",
+    val cardLabel: String = "ACCESS CARD"
 )
 
 @Dao
@@ -123,6 +124,10 @@ interface TransactionDao {
     @Transaction
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY timestamp DESC")
     fun getAllTransactionsWithSplits(): Flow<List<TransactionWithSplits>>
+
+    @Transaction
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY timestamp DESC")
+    suspend fun getAllTransactionsWithSplitsSync(): List<TransactionWithSplits>
 
     @Transaction
     @Query("""
@@ -264,6 +269,14 @@ interface TransactionDao {
     @Query("UPDATE virtual_wallets SET name = :newName WHERE name = :oldName")
     suspend fun updateVirtualWalletName(oldName: String, newName: String)
 
+    @Transaction
+    suspend fun renameVirtualWalletFully(oldName: String, wallet: VirtualWallet) {
+        updateVirtualWalletName(oldName, wallet.name)
+        renameWalletAndMetadata(oldName, wallet.name)
+        upsertVirtualWallet(wallet)
+        deleteVirtualWallet(oldName)
+    }
+
     // -------------------------
 
     @Query("UPDATE transactions SET wallet = :newName WHERE wallet = :oldName")
@@ -289,6 +302,30 @@ interface TransactionDao {
             val index = walletsList.indexOf(oldName)
             if (index != -1) {
                 walletsList[index] = newName
+                saveProfile(profile.copy(wallets = walletsList.joinToString(",")))
+            }
+        }
+    }
+
+    @Transaction
+    suspend fun addWalletToProfile(walletName: String) {
+        val profile = getProfileSync()
+        if (profile != null) {
+            val walletsList = profile.wallets.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableList()
+            if (!walletsList.contains(walletName)) {
+                walletsList.add(walletName)
+                saveProfile(profile.copy(wallets = walletsList.joinToString(",")))
+            }
+        }
+    }
+
+    @Transaction
+    suspend fun removeWalletFromProfile(walletName: String) {
+        val profile = getProfileSync()
+        if (profile != null) {
+            val walletsList = profile.wallets.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableList()
+            if (walletsList.contains(walletName)) {
+                walletsList.remove(walletName)
                 saveProfile(profile.copy(wallets = walletsList.joinToString(",")))
             }
         }
@@ -569,6 +606,12 @@ val MIGRATION_28_29 = object : Migration(28, 29) {
     }
 }
 
+val MIGRATION_29_30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE virtual_wallets ADD COLUMN cardLabel TEXT NOT NULL DEFAULT 'ACCESS CARD'")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -580,7 +623,7 @@ val MIGRATION_28_29 = object : Migration(28, 29) {
         com.bearbones.kumaflow.duo.model.DuoConflictLog::class,
         VirtualWallet::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -596,7 +639,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30)
                     .build()
                 INSTANCE = instance
                 instance

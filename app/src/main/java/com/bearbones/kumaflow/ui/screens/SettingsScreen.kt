@@ -161,6 +161,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showWalletDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
     var pinInput by remember { mutableStateOf("") }
     var targetInput by remember { mutableStateOf(currentProfile.monthlyTarget.toString()) }
@@ -308,9 +309,9 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            Spacer(modifier = Modifier.height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp))
             Text(AppStr.set, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -603,7 +604,8 @@ fun SettingsScreen(
                         "Transfer via Local WiFi" to Icons.Default.Wifi,
                         "Kuma Duo (Shared Wallet)" to Icons.Default.SyncAlt,
                         AppStr.rest to Icons.Default.History,
-                        AppStr.optDb to Icons.Default.CleaningServices
+                        AppStr.optDb to Icons.Default.CleaningServices,
+                        AppStr.resetBal to Icons.Default.Delete
                     )
                 ) { label ->
                     val plainMonthlyTxs = monthlyTransactionsWithSplits.map { it.transaction }
@@ -611,10 +613,11 @@ fun SettingsScreen(
                         AppStr.expPdf -> generatePDF(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.expCsv -> generateCSV(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.expDrive -> exportToDrive(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
-                        AppStr.backApp -> backupAppToJSON(context, currentProfile, allTransactionsWithSplits)
+                        AppStr.backApp -> backupAppToJSON(context)
                         "Transfer via Local WiFi" -> onOpenQrTransfer()
                         "Kuma Duo (Shared Wallet)" -> onOpenDuoSync()
                         AppStr.rest -> { mainActivity?.openSafeFilePicker() }
+                        AppStr.resetBal -> { showResetDialog = true }
                         AppStr.optDb -> {
                             scope.launch(Dispatchers.IO) {
                                 try {
@@ -768,14 +771,12 @@ fun SettingsScreen(
                 onSave = { oldName, wallet ->
                     scope.launch {
                         if (oldName != null && oldName != wallet.name) {
-                            dao.updateVirtualWalletName(oldName, wallet.name)
-                            dao.renameWalletAndMetadata(oldName, wallet.name)
-                            dao.upsertVirtualWallet(wallet)
-                            dao.deleteVirtualWallet(oldName)
+                            dao.renameVirtualWalletFully(oldName, wallet)
                         } else {
                             if (oldName == null) {
                                 val newOrderIndex = if (virtualWallets.isEmpty()) 0 else virtualWallets.maxOf { it.orderIndex } + 1
                                 dao.upsertVirtualWallet(wallet.copy(orderIndex = newOrderIndex))
+                                dao.addWalletToProfile(wallet.name) // Add to old system
                             } else {
                                 dao.upsertVirtualWallet(wallet)
                             }
@@ -787,6 +788,7 @@ fun SettingsScreen(
                 onDelete = { w ->
                     scope.launch {
                         dao.deleteVirtualWallet(w.name)
+                        dao.removeWalletFromProfile(w.name) // Remove from old system
                         onForceUpdate()
                     }
                 },
@@ -1401,6 +1403,69 @@ fun SettingsScreen(
                 confirmButton = { KumaTextButton(onClick = { showPrivacyDialog = false }) { Text(AppStr.gotIt) } },
                 
                 
+            )
+        }
+
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = { Text(AppStr.resetBalConfTitle, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFE53935)) },
+                text = { Text(AppStr.resetBalConfDesc, color = AppText()) },
+                confirmButton = {
+                    com.bearbones.kumaflow.ui.components.KumaButton(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                val balances = mutableMapOf<String, Long>()
+                                allTransactionsWithSplits.forEach { txObj ->
+                                    val amt = txObj.transaction.amount.toLongOrNull() ?: 0L
+                                    val isInc = txObj.transaction.isIncome
+                                    if (txObj.splits.isNotEmpty()) {
+                                        txObj.splits.forEach { split ->
+                                            val cur = balances[split.splitWallet] ?: 0L
+                                            val spAmt = split.splitAmount
+                                            balances[split.splitWallet] = if (isInc) cur + spAmt else cur - spAmt
+                                        }
+                                    } else {
+                                        val w = txObj.transaction.wallet
+                                        val cur = balances[w] ?: 0L
+                                        balances[w] = if (isInc) cur + amt else cur - amt
+                                    }
+                                }
+
+                                val now = java.time.LocalDateTime.now()
+                                val dateStr = java.time.LocalDate.now().toString()
+                                val timeStr = now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+                                balances.forEach { (wName, bal) ->
+                                    if (bal != 0L) {
+                                        val adjustTx = com.bearbones.kumaflow.KumaTransaction(
+                                            name = if(AppStr.isId) "Reset Saldo" else "Balance Reset",
+                                            date = dateStr,
+                                            amount = kotlin.math.abs(bal).toString(),
+                                            isIncome = bal < 0,
+                                            category = "Balancing",
+                                            wallet = wName,
+                                            timestamp = timeStr,
+                                            message = if(AppStr.isId) "Penyesuaian sistem untuk reset saldo" else "System adjustment to reset balance"
+                                        )
+                                        dao.insertTransaction(adjustTx)
+                                    }
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    showResetDialog = false
+                                    Toast.makeText(context, AppStr.resetOk, Toast.LENGTH_SHORT).show()
+                                    onForceUpdate()
+                                }
+                            }
+                        }
+                    ) { Text(AppStr.resetBal, color = androidx.compose.ui.graphics.Color.White) }
+                },
+                dismissButton = {
+                    com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = { showResetDialog = false }) { Text(AppStr.cancelBtn) }
+                }
             )
         }
 

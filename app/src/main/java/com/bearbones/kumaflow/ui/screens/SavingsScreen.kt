@@ -107,7 +107,7 @@ fun SavingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(
-                top = paddingValues.calculateTopPadding() + 24.dp,
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
                 start = 24.dp,
                 end = 24.dp,
                 bottom = paddingValues.calculateBottomPadding() + 100.dp

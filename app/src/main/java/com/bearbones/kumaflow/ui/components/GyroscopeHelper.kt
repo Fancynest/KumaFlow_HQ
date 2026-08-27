@@ -6,18 +6,31 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.provider.Settings
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 data class TiltState(
-    val x: Float = 0f, // -1f (left) to 1f (right) — roll delta from baseline
-    val y: Float = 0f  // -1f (forward/up) to 1f (backward/down) — pitch delta from baseline
+    val x: Float = 0f, // -1f (left) to 1f (right)
+    val y: Float = 0f  // -1f (forward) to 1f (backward)
 )
 
 @Composable
 fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
     val context = LocalContext.current
     val tiltState = remember { mutableStateOf(TiltState()) }
+
+    // Animated values for buttery smooth spring-based interpolation
+    val animX = remember { Animatable(0f) }
+    val animY = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
+    // Target values that the sensor writes to (raw filtered)
+    val targetX = remember { mutableFloatStateOf(0f) }
+    val targetY = remember { mutableFloatStateOf(0f) }
 
     // Check if user has disabled animations (accessibility)
     val animationsEnabled = remember {
@@ -29,6 +42,39 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
         } catch (_: Exception) { true }
     }
 
+    // Spring animation that drives tiltState from sensor targets
+    LaunchedEffect(Unit) {
+        snapshotFlow { targetX.floatValue to targetY.floatValue }
+            .collect { (tx, ty) ->
+                launch {
+                    animX.animateTo(
+                        tx,
+                        animationSpec = spring(
+                            dampingRatio = 0.65f,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    )
+                }
+                launch {
+                    animY.animateTo(
+                        ty,
+                        animationSpec = spring(
+                            dampingRatio = 0.65f,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    )
+                }
+            }
+    }
+
+    // Update tiltState from animated values
+    LaunchedEffect(Unit) {
+        snapshotFlow { animX.value to animY.value }
+            .collect { (ax, ay) ->
+                tiltState.value = TiltState(x = ax, y = ay)
+            }
+    }
+
     DisposableEffect(animationsEnabled) {
         if (!animationsEnabled) {
             tiltState.value = TiltState()
@@ -37,32 +83,24 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
 
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        // Prefer GAME_ROTATION_VECTOR (no magnetometer interference)
-        // Fall back to ROTATION_VECTOR
+        // Prefer GAME_ROTATION_VECTOR (no magnetometer noise)
         val rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
             ?: sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         val gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
-        
-        // Always get accelerometer for shake detection
         val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        // Reusable arrays — no allocations in onSensorChanged
         val rotMatrix = FloatArray(9)
         val orientation = FloatArray(3)
 
         val listener = object : SensorEventListener {
-            // Baseline calibration: first reading becomes "zero"
+            // Baseline calibration
             private var baselinePitch = Float.NaN
             private var baselineRoll = Float.NaN
 
-            // Smoothed output
-            private var smoothX = 0f
-            private var smoothY = 0f
-            private val alpha = 0.12f // Lower = smoother, less jitter
-
-            // Gravity fallback values
-            private var gravX = 0f
-            private var gravY = 0f
+            // Low-pass filter for sensor noise (separate from spring animation)
+            private var lpX = 0f
+            private var lpY = 0f
+            private val lpAlpha = 0.15f // gentle low-pass to kill high-freq jitter
 
             private var lastShakeTime = 0L
 
@@ -72,61 +110,58 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                         SensorManager.getRotationMatrixFromVector(rotMatrix, event.values)
                         SensorManager.getOrientation(rotMatrix, orientation)
 
-                        val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat() // forward/back
-                        val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()   // left/right
+                        val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
+                        val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
 
-                        // Set baseline on first reading
                         if (baselinePitch.isNaN()) {
                             baselinePitch = pitch
                             baselineRoll = roll
                         }
 
-                        // Delta from baseline, clamped to ±12°
-                        val deltaPitch = (pitch - baselinePitch).coerceIn(-12f, 12f)
-                        val deltaRoll = (roll - baselineRoll).coerceIn(-12f, 12f)
+                        val maxAngle = 20f // tighter range = more responsive feel
+                        val deltaPitch = (pitch - baselinePitch).coerceIn(-maxAngle, maxAngle)
+                        val deltaRoll = (roll - baselineRoll).coerceIn(-maxAngle, maxAngle)
 
-                        // Normalize to -1..1
-                        val rawX = (deltaRoll / 12f)
-                        val rawY = (deltaPitch / 12f)
+                        val rawX = deltaRoll / maxAngle
+                        val rawY = deltaPitch / maxAngle
 
-                        // Exponential smoothing
-                        smoothX += (rawX - smoothX) * alpha
-                        smoothY += (rawY - smoothY) * alpha
+                        // Low-pass filter to remove sensor noise before spring animation
+                        lpX += (rawX - lpX) * lpAlpha
+                        lpY += (rawY - lpY) * lpAlpha
 
-                        tiltState.value = TiltState(x = smoothX, y = smoothY)
+                        targetX.floatValue = lpX
+                        targetY.floatValue = lpY
                     }
 
                     Sensor.TYPE_GRAVITY -> {
-                        // Only used if no rotation vector sensor
                         if (rotationSensor != null) return
 
                         val rawX = (event.values[0] / 9.8f).coerceIn(-1f, 1f)
                         val rawY = (event.values[1] / 9.8f).coerceIn(-1f, 1f)
 
-                        // Set baseline
                         if (baselinePitch.isNaN()) {
-                            baselinePitch = rawY * 12f
-                            baselineRoll = rawX * 12f
+                            baselinePitch = rawY * 20f
+                            baselineRoll = rawX * 20f
                         }
 
-                        val deltaX = rawX - (baselineRoll / 12f)
-                        val deltaY = rawY - (baselinePitch / 12f)
+                        val deltaX = (rawX - (baselineRoll / 20f)).coerceIn(-1f, 1f)
+                        val deltaY = (rawY - (baselinePitch / 20f)).coerceIn(-1f, 1f)
 
-                        gravX += (deltaX.coerceIn(-1f, 1f) - gravX) * alpha
-                        gravY += (deltaY.coerceIn(-1f, 1f) - gravY) * alpha
+                        lpX += (deltaX - lpX) * lpAlpha
+                        lpY += (deltaY - lpY) * lpAlpha
 
-                        tiltState.value = TiltState(x = gravX, y = gravY)
+                        targetX.floatValue = lpX
+                        targetY.floatValue = lpY
                     }
-                    
+
                     Sensor.TYPE_ACCELEROMETER -> {
-                        // 1. Shake detection
+                        // Shake detection
                         if (onShake != null) {
                             val gX = event.values[0] / SensorManager.GRAVITY_EARTH
                             val gY = event.values[1] / SensorManager.GRAVITY_EARTH
                             val gZ = event.values[2] / SensorManager.GRAVITY_EARTH
                             val gForce = Math.sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
-                            
-                            // 2.2g is a good shake threshold
+
                             if (gForce > 2.2f) {
                                 val now = System.currentTimeMillis()
                                 if (now - lastShakeTime > 1000) {
@@ -135,24 +170,25 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                                 }
                             }
                         }
-                        
-                        // 2. Fallback for tilt if both rotation and gravity fail
+
+                        // Fallback tilt if both rotation and gravity fail
                         if (rotationSensor == null && gravitySensor == null) {
                             val rawX = (event.values[0] / 9.8f).coerceIn(-1f, 1f)
                             val rawY = (event.values[1] / 9.8f).coerceIn(-1f, 1f)
 
                             if (baselinePitch.isNaN()) {
-                                baselinePitch = rawY * 12f
-                                baselineRoll = rawX * 12f
+                                baselinePitch = rawY * 20f
+                                baselineRoll = rawX * 20f
                             }
 
-                            val deltaX = rawX - (baselineRoll / 12f)
-                            val deltaY = rawY - (baselinePitch / 12f)
+                            val deltaX = (rawX - (baselineRoll / 20f)).coerceIn(-1f, 1f)
+                            val deltaY = (rawY - (baselinePitch / 20f)).coerceIn(-1f, 1f)
 
-                            gravX += (deltaX.coerceIn(-1f, 1f) - gravX) * alpha
-                            gravY += (deltaY.coerceIn(-1f, 1f) - gravY) * alpha
+                            lpX += (deltaX - lpX) * lpAlpha
+                            lpY += (deltaY - lpY) * lpAlpha
 
-                            tiltState.value = TiltState(x = gravX, y = gravY)
+                            targetX.floatValue = lpX
+                            targetY.floatValue = lpY
                         }
                     }
                 }
@@ -161,15 +197,14 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        // Register sensors
         rotationSensor?.let {
-            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI)
         }
         gravitySensor?.let {
-            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI)
         }
         accelSensor?.let {
-            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_GAME)
+            sensorManager.registerListener(listener, it, SensorManager.SENSOR_DELAY_UI)
         }
 
         onDispose {

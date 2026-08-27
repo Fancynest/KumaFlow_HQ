@@ -21,10 +21,10 @@
     <string name="duo_desc_sync_old_history">Jika aktif, transaksi lama akan dikirim ke partner.</string>
     <string name="duo_btn_saving">Menyimpan...</string>
     <string name="duo_btn_done">Selesai</string>
-    <string name="manage_wallet_title_add">Tambah Dompet</string>
-    <string name="manage_wallet_title_edit">Edit Dompet</string>
-    <string name="manage_wallet_name">Nama dompet</string>
-    <string name="manage_wallet_card_number">Nomor kartu</string>
+    <string name="manage_wallet_title_add">Tambah Kartu</string>
+    <string name="manage_wallet_title_edit">Edit Kartu</string>
+    <string name="manage_wallet_name">Nama Kartu</string>
+    <string name="manage_wallet_card_number">Nomor Kartu / Barcode</string>
     <string name="manage_wallet_notes">Catatan</string>
     <string name="manage_wallet_appearance">Tampilan</string>
     <string name="manage_wallet_important_note">Catatan penting</string>

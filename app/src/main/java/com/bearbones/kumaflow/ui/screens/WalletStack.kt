@@ -13,6 +13,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.*
@@ -185,6 +187,7 @@ fun WalletCardStack(
     var poppedCard by remember { mutableStateOf<String?>(null) }
     var popState by remember { mutableIntStateOf(0) }
     var isReconcileHold by remember { mutableStateOf(false) }
+    var zoomedWallet by remember { mutableStateOf<VirtualWallet?>(null) }
     
     val tiltState = rememberTiltState(onShake = {
         if (popState == 2) {
@@ -201,7 +204,8 @@ fun WalletCardStack(
     val emptyCardPeek = 48.dp
     val effectiveCardCount = if (orderedWallets.isEmpty()) emptySlotCount else orderedWallets.size
     val effectiveCardPeek = if (orderedWallets.isEmpty()) emptyCardPeek else cardPeek
-    val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount - 1).coerceAtLeast(0))
+
+val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount - 1).coerceAtLeast(0))
     // The wallet body extends: cards area visible at top + flap covering bottom
     // The flap overlaps the bottom part of the last card
     val flapOverlap = 40.dp
@@ -226,7 +230,7 @@ fun WalletCardStack(
                 .background(walletColor, RoundedCornerShape(walletCorner))
                 .drawWithContent {
                     drawContent()
-                    if (orderedWallets.isEmpty()) {
+                    if (orderedWallets.isEmpty() && size.width > 0f && size.height > 0f && !size.width.isNaN() && !size.height.isNaN()) {
                         // Stitching around the entire wallet body
                         val inset = 8.dp.toPx()
                         val cr = walletCorner.toPx()
@@ -266,6 +270,7 @@ fun WalletCardStack(
                                 .fillMaxWidth()
                                 .height(cardHeight + emptyCardPeek * (emptySlotCount - 1))
                                 .drawBehind {
+                                    if (size.width <= 0f || size.width.isNaN()) return@drawBehind
                                     val peekPx = emptyCardPeek.toPx()
                                     // Gap from edges so it doesn't touch the stitching
                                     val linePadding = 16.dp.toPx()
@@ -292,6 +297,21 @@ fun WalletCardStack(
                             )
                         }
                     } else {
+                        if (orderedWallets.size == 1) {
+                            for (i in 1..2) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(1f - (i * 0.04f))
+                                        .height(cardHeight)
+                                        .align(Alignment.TopCenter)
+                                        .offset(y = cardPeek * i)
+                                        .zIndex(-i.toFloat())
+                                        .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                                        .background(AppText().copy(alpha = 0.03f), RoundedCornerShape(24.dp))
+                                )
+                            }
+                        }
+
                         orderedWallets.forEachIndexed { index, wallet ->
                             key(wallet.name) {
                             val isDragged = draggedIndex == index
@@ -333,14 +353,14 @@ fun WalletCardStack(
                             val zIdx = if (isDragged || (isPopped && popState == 2)) 100f + index else index.toFloat()
 
                             val animatedScale by animateFloatAsState(
-                                targetValue = if (isDragged) 1.05f else 1f,
+                                targetValue = if (isDragged) 1.05f else (1f - (index * 0.025f)).coerceAtLeast(0.9f),
                                 animationSpec = spring(
                                     dampingRatio = Spring.DampingRatioMediumBouncy,
                                     stiffness = Spring.StiffnessMedium
                                 ), label = "cardScale"
                             )
                             val animatedElevation by animateFloatAsState(
-                                targetValue = if (isDragged) 24f else if (isPopped && popState == 2) 30f else if (isPopped && popState == 1) 8f else 4f,
+                                targetValue = if (isDragged) 24f else if (isPopped && popState == 2) 30f else if (isPopped && popState == 1) 12f else if (index == 0) 12f else 4f,
                                 animationSpec = tween(300), label = "cardElevation"
                             )
 
@@ -350,10 +370,10 @@ fun WalletCardStack(
                                 .height(cardHeight)
                                 .zIndex(zIdx)
                                 .offset(y = with(density) { finalOffset.toDp() })
+                                .shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
                                 .graphicsLayer {
                                     scaleX = animatedScale
                                     scaleY = animatedScale
-                                    shadowElevation = animatedElevation
                                     shape = RoundedCornerShape(24.dp)
                                     clip = true
                                     // 3D tilt — full effect only on FULL state, subtle on PEEK, none on RESTING
@@ -362,13 +382,17 @@ fun WalletCardStack(
                                         isPopped && popState == 1 -> 0.3f
                                         else -> 0.15f
                                     }
+                                    
                                     val tilt = tiltState.value
-                                    rotationY = tilt.x * 12f * tiltMultiplier
-                                    rotationX = -tilt.y * 12f * tiltMultiplier
-                                    cameraDistance = 50000f
-                                    // Dynamic shadow offset — shifts opposite to tilt direction
-                                    translationX = -tilt.x * 2f * tiltMultiplier
-                                    translationY = -tilt.y * 2f * tiltMultiplier
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    
+                                    rotationY = tx * 15f * tiltMultiplier
+                                    rotationX = -ty * 15f * tiltMultiplier
+                                    cameraDistance = 16f * density.density
+                                    // Slight shadow offset, keeping card mostly centered
+                                    translationX = -tx * 4f * tiltMultiplier
+                                    translationY = -ty * 4f * tiltMultiplier
                                 }
                                 .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                                 .background(
@@ -502,6 +526,16 @@ fun WalletCardStack(
                                 else -> true
                             }
                             
+                            val bgParallax = Modifier
+                                .fillMaxSize(1.1f)
+                                .align(Alignment.Center)
+                                .graphicsLayer {
+                                    val tilt = tiltState.value
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    translationX = tx * 15f * density.density
+                                    translationY = ty * 15f * density.density
+                                }
                             if (shouldRender) {
                                 val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
                                 if (resId != 0) {
@@ -509,15 +543,25 @@ fun WalletCardStack(
                                         painter = painterResource(id = resId),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = bgParallax
                                     )
                                 }
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
+                            val bgParallax = Modifier
+                                .fillMaxSize(1.1f)
+                                .align(Alignment.Center)
+                                .graphicsLayer {
+                                    val tilt = tiltState.value
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    translationX = tx * 15f * density.density
+                                    translationY = ty * 15f * density.density
+                                }
                             val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
                             val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                             if (bitmap != null) {
-                                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = bgParallax)
                             }
                         }
 
@@ -526,22 +570,30 @@ fun WalletCardStack(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .drawBehind {
-                                    val tilt = tiltState.value
-                                    // Gloss position shifts with tilt
-                                    val glossCenterX = (0.5f + tilt.x * 0.6f) * size.width
-                                    val glossCenterY = (0.5f + tilt.y * 0.6f) * size.height
-                                    val glossRadius = size.width * 0.7f
+                                    val w = size.width
+                                    val h = size.height
+                                    if (w <= 0f || h <= 0f || w.isNaN() || h.isNaN() || w.isInfinite() || h.isInfinite()) return@drawBehind
+                                    
+                                    try {
+                                        val tilt = tiltState.value
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                        // Gloss position shifts opposite to tilt to simulate specular reflection
+                                        val glossCenterX = (0.5f - tx * 0.8f) * w
+                                        val glossCenterY = (0.5f - ty * 0.8f) * h
+                                        val glossRadius = (w * 0.85f).coerceAtLeast(1f)
 
-                                    val glossBrush = Brush.radialGradient(
-                                        colors = listOf(
-                                            Color.White.copy(alpha = 0.15f),
-                                            Color.White.copy(alpha = 0.05f),
-                                            Color.Transparent
-                                        ),
-                                        center = androidx.compose.ui.geometry.Offset(glossCenterX, glossCenterY),
-                                        radius = glossRadius
-                                    )
-                                    drawRect(brush = glossBrush, size = size)
+                                        val glossBrush = Brush.radialGradient(
+                                            colors = listOf(
+                                                Color.White.copy(alpha = 0.15f),
+                                                Color.White.copy(alpha = 0.05f),
+                                                Color.Transparent
+                                            ),
+                                            center = androidx.compose.ui.geometry.Offset(glossCenterX, glossCenterY),
+                                            radius = glossRadius
+                                        )
+                                        drawRect(brush = glossBrush, size = size)
+                                    } catch (_: Exception) { /* RadialGradient native can still reject edge-case params */ }
                                 }
                         )
 
@@ -574,10 +626,13 @@ fun WalletCardStack(
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     // Text layer sits "closer" to the viewer — shifts more
+                                    
                                     val tilt = tiltState.value
-                                    val parallaxMult = if (isPopped && popState == 2) 1.2f else 0.4f
-                                    translationX = tilt.x * 8f * parallaxMult
-                                    translationY = tilt.y * 5f * parallaxMult
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
+                                    val parallaxMult = if (isPopped && popState == 2) 1.2f else 0.5f
+                                    translationX = tx * 14f * parallaxMult
+                                    translationY = ty * 10f * parallaxMult
                                 }
                                 .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.SpaceBetween
@@ -644,6 +699,7 @@ fun WalletCardStack(
                     .background(walletColor)
                     .drawWithContent {
                         drawContent()
+                        if (size.width <= 0f || size.height <= 0f || size.width.isNaN() || size.height.isNaN()) return@drawWithContent
                         // Dashed stitching line along the flap edge (inset a few px)
                         val inset = 8.dp.toPx()
                         val sw = 100.dp.toPx()

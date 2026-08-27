@@ -48,24 +48,25 @@ fun BokehBackground(
         modifier = Modifier
             .fillMaxSize()
             .drawWithCache {
-                val width = size.width
+                
+                val width = if (size.width.isNaN()) 1f else size.width
                 val height = size.height
 
                 // Cache the brushes (centered at 0,0) so they aren't recreated 60 times a second
                 val brush1 = Brush.radialGradient(
                     colors = listOf(color1, Color.Transparent),
                     center = Offset.Zero,
-                    radius = width * 0.9f
+                    radius = (width * 0.9f).coerceAtLeast(1f)
                 )
                 val brush2 = Brush.radialGradient(
                     colors = listOf(color2, Color.Transparent),
                     center = Offset.Zero,
-                    radius = width * 1.0f
+                    radius = (width * 1.0f).coerceAtLeast(1f)
                 )
                 val brush3 = Brush.radialGradient(
                     colors = listOf(color3, Color.Transparent),
                     center = Offset.Zero,
-                    radius = width * 0.8f
+                    radius = (width * 0.8f).coerceAtLeast(1f)
                 )
 
                 onDrawBehind {
@@ -83,13 +84,13 @@ fun BokehBackground(
                     val cy3 = height * 0.9f + cos(t + 4f) * (height * 0.1f) - (parallaxOffset * 1.2f)
 
                     translate(left = cx1, top = cy1) {
-                        drawCircle(brush = brush1, radius = width * 0.9f, center = Offset.Zero)
+                        drawCircle(brush = brush1, radius = (width * 0.9f).coerceAtLeast(1f), center = Offset.Zero)
                     }
                     translate(left = cx2, top = cy2) {
-                        drawCircle(brush = brush2, radius = width * 1.0f, center = Offset.Zero)
+                        drawCircle(brush = brush2, radius = (width * 1.0f).coerceAtLeast(1f), center = Offset.Zero)
                     }
                     translate(left = cx3, top = cy3) {
-                        drawCircle(brush = brush3, radius = width * 0.8f, center = Offset.Zero)
+                        drawCircle(brush = brush3, radius = (width * 0.8f).coerceAtLeast(1f), center = Offset.Zero)
                     }
                 }
             }

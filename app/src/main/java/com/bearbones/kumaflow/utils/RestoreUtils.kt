@@ -6,6 +6,7 @@ import com.bearbones.kumaflow.KumaDatabase
 import com.bearbones.kumaflow.KumaTransaction
 import com.bearbones.kumaflow.TransactionSplit
 import com.bearbones.kumaflow.UserProfile
+import com.bearbones.kumaflow.VirtualWallet
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -29,7 +30,7 @@ object RestoreUtils {
             useCarryOver = pObj.optBoolean("useCarryOver", false),
             expenseCats = pObj.optString("expenseCats", "Food,Shopping,Health,Transport,Education,Entertainment,Others"),
             incomeCats = pObj.optString("incomeCats", "Financial,Others"),
-            wallets = pObj.optString("wallets", "Cash,Bank BCA,GoPay"),
+            wallets = pObj.optString("wallets", ""),
             categoryTargets = pObj.optString("categoryTargets", "{}"),
             isAmoledMode = pObj.optBoolean("isAmoledMode", false),
             categoryIcons = pObj.optString("categoryIcons", "{}"),
@@ -38,7 +39,9 @@ object RestoreUtils {
             currentStreak = pObj.optInt("currentStreak", 0),
             lastActiveDate = pObj.optString("lastActiveDate", ""),
             freezeCount = pObj.optInt("freezeCount", 0),
-            lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0)
+            lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0),
+            savingsWallets = pObj.optString("savingsWallets", ""),
+            savingsGoals = pObj.optString("savingsGoals", "{}")
         )
         
         var restoredQrisPath = pObj.optString("qrisFilePath", "")
@@ -102,6 +105,33 @@ object RestoreUtils {
 
         val dao = KumaDatabase.getDatabase(context).transactionDao()
         dao.restoreDatabase(finalProfile, txsWithSplits)
+        
+        // Restore virtual wallets
+        val virtualWalletsArr = root.optJSONArray("virtualWallets")
+        if (virtualWalletsArr != null) {
+            val virtualWalletsList = mutableListOf<VirtualWallet>()
+            for (i in 0 until virtualWalletsArr.length()) {
+                try {
+                    val vwObj = virtualWalletsArr.getJSONObject(i)
+                    virtualWalletsList.add(
+                        VirtualWallet(
+                            name = vwObj.getString("name"),
+                            orderIndex = vwObj.getInt("orderIndex"),
+                            backgroundType = vwObj.getString("backgroundType"),
+                            backgroundValue = vwObj.getString("backgroundValue"),
+                            cardNumber = vwObj.optString("cardNumber", ""),
+                            notes = vwObj.optString("notes", ""),
+                            cardLabel = vwObj.optString("cardLabel", "ACCESS CARD")
+                        )
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            if (virtualWalletsList.isNotEmpty()) {
+                dao.upsertVirtualWallets(virtualWalletsList)
+            }
+        }
         
         // Restore custom card images
         val customCardsArr = root.optJSONArray("customCards")

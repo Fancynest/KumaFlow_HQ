@@ -21,10 +21,10 @@
     <string name="duo_desc_sync_old_history">If checked, old transactions will be sent to partner.</string>
     <string name="duo_btn_saving">Saving...</string>
     <string name="duo_btn_done">Done</string>
-    <string name="manage_wallet_title_add">Add Wallet</string>
-    <string name="manage_wallet_title_edit">Edit Wallet</string>
-    <string name="manage_wallet_name">Wallet name</string>
-    <string name="manage_wallet_card_number">Card number</string>
+    <string name="manage_wallet_title_add">Add Card</string>
+    <string name="manage_wallet_title_edit">Edit Card</string>
+    <string name="manage_wallet_name">Card name</string>
+    <string name="manage_wallet_card_number">Card / Barcode Number</string>
     <string name="manage_wallet_notes">Notes</string>
     <string name="manage_wallet_appearance">Appearance</string>
     <string name="manage_wallet_important_note">Important note</string>

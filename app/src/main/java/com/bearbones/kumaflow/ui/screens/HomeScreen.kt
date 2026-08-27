@@ -198,8 +198,11 @@ fun HomeScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize().padding(top = 24.dp),
-            contentPadding = PaddingValues(bottom = paddingValues.calculateBottomPadding() + 24.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                bottom = paddingValues.calculateBottomPadding() + 24.dp
+            )
         ) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -473,8 +476,18 @@ fun HomeScreen(
                             val dao = remember { com.bearbones.kumaflow.KumaDatabase.getDatabase(context).transactionDao() }
                             val scope = rememberCoroutineScope()
                             LaunchedEffect(Unit) {
-                                dao.observeAllVirtualWallets().collect {
-                                    virtualWallets = it
+                                dao.observeAllVirtualWallets().collect { vws ->
+                                    virtualWallets = vws
+                                    // Auto-sync missing wallets to profile
+                                    val p = dao.getProfileSync()
+                                    if (p != null) {
+                                        val existing = p.wallets.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                        val missing = vws.map { it.name }.filter { !existing.contains(it) }
+                                        if (missing.isNotEmpty()) {
+                                            val newList = (existing + missing).joinToString(",")
+                                            dao.saveProfile(p.copy(wallets = newList))
+                                        }
+                                    }
                                 }
                             }
                             
