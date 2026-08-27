@@ -223,29 +223,32 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
     ) {
         val stitchColor = AppText().copy(alpha = 0.25f)
         // === WALLET BODY (the beige/gray outer container) ===
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(totalWalletHeight)
-                .let {
-                    if (isBrutal) {
-                        it.drawBehind {
-                            val shadowOffset = 6.dp.toPx()
-                            val corner = walletCorner.toPx()
-                            drawRoundRect(
-                                color = Color.Black,
-                                topLeft = androidx.compose.ui.geometry.Offset(shadowOffset, shadowOffset),
-                                size = size,
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
-                            )
-                        }
-                        .background(walletColor, RoundedCornerShape(walletCorner))
-                        .border(3.dp, Color.Black, RoundedCornerShape(walletCorner))
-                    } else {
-                        it.shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
-                          .background(walletColor, RoundedCornerShape(walletCorner))
-                    }
+        val walletBodyModifier = Modifier
+            .fillMaxWidth()
+            .height(totalWalletHeight)
+            
+        val finalWalletBodyModifier = if (isBrutal) {
+            walletBodyModifier
+                .drawBehind {
+                    val shadowOffset = 6.dp.toPx()
+                    val corner = walletCorner.toPx()
+                    drawRoundRect(
+                        color = Color.Black,
+                        topLeft = androidx.compose.ui.geometry.Offset(shadowOffset, shadowOffset),
+                        size = size,
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
+                    )
                 }
+                .background(walletColor, RoundedCornerShape(walletCorner))
+                .border(3.dp, Color.Black, RoundedCornerShape(walletCorner))
+        } else {
+            walletBodyModifier
+                .shadow(6.dp, RoundedCornerShape(walletCorner), clip = false)
+                .background(walletColor, RoundedCornerShape(walletCorner))
+        }
+
+        Box(
+            modifier = finalWalletBodyModifier
                 .drawWithContent {
                     drawContent()
                     if (!isBrutal && orderedWallets.isEmpty() && size.width > 0f && size.height > 0f && !size.width.isNaN() && !size.height.isNaN()) {
