@@ -325,16 +325,7 @@ fun ManageWalletContent(
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
                     .shadow(12.dp, RoundedCornerShape(24.dp))
-                    .graphicsLayer {
-                        val tx = if (tiltState.value.x.isNaN() || tiltState.value.x.isInfinite()) 0f else tiltState.value.x
-                        val ty = if (tiltState.value.y.isNaN() || tiltState.value.y.isInfinite()) 0f else tiltState.value.y
-                        
-                        rotationY = tx * 12f
-                        rotationX = -ty * 12f
-                        cameraDistance = 50000f
-                        shape = RoundedCornerShape(24.dp)
-                        clip = true
-                    }
+                    
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                     .background(solidColor)
@@ -389,7 +380,7 @@ fun ManageWalletContent(
                 } else if (previewType == "CUSTOM") {
                     val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), previewVal)
                     if (file.exists()) {
-                        val bitmap = remember(file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                        val bitmap = remember(file.absolutePath, file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                         if (bitmap != null) {
                             Image(
                                 bitmap = bitmap,
@@ -609,7 +600,7 @@ fun ManageWalletContent(
                                 }
                             )
                     ) {
-                        val bitmap = remember(file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                        val bitmap = remember(file.absolutePath, file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                         if (bitmap != null) {
                             Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                         }
@@ -771,16 +762,7 @@ fun WalletSuccessContent(
                     .fillMaxWidth()
                     .height(cardPreviewHeight)
                     .shadow(12.dp, RoundedCornerShape(24.dp))
-                    .graphicsLayer {
-                        val tx = if (tiltState.value.x.isNaN() || tiltState.value.x.isInfinite()) 0f else tiltState.value.x
-                        val ty = if (tiltState.value.y.isNaN() || tiltState.value.y.isInfinite()) 0f else tiltState.value.y
-                        
-                        rotationY = tx * 12f
-                        rotationX = -ty * 12f
-                        cameraDistance = 50000f
-                        shape = RoundedCornerShape(24.dp)
-                        clip = true
-                    }
+                    
                     .clip(RoundedCornerShape(24.dp))
                     .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                     .background(solidColor)
@@ -834,7 +816,7 @@ fun WalletSuccessContent(
                     }
                 } else if (wallet.backgroundType == "CUSTOM") {
                     val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
-                    val bitmap = remember(file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                    val bitmap = remember(file.absolutePath, file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
                     if (bitmap != null) {
                         Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     }
