@@ -399,7 +399,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             val zIdx = if (isDragged || (isPopped && popState == 2)) 100f + index else index.toFloat()
 
                             val animatedScale by animateFloatAsState(
-                                targetValue = if (isDragged) 1.05f else (1f - (index * 0.025f)).coerceAtLeast(0.9f),
+                                targetValue = if (isDragged) 1.05f else 1f,
                                 animationSpec = spring(
                                     dampingRatio = Spring.DampingRatioMediumBouncy,
                                     stiffness = Spring.StiffnessMedium
@@ -422,25 +422,23 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     scaleY = animatedScale
                                     shape = RoundedCornerShape(24.dp)
                                     clip = true
-                                    // 3D tilt — full effect only on FULL state, subtle on PEEK, none on RESTING
+                                    // 3D tilt
                                     val tiltMultiplier = when {
                                         isPopped && popState == 2 -> 1f
-                                        isPopped && popState == 1 -> 0.3f
-                                        else -> 0.15f
+                                        isPopped && popState == 1 -> 0.8f
+                                        else -> 0.7f
                                     }
                                     
                                     val tilt = tiltState.value
-                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
-                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
-                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
                                     
                                     rotationY = tx * 15f * tiltMultiplier
                                     rotationX = -ty * 15f * tiltMultiplier
                                     cameraDistance = 16f * density.density
                                     // Slight shadow offset, keeping card mostly centered
-                                    translationX = -tx * 4f * tiltMultiplier
-                                    translationY = -ty * 4f * tiltMultiplier
+                                    translationX = -tx * 8f * tiltMultiplier
+                                    translationY = -ty * 8f * tiltMultiplier
                                 }
                                 .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                                 .background(
@@ -579,12 +577,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val tilt = tiltState.value
-                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
-                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
-                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
-                                    translationX = tx * 15f * density.density
-                                    translationY = ty * 15f * density.density
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                    translationX = tx * 25f * density.density
+                                    translationY = ty * 25f * density.density
                                 }
                             if (shouldRender) {
                                 val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
@@ -603,12 +599,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val tilt = tiltState.value
-                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
-                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
-                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
-                                    translationX = tx * 15f * density.density
-                                    translationY = ty * 15f * density.density
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                    translationX = tx * 25f * density.density
+                                    translationY = ty * 25f * density.density
                                 }
                             val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
                             val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
@@ -628,10 +622,8 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     
                                     try {
                                         val tilt = tiltState.value
-                                        val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                        val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
-                                        val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
-                                        val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
                                         // Gloss position shifts opposite to tilt to simulate specular reflection
                                         val glossCenterX = (0.5f - tx * 0.8f) * w
                                         val glossCenterY = (0.5f - ty * 0.8f) * h
@@ -679,16 +671,14 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
-                                    // Text layer sits "closer" to the viewer — shifts more
+                                    // Text layer sits "closer" to the viewer - shifts more
                                     
                                     val tilt = tiltState.value
-                                    val rawTx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x
-                                    val rawTy = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y
-                                    val tx = (rawTx / 5f).coerceIn(-1.2f, 1.2f)
-                                    val ty = (rawTy / 5f).coerceIn(-1.2f, 1.2f)
-                                    val parallaxMult = if (isPopped && popState == 2) 1.2f else 0.5f
-                                    translationX = tx * 14f * parallaxMult
-                                    translationY = ty * 10f * parallaxMult
+                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                    val parallaxMult = if (isPopped && popState == 2) 1.5f else 1f
+                                    translationX = tx * 25f * parallaxMult
+                                    translationY = ty * 18f * parallaxMult
                                 }
                                 .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.SpaceBetween
