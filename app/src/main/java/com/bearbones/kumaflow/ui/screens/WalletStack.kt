@@ -568,9 +568,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                             
                             val bgParallax = Modifier
-                                .fillMaxSize(1.2f)
-                                .align(Alignment.Center)
+                                .fillMaxSize()
                                 .graphicsLayer {
+                                    scaleX = 1.25f
+                                    scaleY = 1.25f
                                     val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
                                     val tilt = tiltState.value
                                     val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
@@ -591,9 +592,10 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
                             val bgParallax = Modifier
-                                .fillMaxSize(1.2f)
-                                .align(Alignment.Center)
+                                .fillMaxSize()
                                 .graphicsLayer {
+                                    scaleX = 1.25f
+                                    scaleY = 1.25f
                                     val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
                                     val tilt = tiltState.value
                                     val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
