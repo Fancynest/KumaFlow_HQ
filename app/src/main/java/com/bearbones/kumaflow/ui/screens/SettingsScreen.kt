@@ -182,113 +182,23 @@ fun SettingsScreen(
     var newEasterEgg by remember { mutableStateOf(sharedPref.getString("easter_egg_code", "") ?: "") }
     var isRestoring by remember { mutableStateOf(false) }
 
+    var showRestoreCompleteNote by remember { mutableStateOf(false) }
+
     LaunchedEffect(mainActivity?.pendingRestoreJson) {
         val jsonToRestore = mainActivity?.pendingRestoreJson
         if (jsonToRestore != null) {
             isRestoring = true
             scope.launch(Dispatchers.IO) {
                 try {
-                    val root = JSONObject(jsonToRestore)
-                    val pObj = root.getJSONObject("profile")
-                    val newProfile = UserProfile(
-                        userName = pObj.optString("userName", "User"),
-                        isAppLocked = pObj.optBoolean("isAppLocked", false),
-                        appPin = pObj.optString("appPin", ""),
-                        currency = pObj.optString("currency", "IDR"),
-                        dateFormat = pObj.optString("dateFormat", "dd MMM yyyy"),
-                        monthlyTarget = pObj.optLong("monthlyTarget", 0L),
-                        themeMode = pObj.optInt("themeMode", 0),
-                        isReminderOn = pObj.optBoolean("isReminderOn", false),
-                        reminderTimes = pObj.optString("reminderTimes", "05:00,12:30,15:30,18:00,20:00"),
-                        useCarryOver = pObj.optBoolean("useCarryOver", false),
-                        expenseCats = pObj.optString("expenseCats", "Food,Shopping,Health,Transport,Education,Entertainment,Others"),
-                        incomeCats = pObj.optString("incomeCats", "Financial,Others"),
-                        wallets = pObj.optString("wallets", "Cash,Bank BCA,GoPay"),
-                        categoryTargets = pObj.optString("categoryTargets", "{}"),
-                        isAmoledMode = pObj.optBoolean("isAmoledMode", false),
-                        categoryIcons = pObj.optString("categoryIcons", "{}"),
-                        isLiquidGlass = pObj.optBoolean("isLiquidGlass", false),
-                        isPremiumGlassBlur = pObj.optBoolean("isPremiumGlassBlur", false),
-                        currentStreak = pObj.optInt("currentStreak", 0),
-                        lastActiveDate = pObj.optString("lastActiveDate", ""),
-                        freezeCount = pObj.optInt("freezeCount", 0),
-                        lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0),
-                    )
-                    
-                    var restoredQrisPath = pObj.optString("qrisFilePath", "")
-                    val qrisBase64 = pObj.optString("qrisBase64", "")
-                    if (qrisBase64.isNotEmpty()) {
-                        try {
-                            val bytes = android.util.Base64.decode(qrisBase64, android.util.Base64.DEFAULT)
-                            val file = java.io.File(context.filesDir, "qris_restored_${System.currentTimeMillis()}.jpg")
-                            java.io.FileOutputStream(file).use { it.write(bytes) }
-                            restoredQrisPath = file.absolutePath
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                    val finalProfile = newProfile.copy(
-                        qrisFilePath = restoredQrisPath,
-                        qrisHolderName = pObj.optString("qrisHolderName", ""),
-                        bankName = pObj.optString("bankName", ""),
-                        bankAccount = pObj.optString("bankAccount", "")
-                    )
-
-                    val txsArr = root.getJSONArray("transactions")
-                    val txsWithSplits = mutableListOf<Pair<KumaTransaction, List<TransactionSplit>>>()
-
-                    for (i in 0 until txsArr.length()) {
-                        val tObj = txsArr.getJSONObject(i)
-                        var safeTimestamp = tObj.optString("timestamp", "")
-                        if (safeTimestamp.isBlank()) {
-                            safeTimestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                        }
-
-                        val baseTx = KumaTransaction(
-                            id = 0,
-                            name = tObj.optString("name", "Unknown"),
-                            date = tObj.optString("date", ""),
-                            amount = tObj.optString("amount", "0"),
-                            isIncome = tObj.optBoolean("isIncome", false),
-                            category = tObj.optString("category", "Others"),
-                            wallet = tObj.optString("wallet", "Cash"),
-                            timestamp = safeTimestamp,
-                            message = tObj.optString("message", ""),
-                            isEdited = tObj.optBoolean("isEdited", false)
-                        )
-
-                        val splitsArr = tObj.optJSONArray("splits")
-                        val currentSplits = mutableListOf<TransactionSplit>()
-                        if (splitsArr != null) {
-                            for (j in 0 until splitsArr.length()) {
-                                val sObj = splitsArr.getJSONObject(j)
-                                currentSplits.add(
-                                    TransactionSplit(
-                                        transactionId = 0,
-                                        splitWallet = sObj.optString("w", "Cash"),
-                                        splitAmount = sObj.optLong("a", 0L)
-                                    )
-                                )
-                            }
-                        }
-                        
-                        // To keep descending order correct after SQLite auto generates IDs sequentially,
-                        // we must add it to the front (since the oldest transactions are at the end of the JSON array).
-                        // Wait, the JSON array is descending (newest first). 
-                        // If we insert newest first, the newest gets ID=1, oldest gets ID=100.
-                        // Since we ORDER BY timestamp DESC, ID doesn't dictate order, timestamp does.
-                        // So adding sequentially is fine.
-                        txsWithSplits.add(Pair(baseTx, currentSplits))
-                    }
-
                     // Atomic block to prevent corruption if user leaves or crashes
                     kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
-                        dao.restoreDatabase(finalProfile, txsWithSplits)
+                        com.bearbones.kumaflow.utils.RestoreUtils.parseAndRestoreJson(jsonToRestore, context)
                     }
 
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, AppStr.resOk, Toast.LENGTH_SHORT).show()
                         updateKumaWidget(context)
+                        showRestoreCompleteNote = true
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
@@ -1625,6 +1535,27 @@ fun SettingsScreen(
                 modifier = Modifier.size(64.dp)
             )
         }
+    }
+
+    if (showRestoreCompleteNote) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showRestoreCompleteNote = false },
+            modifier = Modifier.glassCard(24.dp, AppSurface()),
+            containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+            title = { Text(if(AppStr.isId) "Restore Selesai" else "Restore Complete", fontWeight = FontWeight.Bold, color = AppText()) },
+            text = {
+                Text(
+                    text = if(AppStr.isId) "Data berhasil dipulihkan.\n\nCatatan: Koneksi Duo Sync tidak di-backup karena alasan keamanan. Jika sebelumnya Anda terhubung dengan partner, silakan lakukan Pairing ulang di menu Duo Sync."
+                           else "Data successfully restored.\n\nNote: Duo Sync pairings are not backed up for security reasons. If you were connected to a partner, please re-pair your devices in the Duo Sync menu.",
+                    color = AppText().copy(alpha = 0.8f)
+                )
+            },
+            confirmButton = {
+                com.bearbones.kumaflow.ui.components.KumaButton(
+                    onClick = { showRestoreCompleteNote = false }
+                ) { Text(if(AppStr.isId) "Mengerti" else "Got it", color = androidx.compose.ui.graphics.Color.White) }
+            }
+        )
     }
 }
 }

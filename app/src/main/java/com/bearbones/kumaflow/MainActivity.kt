@@ -2135,7 +2135,7 @@ fun backupAppToJSON(context: Context) {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     Toast.makeText(context, AppStr.noTx, Toast.LENGTH_SHORT).show()
                 }
-                return@launch
+                // Do NOT return here, continue backing up profile and wallets
             }
             val root = JSONObject()
             root.put("backupVersion", 7) // Incremented backup version
@@ -2220,6 +2220,20 @@ fun backupAppToJSON(context: Context) {
                     })
                 }
                 root.put("virtualWallets", vwArr)
+            }
+            
+            val walletMetadatas = dao.getAllWalletMetadata()
+            if (walletMetadatas.isNotEmpty()) {
+                val wmArr = JSONArray()
+                walletMetadatas.forEach { wm ->
+                    wmArr.put(JSONObject().apply {
+                        put("walletStableId", wm.walletStableId)
+                        put("currentName", wm.currentName)
+                        put("createdAt", wm.createdAt)
+                        put("nameLastModified", wm.nameLastModified)
+                    })
+                }
+                root.put("walletMetadata", wmArr)
             }
 
             val tArr = JSONArray()

@@ -240,7 +240,7 @@ fun ManageWalletContent(
     }
     
     val isNewWallet = pagerState.currentPage == wallets.size
-    val currentWallet = if (isNewWallet) null else wallets.getOrNull(pagerState.currentPage)
+    var activeWalletSnapshot by remember { mutableStateOf(if (isNewWallet) null else wallets.getOrNull(pagerState.currentPage)) }
 
     var editPageIndex by remember { mutableIntStateOf(pagerState.currentPage) }
     
@@ -251,6 +251,7 @@ fun ManageWalletContent(
                 editPageIndex = page
                 val isNew = page == wallets.size
                 val w = if (isNew) null else wallets.getOrNull(page)
+                activeWalletSnapshot = w
                 if (isNew) {
                     name = ""
                     cardNumber = ""
@@ -654,9 +655,9 @@ fun ManageWalletContent(
             Spacer(modifier = Modifier.height(24.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                if (!isNewWallet && currentWallet != null) {
+                if (!isNewWallet && activeWalletSnapshot != null) {
                     KumaButton(
-                        onClick = { walletToDelete = currentWallet }, 
+                        onClick = { walletToDelete = activeWalletSnapshot }, 
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         modifier = Modifier.weight(0.4f)
                     ) {
@@ -669,10 +670,10 @@ fun ManageWalletContent(
                     onClick = {
                         if (name.isNotBlank()) {
                             onSave(
-                                currentWallet?.name,
+                                activeWalletSnapshot?.name,
                                 VirtualWallet(
                                     name = name.trim(),
-                                    orderIndex = currentWallet?.orderIndex ?: wallets.size,
+                                    orderIndex = activeWalletSnapshot?.orderIndex ?: wallets.size,
                                     backgroundType = bgType,
                                     backgroundValue = bgValue,
                                     cardNumber = cardNumber.trim(),

@@ -133,6 +133,25 @@ object RestoreUtils {
             }
         }
         
+        // Restore wallet metadata
+        val walletMetadataArr = root.optJSONArray("walletMetadata")
+        if (walletMetadataArr != null) {
+            for (i in 0 until walletMetadataArr.length()) {
+                try {
+                    val wmObj = walletMetadataArr.getJSONObject(i)
+                    val metadata = com.bearbones.kumaflow.duo.model.WalletMetadata(
+                        walletStableId = wmObj.getString("walletStableId"),
+                        currentName = wmObj.getString("currentName"),
+                        createdAt = wmObj.getLong("createdAt"),
+                        nameLastModified = wmObj.getLong("nameLastModified")
+                    )
+                    dao.upsertWalletMetadata(metadata)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        
         // Restore custom card images
         val customCardsArr = root.optJSONArray("customCards")
         if (customCardsArr != null) {
