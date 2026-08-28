@@ -568,15 +568,15 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                             
                             val bgParallax = Modifier
-                                .fillMaxSize(1.15f)
+                                .fillMaxSize(1.2f)
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
                                     val tilt = tiltState.value
                                     val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
                                     val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    translationX = tx * 25f * density.density * bgParallaxMult
-                                    translationY = ty * 25f * density.density * bgParallaxMult
+                                    translationX = tx * 4f * density.density * bgParallaxMult
+                                    translationY = ty * 4f * density.density * bgParallaxMult
                                 }
                             if (shouldRender) {
                                 val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
@@ -591,15 +591,15 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
                             val bgParallax = Modifier
-                                .fillMaxSize(1.15f)
+                                .fillMaxSize(1.2f)
                                 .align(Alignment.Center)
                                 .graphicsLayer {
                                     val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
                                     val tilt = tiltState.value
                                     val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
                                     val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    translationX = tx * 25f * density.density * bgParallaxMult
-                                    translationY = ty * 25f * density.density * bgParallaxMult
+                                    translationX = tx * 4f * density.density * bgParallaxMult
+                                    translationY = ty * 4f * density.density * bgParallaxMult
                                 }
                             val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
                             val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
