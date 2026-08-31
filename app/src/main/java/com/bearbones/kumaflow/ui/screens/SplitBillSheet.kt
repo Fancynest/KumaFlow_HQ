@@ -92,7 +92,7 @@ fun SplitBillSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         containerColor = AppSurface(),
-        dragHandle = { BottomSheetDefaults.DragHandle() },
+        dragHandle = null,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
@@ -100,6 +100,7 @@ fun SplitBillSheet(
                 .bouncySheetContent()
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -107,7 +108,7 @@ fun SplitBillSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(top = 12.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -330,11 +331,33 @@ fun SplitBillSheet(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Action Buttons Row
-                Row(
+                // Action Buttons
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Record to Expenses Button (Centang)
+                    if (onSaveExpense != null) {
+                        KumaButton(
+                            onClick = {
+                                selectedRecordAmount = finalAmount
+                                showRecordExpenseDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AppGreen())
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                AppStr.recordExpenseBtn,
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                        }
+                    }
+
                     // Share QRIS Button
                     KumaButton(
                         onClick = {
@@ -345,28 +368,17 @@ fun SplitBillSheet(
                             previewAmountStr = format.format(finalAmount)
                             showPreviewDialog = true
                         },
-                        modifier = Modifier.weight(1f).height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary())
                     ) {
                         KumaExpressiveIcon(Icons.Default.Share, contentDescription = null, containerColor = Color.Transparent, size = 18.dp)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(AppStr.previewQris, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    // Record to Expenses Button (Centang)
-                    if (onSaveExpense != null) {
-                        KumaButton(
-                            onClick = {
-                                selectedRecordAmount = finalAmount
-                                showRecordExpenseDialog = true
-                            },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppGreen())
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(AppStr.recordExpenseBtn, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            AppStr.previewQris,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
                     }
                 }
             } else {
