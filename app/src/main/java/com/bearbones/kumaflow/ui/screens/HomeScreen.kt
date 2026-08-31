@@ -407,10 +407,11 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Action Buttons (QRIS & Spin)
+                    // Action Buttons (QRIS, Split Bill & Spin)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
                         
@@ -434,19 +435,39 @@ fun HomeScreen(
                                         android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                                .padding(horizontal = 8.dp),
+                                .padding(horizontal = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
                         
-                        Spacer(modifier = Modifier.width(16.dp))
+                        // Split Bill Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .then(
+                                    if (isBrutal) 
+                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
+                                    else 
+                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
+                                )
+                                .clickable { onOpenSplitBill() }
+                                .padding(horizontal = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ReceiptLong, contentDescription = "Split Bill", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Split", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
+                            }
+                        }
 
-                        // Kuma Roulette Entry Point
+                        // Kuma Roulette / Spin Entry Point
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -458,13 +479,13 @@ fun HomeScreen(
                                         Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
                                 )
                                 .clickable { onOpenRoulette() }
-                                .padding(horizontal = 8.dp),
+                                .padding(horizontal = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 14.sp)
+                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
                     }

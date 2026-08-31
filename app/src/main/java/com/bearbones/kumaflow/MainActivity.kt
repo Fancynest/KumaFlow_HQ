@@ -622,6 +622,16 @@ fun MainScreen(
             holderName = userProfile.qrisHolderName,
             bankName = userProfile.bankName,
             bankAccount = userProfile.bankAccount,
+            physicalWallets = userProfile.wallets.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+            expenseCategories = (userProfile.expenseCats.split(",") + userProfile.incomeCats.split(",")).map { it.trim() }.filter { it.isNotEmpty() }.distinct(),
+            onSaveExpense = { tx ->
+                scope.launch {
+                    dao.insertFullTransaction(tx, emptyList())
+                    forceUpdateTrigger++
+                    updateKumaWidget(context)
+                    Toast.makeText(context, AppStr.splitExpenseRecorded, Toast.LENGTH_SHORT).show()
+                }
+            },
             onDismissRequest = { showSplitBill = false }
         )
     }
@@ -1841,6 +1851,14 @@ fun TransactionBottomSheet(
             holderName = profile.qrisHolderName,
             bankName = profile.bankName,
             bankAccount = profile.bankAccount,
+            physicalWallets = profile.wallets.split(",").map { it.trim() }.filter { it.isNotEmpty() },
+            expenseCategories = (profile.expenseCats.split(",") + profile.incomeCats.split(",")).map { it.trim() }.filter { it.isNotEmpty() }.distinct(),
+            onSaveExpense = { tx ->
+                onSave(listOf(Pair(tx, emptyList())))
+                Toast.makeText(context, AppStr.splitExpenseRecorded, Toast.LENGTH_SHORT).show()
+                showSplitBill = false
+                onDismiss()
+            },
             onDismissRequest = { showSplitBill = false }
         )
     }

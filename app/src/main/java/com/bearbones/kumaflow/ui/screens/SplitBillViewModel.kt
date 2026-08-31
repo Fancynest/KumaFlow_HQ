@@ -13,18 +13,61 @@ enum class SplitMode {
     TAHU_DIRI
 }
 
+data class SubItem(
+    val id: String = UUID.randomUUID().toString(),
+    val amountStr: String = ""
+)
+
 data class CustomSplitItem(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
-    val price: Long = 0L
-)
+    val amounts: List<SubItem> = listOf(SubItem())
+) {
+    val totalPrice: Long
+        get() = amounts.sumOf {
+            val clean = it.amountStr.replace("[^0-9]".toRegex(), "")
+            clean.toLongOrNull() ?: 0L
+        }
+}
 
 data class SplitBillState(
-    val totalBill: Long = 0L,
+    val totalBillStr: String = "",
     val numberOfPeople: String = "2",
     val mode: SplitMode = SplitMode.SAMA_RATA,
-    val taxPercentage: String = "15",
-    val customItems: List<CustomSplitItem> = emptyList()
+    val taxPercentage: String = "0",
+    val customItems: List<CustomSplitItem> = listOf(
+        CustomSplitItem(name = "Saya"),
+        CustomSplitItem(name = "Teman 1")
+    )
+) {
+    val totalBill: Long
+        get() {
+            val manual = totalBillStr.replace("[^0-9]".toRegex(), "").toLongOrNull() ?: 0L
+            return if (manual > 0L) {
+                manual
+            } else if (mode == SplitMode.TAHU_DIRI) {
+                customItems.sumOf { it.totalPrice }
+            } else {
+                0L
+            }
+        }
+}
+
+data class PersonShare(
+    val id: String,
+    val name: String,
+    val subtotal: Long,
+    val taxAmount: Long,
+    val finalAmount: Long
+)
+
+data class TahuDiriResult(
+    val itemizedShares: List<PersonShare>,
+    val subtotalAll: Long,
+    val totalTax: Long,
+    val grandTotal: Long,
+    val remainingPerPerson: Long = 0L,
+    val remainingPeopleCount: Int = 0
 )
 
 class SplitBillViewModel : ViewModel() {
@@ -32,7 +75,14 @@ class SplitBillViewModel : ViewModel() {
     val state: StateFlow<SplitBillState> = _state.asStateFlow()
 
     fun setTotalBill(amount: Long) {
-        _state.update { it.copy(totalBill = amount) }
+        _state.update {
+            it.copy(totalBillStr = if (amount > 0L) amount.toString() else "")
+        }
+    }
+
+    fun setTotalBillStr(str: String) {
+        val clean = str.replace("[^0-9]".toRegex(), "")
+        _state.update { it.copy(totalBillStr = clean) }
     }
 
     fun resetState() {
@@ -40,10 +90,8 @@ class SplitBillViewModel : ViewModel() {
     }
 
     fun setNumberOfPeople(countStr: String) {
-        // Only allow numbers
-        if (countStr.all { it.isDigit() }) {
-            _state.update { it.copy(numberOfPeople = countStr) }
-        }
+        val clean = countStr.replace("[^0-9]".toRegex(), "")
+        _state.update { it.copy(numberOfPeople = clean) }
     }
 
     fun setMode(mode: SplitMode) {
@@ -51,41 +99,73 @@ class SplitBillViewModel : ViewModel() {
     }
 
     fun setTaxPercentage(tax: String) {
-        if (tax.all { it.isDigit() }) {
-            _state.update { it.copy(taxPercentage = tax) }
+        val clean = tax.replace("[^0-9]".toRegex(), "")
+        _state.update { it.copy(taxPercentage = clean) }
+    }
+
+    fun addPerson(defaultName: String? = null) {
+        _state.update { s ->
+            val num = s.customItems.size + 1
+            val name = defaultName ?: "Teman $num"
+            s.copy(customItems = s.customItems + CustomSplitItem(name = name))
         }
     }
 
-    fun addCustomItem() {
-        _state.update {
-            it.copy(customItems = it.customItems + CustomSplitItem(name = "Person ${it.customItems.size + 1}"))
+    fun removePerson(personId: String) {
+        _state.update { s ->
+            s.copy(customItems = s.customItems.filter { it.id != personId })
         }
     }
 
-    fun updateCustomItemName(id: String, newName: String) {
-        _state.update { state ->
-            val updated = state.customItems.map { if (it.id == id) it.copy(name = newName) else it }
-            state.copy(customItems = updated)
+    fun updatePersonName(personId: String, newName: String) {
+        _state.update { s ->
+            s.copy(customItems = s.customItems.map {
+                if (it.id == personId) it.copy(name = newName) else it
+            })
         }
     }
 
-    fun updateCustomItemPrice(id: String, newPriceStr: String) {
-        val cleanStr = newPriceStr.replace("[^0-9]".toRegex(), "")
-        val newPrice = cleanStr.toLongOrNull() ?: 0L
-        _state.update { state ->
-            val updated = state.customItems.map { if (it.id == id) it.copy(price = newPrice) else it }
-            state.copy(customItems = updated)
+    fun addAmountToPerson(personId: String) {
+        _state.update { s ->
+            s.copy(customItems = s.customItems.map { person ->
+                if (person.id == personId) {
+                    person.copy(amounts = person.amounts + SubItem())
+                } else {
+                    person
+                }
+            })
         }
     }
 
-    fun removeCustomItem(id: String) {
-        _state.update { state ->
-            state.copy(customItems = state.customItems.filter { it.id != id })
+    fun updatePersonAmount(personId: String, amountId: String, newAmountStr: String) {
+        val clean = newAmountStr.replace("[^0-9]".toRegex(), "")
+        _state.update { s ->
+            s.copy(customItems = s.customItems.map { person ->
+                if (person.id == personId) {
+                    person.copy(amounts = person.amounts.map { sub ->
+                        if (sub.id == amountId) sub.copy(amountStr = clean) else sub
+                    })
+                } else {
+                    person
+                }
+            })
         }
     }
 
-    // Mathematical logic
-    
+    fun removePersonAmount(personId: String, amountId: String) {
+        _state.update { s ->
+            s.copy(customItems = s.customItems.map { person ->
+                if (person.id == personId) {
+                    val filtered = person.amounts.filter { it.id != amountId }
+                    person.copy(amounts = if (filtered.isEmpty()) listOf(SubItem()) else filtered)
+                } else {
+                    person
+                }
+            })
+        }
+    }
+
+    // Math & rounding logic
     private fun roundUpToHundreds(amount: Double): Long {
         return (ceil(amount / 100.0) * 100).toLong()
     }
@@ -94,44 +174,39 @@ class SplitBillViewModel : ViewModel() {
         val s = _state.value
         val people = s.numberOfPeople.toIntOrNull() ?: 1
         if (people <= 0) return 0L
+        val cleanBill = s.totalBillStr.replace("[^0-9]".toRegex(), "").toDoubleOrNull() ?: 0.0
+        if (cleanBill <= 0.0) return 0L
         val taxPct = s.taxPercentage.toDoubleOrNull() ?: 0.0
-        val finalBill = s.totalBill * (1 + (taxPct / 100.0))
+        val finalBill = cleanBill * (1.0 + (taxPct / 100.0))
         return roundUpToHundreds(finalBill / people)
     }
 
-    data class TahuDiriResult(
-        val itemizedShares: List<Pair<String, Long>>,
-        val remainingPerPerson: Long,
-        val remainingPeopleCount: Int
-    )
-
     fun calculateTahuDiriSplit(): TahuDiriResult {
         val s = _state.value
-        val totalPeople = s.numberOfPeople.toIntOrNull() ?: 1
         val taxPct = s.taxPercentage.toDoubleOrNull() ?: 0.0
 
-        val itemized = s.customItems.map { item ->
-            val finalPrice = item.price * (1 + (taxPct / 100.0))
-            // We DO NOT round up the custom item immediately to avoid compounding rounding errors, 
-            // OR we do round it up so they pay in round numbers? 
-            // The spec says: "The user who paid the initial bill must NEVER lose money on decimals."
-            // Rounding up every individual share is the safest way to ensure no loss.
-            val roundedPrice = roundUpToHundreds(finalPrice)
-            item.name to roundedPrice
+        val itemized = s.customItems.map { person ->
+            val subtotal = person.totalPrice
+            val taxAmount = (subtotal * (taxPct / 100.0)).toLong()
+            val finalPrice = roundUpToHundreds(subtotal * (1.0 + (taxPct / 100.0)))
+            PersonShare(
+                id = person.id,
+                name = person.name.ifBlank { "Peserta" },
+                subtotal = subtotal,
+                taxAmount = taxAmount,
+                finalAmount = finalPrice
+            )
         }
 
-        val totalCustomPrice = itemized.sumOf { it.second }
-        val finalTotalBill = s.totalBill * (1 + (taxPct / 100.0))
-        val remainingBill = finalTotalBill.toLong() - totalCustomPrice
+        val subtotalAll = itemized.sumOf { it.subtotal }
+        val grandTotal = itemized.sumOf { it.finalAmount }
+        val totalTax = maxOf(0L, grandTotal - subtotalAll)
 
-        val remainingPeopleCount = maxOf(0, totalPeople - s.customItems.size)
-        
-        val remainingPerPerson = if (remainingPeopleCount > 0 && remainingBill > 0) {
-            roundUpToHundreds(remainingBill.toDouble() / remainingPeopleCount)
-        } else {
-            0L
-        }
-
-        return TahuDiriResult(itemized, remainingPerPerson, remainingPeopleCount)
+        return TahuDiriResult(
+            itemizedShares = itemized,
+            subtotalAll = subtotalAll,
+            totalTax = totalTax,
+            grandTotal = grandTotal
+        )
     }
 }
