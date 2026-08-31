@@ -393,6 +393,34 @@ fun SplitBillSheet(
                             .padding(12.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
+                            // Badge for User / Anda
+                            if (pIdx == 0) {
+                                Row(
+                                    modifier = Modifier.padding(bottom = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(AppGreen().copy(alpha = 0.18f))
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = if (AppStr.isId) "👤 Anda (Pengguna)" else "👤 You (User)",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppGreen()
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (AppStr.isId) "• Dicatat ke Expenses" else "• Recorded to Expenses",
+                                        fontSize = 11.sp,
+                                        color = AppText().copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+
                             // Person Header (Name + Subtotal + Delete)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -402,8 +430,8 @@ fun SplitBillSheet(
                                 KumaOutlinedTextField(
                                     value = person.name,
                                     onValueChange = { viewModel.updatePersonName(person.id, it) },
-                                    label = { Text("Nama") },
-                                    placeholder = { Text("Person ${pIdx + 1}", fontSize = 13.sp) },
+                                    label = { Text(if (pIdx == 0) (if (AppStr.isId) "Nama (Anda)" else "Name (You)") else "Nama") },
+                                    placeholder = { Text(if (pIdx == 0) "Saya" else "Teman $pIdx", fontSize = 13.sp) },
                                     colors = getGlassTextFieldColors(),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f)
@@ -665,8 +693,8 @@ fun SplitBillSheet(
                     val personalShareLabel = if (state.mode == SplitMode.SAMA_RATA) {
                         if (AppStr.isId) "Bagian per Orang" else "Per Person Share"
                     } else {
-                        val pName = tahuDiriResult.itemizedShares.firstOrNull()?.name ?: "Person 1"
-                        if (AppStr.isId) "Bagian $pName" else "$pName's Share"
+                        val pName = tahuDiriResult.itemizedShares.firstOrNull()?.name?.ifBlank { "Saya" } ?: "Saya"
+                        if (AppStr.isId) "Bagian $pName (Anda)" else "$pName's Share (You)"
                     }
 
                     // Option: Bagian Saya / Person 1

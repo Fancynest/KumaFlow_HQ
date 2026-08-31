@@ -36,7 +36,7 @@ data class SplitBillState(
     val mode: SplitMode = SplitMode.SAMA_RATA,
     val taxPercentage: String = "0",
     val customItems: List<CustomSplitItem> = listOf(
-        CustomSplitItem(name = "Person 1")
+        CustomSplitItem(name = "Saya")
     )
 ) {
     val totalBill: Long
@@ -104,8 +104,8 @@ class SplitBillViewModel : ViewModel() {
 
     fun addPerson(defaultName: String? = null) {
         _state.update { s ->
-            val num = s.customItems.size + 1
-            val name = defaultName ?: "Person $num"
+            val friendNum = s.customItems.size
+            val name = defaultName ?: if (friendNum == 0) "Saya" else "Teman $friendNum"
             s.copy(customItems = s.customItems + CustomSplitItem(name = name))
         }
     }
