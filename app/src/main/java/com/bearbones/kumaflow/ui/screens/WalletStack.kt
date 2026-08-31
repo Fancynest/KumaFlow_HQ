@@ -580,7 +580,9 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     translationY = ty * 4f * density.density * bgParallaxMult
                                 }
                             if (shouldRender) {
-                                val resId = context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
+                                val resId = remember(wallet.backgroundValue) {
+                                    context.resources.getIdentifier(wallet.backgroundValue, "drawable", context.packageName)
+                                }
                                 if (resId != 0) {
                                     Image(
                                         painter = painterResource(id = resId),
@@ -603,8 +605,40 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     translationX = tx * 4f * density.density * bgParallaxMult
                                     translationY = ty * 4f * density.density * bgParallaxMult
                                 }
-                            val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
-                            val bitmap = remember(wallet.backgroundValue) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                            val file = remember(wallet.backgroundValue) {
+                                java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
+                            }
+                            val bitmap = remember(wallet.backgroundValue, file.lastModified()) {
+                                if (!file.exists()) null
+                                else {
+                                    try {
+                                        val boundsOptions = android.graphics.BitmapFactory.Options().apply {
+                                            inJustDecodeBounds = true
+                                        }
+                                        android.graphics.BitmapFactory.decodeFile(file.absolutePath, boundsOptions)
+
+                                        val targetW = (360f * density.density).toInt().coerceAtLeast(720)
+                                        val targetH = (220f * density.density).toInt().coerceAtLeast(440)
+
+                                        var sampleSize = 1
+                                        if (boundsOptions.outHeight > targetH || boundsOptions.outWidth > targetW) {
+                                            val halfHeight = boundsOptions.outHeight / 2
+                                            val halfWidth = boundsOptions.outWidth / 2
+                                            while ((halfHeight / sampleSize) >= targetH && (halfWidth / sampleSize) >= targetW) {
+                                                sampleSize *= 2
+                                            }
+                                        }
+
+                                        val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                                            inSampleSize = sampleSize
+                                            inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                                        }
+                                        android.graphics.BitmapFactory.decodeFile(file.absolutePath, decodeOptions)?.asImageBitmap()
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                }
+                            }
                             if (bitmap != null) {
                                 Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = bgParallax)
                             }

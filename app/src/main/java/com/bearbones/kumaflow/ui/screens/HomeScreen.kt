@@ -148,11 +148,13 @@ fun HomeScreen(
     }
 
     var searchQuery by remember { mutableStateOf("") }
-    val filteredTx = transactionsWithSplits.filter {
-        it.transaction.date == todayFormatted && 
-        (it.transaction.name.contains(searchQuery, ignoreCase = true) || 
-         it.transaction.category.contains(searchQuery, ignoreCase = true) || 
-         it.transaction.message.contains(searchQuery, ignoreCase = true))
+    val filteredTx = remember(transactionsWithSplits, searchQuery, todayFormatted) {
+        transactionsWithSplits.filter {
+            it.transaction.date == todayFormatted && 
+            (it.transaction.name.contains(searchQuery, ignoreCase = true) || 
+             it.transaction.category.contains(searchQuery, ignoreCase = true) || 
+             it.transaction.message.contains(searchQuery, ignoreCase = true))
+        }
     }
 
     val groupedTx = remember(filteredTx) { filteredTx.groupBy { it.transaction.date } }
@@ -165,7 +167,9 @@ fun HomeScreen(
     val wrappedKey = "$prevMonth-$prevYear"
 
     // Wrapped banner removed
-    val selectedTxsList = selectedTxs.mapNotNull { id -> transactionsWithSplits.find { it.transaction.id == id } }
+    val selectedTxsList = remember(selectedTxs, transactionsWithSplits) {
+        selectedTxs.mapNotNull { id -> transactionsWithSplits.find { it.transaction.id == id } }
+    }
 
     val isSelectionMode = selectedTxs.isNotEmpty()
     var showBulkCatDialog by remember { mutableStateOf(false) }
