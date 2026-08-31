@@ -47,7 +47,7 @@ object AppStr {
     val recordSplitExpenseTitle get() = if(isId) "Catat Pengeluaran Split Bill" else "Record Split Bill Expense"
     val splitExpenseRecorded get() = if(isId) "Pengeluaran split bill berhasil dicatat!" else "Split bill expense recorded!"
     val addPersonBtn get() = if(isId) "Tambah Orang" else "Add Person"
-    val addNominalBtn get() = if(isId) "Tambah Nominal (+)" else "Add Amount (+)"
+    val addNominalBtn get() = if(isId) "Tambah Nominal" else "Add Amount"
     val myShare get() = if(isId) "Bagian Saya" else "My Share"
     val totalBillRecorded get() = if(isId) "Total Tagihan Keseluruhan" else "Full Bill Amount"
     val selectWallet get() = if(isId) "Pilih Dompet" else "Select Wallet"

@@ -103,53 +103,26 @@ fun SplitBillSheet(
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header with Title & Checkmark Action
+            // Header with Title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.ReceiptLong,
-                        contentDescription = null,
-                        tint = AppPrimary(),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = AppStr.splitBillCalc,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppText()
-                    )
-                }
-
-                if (onSaveExpense != null) {
-                    // Tombol Centang: Record to Expenses
-                    KumaIconButton(
-                        onClick = {
-                            val amountToRecord = if (state.mode == SplitMode.SAMA_RATA) {
-                                viewModel.calculateEqualSplit()
-                            } else {
-                                val res = viewModel.calculateTahuDiriSplit()
-                                res.itemizedShares.firstOrNull()?.finalAmount ?: res.grandTotal
-                            }
-                            selectedRecordAmount = amountToRecord
-                            showRecordExpenseDialog = true
-                        }
-                    ) {
-                        KumaExpressiveIcon(
-                            Icons.Default.Check,
-                            contentDescription = AppStr.recordExpenseBtn,
-                            tint = Color.White,
-                            containerColor = AppGreen(),
-                            size = 22.dp
-                        )
-                    }
-                }
+                Icon(
+                    Icons.Default.ReceiptLong,
+                    contentDescription = null,
+                    tint = AppPrimary(),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = AppStr.splitBillCalc,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppText()
+                )
             }
 
             // Mode Toggle (Bagi Rata vs Sesuai Pesanan)
@@ -429,8 +402,8 @@ fun SplitBillSheet(
                                 KumaOutlinedTextField(
                                     value = person.name,
                                     onValueChange = { viewModel.updatePersonName(person.id, it) },
-                                    label = { Text(if (pIdx == 0) "Nama (Saya)" else "Nama") },
-                                    placeholder = { Text("cth: Budi", fontSize = 13.sp) },
+                                    label = { Text("Nama") },
+                                    placeholder = { Text("Person ${pIdx + 1}", fontSize = 13.sp) },
                                     colors = getGlassTextFieldColors(),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f)
@@ -689,7 +662,14 @@ fun SplitBillSheet(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Option: Bagian Saya
+                    val personalShareLabel = if (state.mode == SplitMode.SAMA_RATA) {
+                        if (AppStr.isId) "Bagian per Orang" else "Per Person Share"
+                    } else {
+                        val pName = tahuDiriResult.itemizedShares.firstOrNull()?.name ?: "Person 1"
+                        if (AppStr.isId) "Bagian $pName" else "$pName's Share"
+                    }
+
+                    // Option: Bagian Saya / Person 1
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -700,7 +680,7 @@ fun SplitBillSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(AppStr.myShare, color = AppText(), fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                        Text(personalShareLabel, color = AppText(), fontWeight = FontWeight.Medium, fontSize = 13.sp)
                         Text("Rp ${format.format(myAmount)}", fontWeight = FontWeight.Bold, color = AppPrimary())
                     }
 
