@@ -77,15 +77,26 @@ class SplitBillViewModel : ViewModel() {
     private val _state = MutableStateFlow(SplitBillState())
     val state: StateFlow<SplitBillState> = _state.asStateFlow()
 
+    private fun formatNumber(raw: String): String {
+        val clean = raw.replace("[^0-9]".toRegex(), "")
+        val longVal = clean.toLongOrNull() ?: 0L
+        return if (longVal > 0L) {
+            java.text.NumberFormat.getInstance(java.util.Locale.GERMANY).format(longVal)
+        } else if (clean.isNotEmpty()) {
+            "0"
+        } else {
+            ""
+        }
+    }
+
     fun setTotalBill(amount: Long) {
         _state.update {
-            it.copy(totalBillStr = if (amount > 0L) amount.toString() else "")
+            it.copy(totalBillStr = if (amount > 0L) java.text.NumberFormat.getInstance(java.util.Locale.GERMANY).format(amount) else "")
         }
     }
 
     fun setTotalBillStr(str: String) {
-        val clean = str.replace("[^0-9]".toRegex(), "")
-        _state.update { it.copy(totalBillStr = clean) }
+        _state.update { it.copy(totalBillStr = formatNumber(str)) }
     }
 
     fun resetState() {
@@ -156,12 +167,12 @@ class SplitBillViewModel : ViewModel() {
     }
 
     fun updatePersonAmount(personId: String, amountId: String, newAmountStr: String) {
-        val clean = newAmountStr.replace("[^0-9]".toRegex(), "")
+        val formatted = formatNumber(newAmountStr)
         _state.update { s ->
             s.copy(customItems = s.customItems.map { person ->
                 if (person.id == personId) {
                     person.copy(amounts = person.amounts.map { sub ->
-                        if (sub.id == amountId) sub.copy(amountStr = clean) else sub
+                        if (sub.id == amountId) sub.copy(amountStr = formatted) else sub
                     })
                 } else {
                     person

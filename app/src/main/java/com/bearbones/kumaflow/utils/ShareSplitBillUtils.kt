@@ -155,23 +155,24 @@ object ShareSplitBillUtils {
     }
 
     fun addQrisFrame(context: Context, originalBitmap: Bitmap, merchantName: String = "", amountStr: String = ""): Bitmap {
-        val qrSize = originalBitmap.width // QR is square
+        val qrWidth = originalBitmap.width
+        val qrHeight = originalBitmap.height
         
-        // Scale everything relative to QR size for proper proportions
-        val sidePadding = (qrSize * 0.12f)
-        val qrBoxPadding = (qrSize * 0.06f)
-        val totalWidth = qrSize + (sidePadding * 2) + (qrBoxPadding * 2)
+        // Scale dimensions relative to QR width for consistent layout
+        val sidePadding = qrWidth * 0.10f
+        val qrBoxPadding = qrWidth * 0.05f
+        val totalWidth = qrWidth + (sidePadding * 2) + (qrBoxPadding * 2)
         
         // Header section heights
-        val topPadding = qrSize * 0.10f
-        val logoRowHeight = qrSize * 0.10f
-        val amountHeight = if (amountStr.isNotBlank()) qrSize * 0.14f else 0f
-        val amountGap = if (amountStr.isNotBlank()) qrSize * 0.06f else 0f
-        val preQrGap = qrSize * 0.06f
+        val topPadding = qrWidth * 0.10f
+        val logoRowHeight = qrWidth * 0.10f
+        val amountHeight = if (amountStr.isNotBlank()) qrWidth * 0.14f else 0f
+        val amountGap = if (amountStr.isNotBlank()) qrWidth * 0.05f else 0f
+        val preQrGap = qrWidth * 0.06f
         
         val headerTotalHeight = topPadding + logoRowHeight + amountGap + amountHeight + preQrGap
-        val qrBoxHeight = qrSize + (qrBoxPadding * 2)
-        val bottomPadding = qrSize * 0.08f
+        val qrBoxHeight = qrHeight + (qrBoxPadding * 2)
+        val bottomPadding = qrWidth * 0.10f
         
         val totalHeight = headerTotalHeight + qrBoxHeight + bottomPadding
         
@@ -210,7 +211,7 @@ object ShareSplitBillUtils {
             // Fallback: draw text
             val qrisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
-                textSize = qrSize * 0.12f
+                textSize = qrWidth * 0.12f
                 textAlign = Paint.Align.CENTER
                 typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD_ITALIC)
             }
@@ -221,13 +222,13 @@ object ShareSplitBillUtils {
         if (amountStr.isNotBlank()) {
             val rpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
-                textSize = qrSize * 0.06f
+                textSize = qrWidth * 0.06f
                 textAlign = Paint.Align.RIGHT
                 typeface = android.graphics.Typeface.DEFAULT
             }
             val amountMainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.BLACK
-                textSize = qrSize * 0.12f
+                textSize = qrWidth * 0.12f
                 textAlign = Paint.Align.LEFT
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
@@ -246,17 +247,17 @@ object ShareSplitBillUtils {
         // ── White QR Box with rounded corners ──
         val qrBoxLeft = sidePadding
         val qrBoxTop = headerTotalHeight
-        val qrBoxRight = qrBoxLeft + qrSize + (qrBoxPadding * 2)
+        val qrBoxRight = qrBoxLeft + qrWidth + (qrBoxPadding * 2)
         val qrBoxBottom = qrBoxTop + qrBoxHeight
         val qrBoxRect = android.graphics.RectF(qrBoxLeft, qrBoxTop, qrBoxRight, qrBoxBottom)
         
-        val cornerRadius = qrSize * 0.06f
+        val cornerRadius = qrWidth * 0.06f
         val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
         canvas.drawRoundRect(qrBoxRect, cornerRadius, cornerRadius, boxPaint)
 
         // ── Red Triangle Accents (Gopay style) ──
         val redPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#ED1C24") }
-        val accentSize = qrSize * 0.2f
+        val accentSize = qrWidth * 0.18f
         
         // Top-Left red triangle
         val tlPath = android.graphics.Path().apply {
