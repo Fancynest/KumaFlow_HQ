@@ -36,7 +36,7 @@ data class SplitBillState(
     val mode: SplitMode = SplitMode.SAMA_RATA,
     val taxPercentage: String = "0",
     val customItems: List<CustomSplitItem> = listOf(
-        CustomSplitItem(name = "Saya")
+        CustomSplitItem(name = if (com.bearbones.kumaflow.AppStr.isId) "Anda" else "You")
     )
 ) {
     val totalBill: Long
@@ -85,7 +85,9 @@ class SplitBillViewModel : ViewModel() {
     }
 
     fun resetState() {
-        _state.value = SplitBillState()
+        _state.value = SplitBillState(
+            customItems = listOf(CustomSplitItem(name = if (com.bearbones.kumaflow.AppStr.isId) "Anda" else "You"))
+        )
     }
 
     fun setNumberOfPeople(countStr: String) {
@@ -104,8 +106,8 @@ class SplitBillViewModel : ViewModel() {
 
     fun addPerson(defaultName: String? = null) {
         _state.update { s ->
-            val friendNum = s.customItems.size
-            val name = defaultName ?: if (friendNum == 0) "Saya" else "Teman $friendNum"
+            val personNum = s.customItems.size + 1
+            val name = defaultName ?: "Person $personNum"
             s.copy(customItems = s.customItems + CustomSplitItem(name = name))
         }
     }

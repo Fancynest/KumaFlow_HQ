@@ -370,7 +370,7 @@ fun SplitBillSheet(
 
                     // Add Person Button
                     KumaButton(
-                        onClick = { viewModel.addPerson(if (AppStr.isId) null else "Friend ${state.customItems.size}") },
+                        onClick = { viewModel.addPerson() },
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.height(36.dp)
@@ -431,7 +431,7 @@ fun SplitBillSheet(
                                     value = person.name,
                                     onValueChange = { viewModel.updatePersonName(person.id, it) },
                                     label = { Text(if (pIdx == 0) AppStr.nameYouLabel else AppStr.nameLabel) },
-                                    placeholder = { Text(if (pIdx == 0) AppStr.defaultMe else "${AppStr.defaultFriend} $pIdx", fontSize = 13.sp) },
+                                    placeholder = { Text(if (pIdx == 0) AppStr.defaultMe else "Person ${pIdx + 1}", fontSize = 13.sp) },
                                     colors = getGlassTextFieldColors(),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f)
