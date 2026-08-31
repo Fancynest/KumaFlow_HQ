@@ -85,7 +85,7 @@ fun SplitBillSheet(
         mutableStateOf(
             expenseCategories.firstOrNull { it.contains("Makan", ignoreCase = true) || it.contains("Food", ignoreCase = true) }
                 ?: expenseCategories.firstOrNull()
-                ?: "Makanan & Minuman"
+                ?: (if (AppStr.isId) "Makanan & Minuman" else "Food & Beverage")
         )
     }
 
@@ -226,7 +226,7 @@ fun SplitBillSheet(
                     value = state.totalBillStr,
                     onValueChange = { viewModel.setTotalBillStr(it) },
                     label = { Text(AppStr.totalBill) },
-                    placeholder = { Text("Contoh: 150000") },
+                    placeholder = { Text(AppStr.totalBillExample) },
                     prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = getGlassTextFieldColors(),
@@ -370,7 +370,7 @@ fun SplitBillSheet(
 
                     // Add Person Button
                     KumaButton(
-                        onClick = { viewModel.addPerson() },
+                        onClick = { viewModel.addPerson(if (AppStr.isId) null else "Friend ${state.customItems.size}") },
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary().copy(alpha = 0.2f), contentColor = AppPrimary()),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.height(36.dp)
@@ -406,7 +406,7 @@ fun SplitBillSheet(
                                             .padding(horizontal = 8.dp, vertical = 3.dp)
                                     ) {
                                         Text(
-                                            text = if (AppStr.isId) "👤 Anda (Pengguna)" else "👤 You (User)",
+                                            text = AppStr.youUserBadge,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = AppGreen()
@@ -414,7 +414,7 @@ fun SplitBillSheet(
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (AppStr.isId) "• Dicatat ke Expenses" else "• Recorded to Expenses",
+                                        text = AppStr.recordedToExpensesHint,
                                         fontSize = 11.sp,
                                         color = AppText().copy(alpha = 0.6f)
                                     )
@@ -430,8 +430,8 @@ fun SplitBillSheet(
                                 KumaOutlinedTextField(
                                     value = person.name,
                                     onValueChange = { viewModel.updatePersonName(person.id, it) },
-                                    label = { Text(if (pIdx == 0) (if (AppStr.isId) "Nama (Anda)" else "Name (You)") else "Nama") },
-                                    placeholder = { Text(if (pIdx == 0) "Saya" else "Teman $pIdx", fontSize = 13.sp) },
+                                    label = { Text(if (pIdx == 0) AppStr.nameYouLabel else AppStr.nameLabel) },
+                                    placeholder = { Text(if (pIdx == 0) AppStr.defaultMe else "${AppStr.defaultFriend} $pIdx", fontSize = 13.sp) },
                                     colors = getGlassTextFieldColors(),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f)
@@ -461,7 +461,7 @@ fun SplitBillSheet(
                                     ) {
                                         Icon(
                                             Icons.Default.Delete,
-                                            contentDescription = "Hapus Orang",
+                                            contentDescription = AppStr.deletePersonContentDesc,
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -483,7 +483,7 @@ fun SplitBillSheet(
                                     KumaOutlinedTextField(
                                         value = subItem.amountStr,
                                         onValueChange = { viewModel.updatePersonAmount(person.id, subItem.id, it) },
-                                        label = { Text("Nominal ${aIdx + 1}") },
+                                        label = { Text("${AppStr.nominalLabel} ${aIdx + 1}") },
                                         placeholder = { Text("0") },
                                         prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -499,7 +499,7 @@ fun SplitBillSheet(
                                         ) {
                                             Icon(
                                                 Icons.Default.Close,
-                                                contentDescription = "Hapus Nominal",
+                                                contentDescription = AppStr.deleteNominalContentDesc,
                                                 tint = AppText().copy(alpha = 0.5f),
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -525,7 +525,7 @@ fun SplitBillSheet(
                                 ) {
                                     Icon(
                                         Icons.Default.Add,
-                                        contentDescription = "Tambah Nominal",
+                                        contentDescription = AppStr.addNominalBtn,
                                         tint = AppPrimary(),
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -542,7 +542,7 @@ fun SplitBillSheet(
                                 if (taxPctVal > 0.0) {
                                     val withTax = person.totalPrice * (1.0 + (taxPctVal / 100.0))
                                     Text(
-                                        "+ Pajak: Rp ${format.format(withTax.toLong())}",
+                                        "${AppStr.plusTax}: Rp ${format.format(withTax.toLong())}",
                                         fontSize = 11.sp,
                                         color = AppText().copy(alpha = 0.6f)
                                     )
@@ -617,7 +617,7 @@ fun SplitBillSheet(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Total Keseluruhan", fontWeight = FontWeight.Bold, color = AppText(), fontSize = 14.sp)
+                            Text(AppStr.grandTotal, fontWeight = FontWeight.Bold, color = AppText(), fontSize = 14.sp)
                             Text(
                                 "Rp ${format.format(result.grandTotal)}",
                                 fontWeight = FontWeight.ExtraBold,
@@ -682,7 +682,7 @@ fun SplitBillSheet(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        "Pilih nominal yang ingin dicatat:",
+                        AppStr.selectAmountToRecord,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = AppText().copy(alpha = 0.8f)
@@ -693,7 +693,7 @@ fun SplitBillSheet(
                     val personalShareLabel = if (state.mode == SplitMode.SAMA_RATA) {
                         if (AppStr.isId) "Bagian per Orang" else "Per Person Share"
                     } else {
-                        val pName = tahuDiriResult.itemizedShares.firstOrNull()?.name?.ifBlank { "Saya" } ?: "Saya"
+                        val pName = tahuDiriResult.itemizedShares.firstOrNull()?.name?.ifBlank { AppStr.defaultMe } ?: AppStr.defaultMe
                         if (AppStr.isId) "Bagian $pName (Anda)" else "$pName's Share (You)"
                     }
 
