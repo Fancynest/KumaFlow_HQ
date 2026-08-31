@@ -201,12 +201,12 @@ fun SplitBillSheet(
                 ) {
                     val taxPresets = listOf("0", "10", "11", "15")
                     taxPresets.forEach { preset ->
-                        val isSelected = state.taxPercentage == preset
+                        val isSelected = state.customTaxStr.isEmpty() && state.selectedPresetTax == preset
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) AppPrimary() else AppSurfaceVariant())
-                                .clickable { viewModel.setTaxPercentage(preset) }
+                                .clickable { viewModel.setPresetTax(preset) }
                                 .padding(horizontal = 14.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -221,8 +221,8 @@ fun SplitBillSheet(
 
                     // Custom Tax Input
                     KumaOutlinedTextField(
-                        value = state.taxPercentage,
-                        onValueChange = { viewModel.setTaxPercentage(it) },
+                        value = state.customTaxStr,
+                        onValueChange = { viewModel.setCustomTaxStr(it) },
                         placeholder = { Text("Custom %", fontSize = 12.sp) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         colors = getGlassTextFieldColors(),

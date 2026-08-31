@@ -34,11 +34,15 @@ data class SplitBillState(
     val totalBillStr: String = "",
     val numberOfPeople: String = "1",
     val mode: SplitMode = SplitMode.SAMA_RATA,
-    val taxPercentage: String = "0",
+    val selectedPresetTax: String = "0",
+    val customTaxStr: String = "",
     val customItems: List<CustomSplitItem> = listOf(
         CustomSplitItem(name = if (com.bearbones.kumaflow.AppStr.isId) "Anda" else "You")
     )
 ) {
+    val taxPercentage: String
+        get() = if (customTaxStr.isNotBlank()) customTaxStr else selectedPresetTax
+
     val totalBill: Long
         get() {
             val manual = totalBillStr.replace("[^0-9]".toRegex(), "").toLongOrNull() ?: 0L
@@ -99,9 +103,22 @@ class SplitBillViewModel : ViewModel() {
         _state.update { it.copy(mode = mode) }
     }
 
-    fun setTaxPercentage(tax: String) {
+    fun setPresetTax(preset: String) {
+        _state.update { it.copy(selectedPresetTax = preset, customTaxStr = "") }
+    }
+
+    fun setCustomTaxStr(tax: String) {
         val clean = tax.replace("[^0-9]".toRegex(), "")
-        _state.update { it.copy(taxPercentage = clean) }
+        _state.update {
+            it.copy(
+                customTaxStr = clean,
+                selectedPresetTax = if (clean.isEmpty()) "0" else ""
+            )
+        }
+    }
+
+    fun setTaxPercentage(tax: String) {
+        setCustomTaxStr(tax)
     }
 
     fun addPerson(defaultName: String? = null) {
