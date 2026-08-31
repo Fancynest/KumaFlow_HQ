@@ -219,7 +219,7 @@ fun SplitBillSheet(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) AppPrimary() else AppSurfaceVariant())
                                 .clickable { viewModel.setTaxPercentage(preset) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -239,7 +239,7 @@ fun SplitBillSheet(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         colors = getGlassTextFieldColors(),
                         singleLine = true,
-                        modifier = Modifier.weight(1f).height(44.dp)
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -254,6 +254,7 @@ fun SplitBillSheet(
                     onValueChange = { viewModel.setTotalBillStr(it) },
                     label = { Text(AppStr.totalBill) },
                     placeholder = { Text("Contoh: 150000") },
+                    prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = getGlassTextFieldColors(),
                     singleLine = true,
@@ -291,7 +292,7 @@ fun SplitBillSheet(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             colors = getGlassTextFieldColors(),
                             singleLine = true,
-                            modifier = Modifier.width(60.dp)
+                            modifier = Modifier.width(72.dp)
                         )
 
                         KumaIconButton(
@@ -428,10 +429,11 @@ fun SplitBillSheet(
                                 KumaOutlinedTextField(
                                     value = person.name,
                                     onValueChange = { viewModel.updatePersonName(person.id, it) },
-                                    placeholder = { Text("Nama (cth: Budi)", fontSize = 13.sp) },
+                                    label = { Text(if (pIdx == 0) "Nama (Saya)" else "Nama") },
+                                    placeholder = { Text("cth: Budi", fontSize = 13.sp) },
                                     colors = getGlassTextFieldColors(),
                                     singleLine = true,
-                                    modifier = Modifier.weight(1f).height(46.dp)
+                                    modifier = Modifier.weight(1f)
                                 )
 
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -454,13 +456,13 @@ fun SplitBillSheet(
                                 if (state.customItems.size > 1) {
                                     KumaIconButton(
                                         onClick = { viewModel.removePerson(person.id) },
-                                        modifier = Modifier.size(32.dp)
+                                        modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
                                             Icons.Default.Delete,
                                             contentDescription = "Hapus Orang",
                                             tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                 }
@@ -480,23 +482,25 @@ fun SplitBillSheet(
                                     KumaOutlinedTextField(
                                         value = subItem.amountStr,
                                         onValueChange = { viewModel.updatePersonAmount(person.id, subItem.id, it) },
-                                        placeholder = { Text("Nominal ${aIdx + 1} (Rp)", fontSize = 12.sp) },
+                                        label = { Text("Nominal ${aIdx + 1}") },
+                                        placeholder = { Text("0") },
+                                        prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         colors = getGlassTextFieldColors(),
                                         singleLine = true,
-                                        modifier = Modifier.weight(1f).height(44.dp)
+                                        modifier = Modifier.weight(1f)
                                     )
 
                                     if (person.amounts.size > 1) {
                                         KumaIconButton(
                                             onClick = { viewModel.removePersonAmount(person.id, subItem.id) },
-                                            modifier = Modifier.size(28.dp)
+                                            modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
                                                 Icons.Default.Close,
                                                 contentDescription = "Hapus Nominal",
                                                 tint = AppText().copy(alpha = 0.5f),
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                     }
@@ -515,20 +519,20 @@ fun SplitBillSheet(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(6.dp))
                                         .kumaClickable { viewModel.addAmountToPerson(person.id) }
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                        .padding(horizontal = 8.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
                                         Icons.Default.Add,
                                         contentDescription = "Tambah Nominal",
                                         tint = AppPrimary(),
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         AppStr.addNominalBtn,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
                                         color = AppPrimary()
                                     )
                                 }
