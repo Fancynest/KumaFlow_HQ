@@ -93,7 +93,7 @@ fun SplitBillSheet(
         onDismissRequest = onDismissRequest,
         containerColor = AppSurface(),
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
             modifier = Modifier
@@ -103,26 +103,41 @@ fun SplitBillSheet(
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header with Title
+            // Header with Title & Close button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    Icons.Default.ReceiptLong,
-                    contentDescription = null,
-                    tint = AppPrimary(),
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = AppStr.splitBillCalc,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AppText()
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.ReceiptLong,
+                        contentDescription = null,
+                        tint = AppPrimary(),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = AppStr.splitBillCalc,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppText()
+                    )
+                }
+
+                KumaIconButton(
+                    onClick = onDismissRequest,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = AppText().copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             // Mode Toggle (Bagi Rata vs Sesuai Pesanan)
