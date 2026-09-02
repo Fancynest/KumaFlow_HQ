@@ -51,7 +51,8 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                         tx,
                         animationSpec = spring(
                             dampingRatio = 0.65f,
-                            stiffness = Spring.StiffnessLow
+                            stiffness = Spring.StiffnessLow,
+                            visibilityThreshold = 0.0001f
                         )
                     )
                 }
@@ -60,18 +61,33 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                         ty,
                         animationSpec = spring(
                             dampingRatio = 0.65f,
-                            stiffness = Spring.StiffnessLow
+                            stiffness = Spring.StiffnessLow,
+                            visibilityThreshold = 0.0001f
                         )
                     )
                 }
             }
     }
 
+    // Idle settle safeguard: if targets remain unchanged for 400ms, snap to exact rest to eliminate asymptotic decay
+    LaunchedEffect(targetX.floatValue, targetY.floatValue) {
+        kotlinx.coroutines.delay(400L)
+        if (kotlin.math.abs(animX.value - targetX.floatValue) < 0.005f && animX.isRunning) {
+            animX.snapTo(targetX.floatValue)
+        }
+        if (kotlin.math.abs(animY.value - targetY.floatValue) < 0.005f && animY.isRunning) {
+            animY.snapTo(targetY.floatValue)
+        }
+    }
+
     // Update tiltState from animated values
     LaunchedEffect(Unit) {
         snapshotFlow { animX.value to animY.value }
             .collect { (ax, ay) ->
-                tiltState.value = TiltState(x = ax, y = ay)
+                val cur = tiltState.value
+                if (kotlin.math.abs(cur.x - ax) > 0.0001f || kotlin.math.abs(cur.y - ay) > 0.0001f) {
+                    tiltState.value = TiltState(x = ax, y = ay)
+                }
             }
     }
 
@@ -102,6 +118,23 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
             private var lpY = 0f
             private val lpAlpha = 0.15f // gentle low-pass to kill high-freq jitter
 
+            // Deadzone threshold for settling when stationary
+            // ~0.003f in normalized [-1..1] scale corresponds to < 0.06 deg tilt or < 0.3px visual shift
+            private var lastCommittedX = 0f
+            private var lastCommittedY = 0f
+            private val deadzoneThreshold = 0.003f
+
+            private fun updateTargetIfChanged(newX: Float, newY: Float) {
+                val dx = kotlin.math.abs(newX - lastCommittedX)
+                val dy = kotlin.math.abs(newY - lastCommittedY)
+                if (dx >= deadzoneThreshold || dy >= deadzoneThreshold) {
+                    lastCommittedX = newX
+                    lastCommittedY = newY
+                    targetX.floatValue = newX
+                    targetY.floatValue = newY
+                }
+            }
+
             private var lastShakeTime = 0L
 
             override fun onSensorChanged(event: SensorEvent) {
@@ -129,8 +162,7 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                         lpX += (rawX - lpX) * lpAlpha
                         lpY += (rawY - lpY) * lpAlpha
 
-                        targetX.floatValue = lpX
-                        targetY.floatValue = lpY
+                        updateTargetIfChanged(lpX, lpY)
                     }
 
                     Sensor.TYPE_GRAVITY -> {
@@ -150,8 +182,7 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                         lpX += (deltaX - lpX) * lpAlpha
                         lpY += (deltaY - lpY) * lpAlpha
 
-                        targetX.floatValue = lpX
-                        targetY.floatValue = lpY
+                        updateTargetIfChanged(lpX, lpY)
                     }
 
                     Sensor.TYPE_ACCELEROMETER -> {
@@ -187,8 +218,7 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
                             lpX += (deltaX - lpX) * lpAlpha
                             lpY += (deltaY - lpY) * lpAlpha
 
-                            targetX.floatValue = lpX
-                            targetY.floatValue = lpY
+                            updateTargetIfChanged(lpX, lpY)
                         }
                     }
                 }
