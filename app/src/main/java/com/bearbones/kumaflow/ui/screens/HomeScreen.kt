@@ -516,22 +516,32 @@ fun HomeScreen(
                                 }
                             }
                             
-                            WalletCardStack(
-                                userName = profile.userName,
-                                wallets = virtualWallets,
-                                balances = walletBalances,
-                                currencySymbol = curSym,
-                                formatHide = { formatHide(it) },
-                                onWalletClick = { walletName ->
+                            val formatHideStable = remember(isPrivacyMode) { { value: Long -> formatHide(value) } }
+
+                            val onWalletClickStable = remember {
+                                { walletName: String ->
                                     reconcileWalletName = walletName
                                     showReconcileDialog = true
-                                },
-                                onOrderChange = { newOrder ->
+                                }
+                            }
+
+                            val onOrderChangeStable: (List<com.bearbones.kumaflow.VirtualWallet>) -> Unit = remember {
+                                { newOrder ->
                                     scope.launch {
                                         val updated = newOrder.mapIndexed { index, wallet -> wallet.copy(orderIndex = index) }
                                         dao.upsertVirtualWallets(updated)
                                     }
                                 }
+                            }
+
+                            WalletCardStack(
+                                userName = profile.userName,
+                                wallets = virtualWallets,
+                                balances = walletBalances,
+                                currencySymbol = curSym,
+                                formatHide = formatHideStable,
+                                onWalletClick = onWalletClickStable,
+                                onOrderChange = onOrderChangeStable
                             )
 
                     Spacer(modifier = Modifier.height(32.dp))
