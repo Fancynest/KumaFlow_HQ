@@ -563,13 +563,13 @@ fun MainScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
-    var showAddOptionsDialog by remember { mutableStateOf(false) }
+    var isSpeedDialOpen by remember { mutableStateOf(false) }
     var autoTriggerOcr by remember { mutableStateOf(false) }
     var showBackupReminder by remember { mutableStateOf(false) }
     var showQrTransfer by remember { mutableStateOf(false) }
     var showDuoSync by remember { mutableStateOf(false) }
     var showDuoPairing by remember { mutableStateOf(false) }
-    LaunchedEffect(showBottomSheet, showAddOptionsDialog) { onOverlayStateChange(showBottomSheet || showAddOptionsDialog) }
+    LaunchedEffect(showBottomSheet, isSpeedDialOpen) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     val totalTxCount = transactionListWithSplits.size
 
@@ -581,9 +581,9 @@ fun MainScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showBottomSheet || showAddOptionsDialog || pagerState.currentPage != 0 || isSelectionMode) {
-        if (showAddOptionsDialog) {
-            showAddOptionsDialog = false
+    androidx.activity.compose.BackHandler(enabled = showBottomSheet || isSpeedDialOpen || pagerState.currentPage != 0 || isSelectionMode) {
+        if (isSpeedDialOpen) {
+            isSpeedDialOpen = false
         } else if (showBottomSheet) {
             showBottomSheet = false
             autoTriggerOcr = false
@@ -680,37 +680,210 @@ fun MainScreen(
                 val isLiquidGlass = LocalIsLiquidGlass.current
                 
                 val tutorialState = com.bearbones.kumaflow.ui.tutorial.LocalTutorialState.current
-                
+
+                val dialSpringSpec = androidx.compose.animation.core.spring<Float>(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                )
+                val dialProgress by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isSpeedDialOpen) 1f else 0f,
+                    animationSpec = dialSpringSpec,
+                    label = "dialProgress"
+                )
+                val fabRotation by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = if (isSpeedDialOpen) 45f else 0f,
+                    animationSpec = dialSpringSpec,
+                    label = "fabRotation"
+                )
+
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(70.dp)
-                        .tutorialTarget(TutorialStep.HOME_ADD_BTN)
-                        .bouncyScale(fabInteractionSource)
-                        .graphicsLayer {
-                            shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                            shape = fabShape
-                            clip = true
-                        }
-                        .background(bgColor)
-                        .border(
-                            width = if (isLiquidGlass) 1.dp else 0.dp,
-                            color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                            shape = fabShape
-                        )
-                        .kumaClickable(
-                            interactionSource = fabInteractionSource,
-                            indication = null,
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                showAddOptionsDialog = true
-                                if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
-                                    tutorialState.next()
-                                }
-                            }
-                        )
+                    contentAlignment = Alignment.BottomEnd,
+                    modifier = if (dialProgress > 0.01f) {
+                        Modifier
+                            .size(width = 260.dp, height = 180.dp)
+                            .kumaClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { isSpeedDialOpen = false }
+                    } else {
+                        Modifier.size(70.dp)
+                    }
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(32.dp), tint = fgColor)
+                    // Option 1: Scan Struk (Atas FAB)
+                    if (dialProgress > 0.01f) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End,
+                            modifier = Modifier
+                                .offset(
+                                    x = (-4).dp * dialProgress,
+                                    y = (-78).dp * dialProgress
+                                )
+                                .graphicsLayer {
+                                    scaleX = dialProgress
+                                    scaleY = dialProgress
+                                    alpha = dialProgress.coerceIn(0f, 1f)
+                                }
+                                .kumaClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        isSpeedDialOpen = false
+                                        transactionToEdit = null
+                                        autoTriggerOcr = true
+                                        showBottomSheet = true
+                                    }
+                                )
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = AppSurface().copy(alpha = 0.95f),
+                                border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                                shadowElevation = 4.dp
+                            ) {
+                                Text(
+                                    AppStr.scanReceiptOptionTitle,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppText(),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .graphicsLayer {
+                                        shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                        shape = RoundedCornerShape(18.dp)
+                                        clip = true
+                                    }
+                                    .background(bgColor)
+                                    .border(
+                                        width = if (isLiquidGlass) 1.dp else 0.dp,
+                                        color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                        shape = RoundedCornerShape(18.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.DocumentScanner,
+                                    contentDescription = AppStr.scanReceiptOptionTitle,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = fgColor
+                                )
+                            }
+                        }
+                    }
+
+                    // Option 2: Catat Normal (Kiri FAB)
+                    if (dialProgress > 0.01f) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End,
+                            modifier = Modifier
+                                .offset(
+                                    x = (-78).dp * dialProgress,
+                                    y = (-8).dp * dialProgress
+                                )
+                                .graphicsLayer {
+                                    scaleX = dialProgress
+                                    scaleY = dialProgress
+                                    alpha = dialProgress.coerceIn(0f, 1f)
+                                }
+                                .kumaClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        isSpeedDialOpen = false
+                                        transactionToEdit = null
+                                        autoTriggerOcr = false
+                                        showBottomSheet = true
+                                    }
+                                )
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = AppSurface().copy(alpha = 0.95f),
+                                border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                                shadowElevation = 4.dp
+                            ) {
+                                Text(
+                                    AppStr.manualEntryTitle,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppText(),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .graphicsLayer {
+                                        shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                        shape = RoundedCornerShape(18.dp)
+                                        clip = true
+                                    }
+                                    .background(bgColor)
+                                    .border(
+                                        width = if (isLiquidGlass) 1.dp else 0.dp,
+                                        color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                        shape = RoundedCornerShape(18.dp)
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = AppStr.manualEntryTitle,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = fgColor
+                                )
+                            }
+                        }
+                    }
+
+                    // Main FAB
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .tutorialTarget(TutorialStep.HOME_ADD_BTN)
+                            .bouncyScale(fabInteractionSource)
+                            .graphicsLayer {
+                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                shape = fabShape
+                                clip = true
+                            }
+                            .background(bgColor)
+                            .border(
+                                width = if (isLiquidGlass) 1.dp else 0.dp,
+                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                shape = fabShape
+                            )
+                            .kumaClickable(
+                                interactionSource = fabInteractionSource,
+                                indication = null,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    isSpeedDialOpen = !isSpeedDialOpen
+                                    if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
+                                        tutorialState.next()
+                                    }
+                                }
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .graphicsLayer { rotationZ = fabRotation },
+                            tint = fgColor
+                        )
+                    }
                 }
             }
         },
@@ -1016,6 +1189,22 @@ fun MainScreen(
         }
 
         androidx.compose.animation.AnimatedVisibility(
+            visible = isSpeedDialOpen,
+            enter = androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .kumaClickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) { isSpeedDialOpen = false }
+            )
+        }
+
+        androidx.compose.animation.AnimatedVisibility(
             visible = showBottomSheet,
             enter = androidx.compose.animation.fadeIn(),
             exit = androidx.compose.animation.fadeOut()
@@ -1097,83 +1286,6 @@ fun MainScreen(
                     )
                 }
             }
-        }
-
-        if (showAddOptionsDialog) {
-            AlertDialog(
-                onDismissRequest = { showAddOptionsDialog = false },
-                modifier = Modifier.glassCard(24.dp, AppSurface()),
-                containerColor = if (LocalIsLiquidGlass.current) Color.Transparent else AppSurface(),
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        KumaExpressiveIcon(Icons.Default.Add, null, tint = AppPrimary())
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(AppStr.addTxOptionTitle, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    }
-                },
-                text = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Option 1: Catat Normal
-                        Surface(
-                            onClick = {
-                                showAddOptionsDialog = false
-                                transactionToEdit = null
-                                autoTriggerOcr = false
-                                showBottomSheet = true
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = AppPrimary().copy(alpha = 0.12f),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                KumaExpressiveIcon(Icons.Default.Edit, null, tint = AppPrimary(), size = 28.dp)
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(AppStr.manualEntryTitle, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
-                                    Text(AppStr.manualEntryDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
-                                }
-                            }
-                        }
-
-                        // Option 2: Scan Struk (OCR AI)
-                        Surface(
-                            onClick = {
-                                showAddOptionsDialog = false
-                                transactionToEdit = null
-                                autoTriggerOcr = true
-                                showBottomSheet = true
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            color = AppPrimary().copy(alpha = 0.12f),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                KumaExpressiveIcon(Icons.Default.DocumentScanner, null, tint = AppPrimary(), size = 28.dp)
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(AppStr.scanReceiptOptionTitle, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
-                                    Text(AppStr.scanReceiptDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {
-                    KumaTextButton(onClick = { showAddOptionsDialog = false }) {
-                        Text(AppStr.close, color = AppText())
-                    }
-                }
-            )
         }
 
         if (showBackupReminder) {
