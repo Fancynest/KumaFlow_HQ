@@ -33,6 +33,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
 import com.bearbones.kumaflow.utils.m3Shapes
 import com.bearbones.kumaflow.utils.PolygonShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1206,7 +1207,13 @@ fun TransactionBottomSheet(
     var tempCameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
     fun processReceiptImage(uri: Uri) {
-        val apiKey = ocrStorage.getApiKey()
+        val selectedProvider = ocrStorage.getSelectedProvider()
+        val provider = if (selectedProvider == "gemini") {
+            com.bearbones.kumaflow.utils.OcrProvider.GEMINI
+        } else {
+            com.bearbones.kumaflow.utils.OcrProvider.ANTHROPIC
+        }
+        val apiKey = ocrStorage.getActiveApiKey()
         if (apiKey.isNullOrBlank()) {
             showOcrKeyPromptDialog = true
             return
@@ -1224,7 +1231,7 @@ fun TransactionBottomSheet(
                     return@launch
                 }
 
-                val parseResult = com.bearbones.kumaflow.utils.ReceiptOcrUtils.parseReceiptWithAI(rawText, apiKey)
+                val parseResult = com.bearbones.kumaflow.utils.ReceiptOcrUtils.parseReceiptWithAI(rawText, apiKey, provider)
 
                 withContext(Dispatchers.Main) {
                     if (parseResult.isSuccess) {
@@ -1350,7 +1357,7 @@ fun TransactionBottomSheet(
                 Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        if (!ocrStorage.hasApiKey()) {
+                        if (!ocrStorage.hasActiveApiKey()) {
                             showOcrKeyPromptDialog = true
                         } else {
                             showOcrSourceChooser = true
@@ -2060,8 +2067,13 @@ fun TransactionBottomSheet(
     }
 
     if (showOcrKeyPromptDialog) {
-        var directKeyInput by remember { mutableStateOf("") }
+        var selectedPromptProvider by remember { mutableStateOf(ocrStorage.getSelectedProvider()) }
+        var promptAnthropicKey by remember { mutableStateOf(ocrStorage.getApiKey() ?: "") }
+        var promptGeminiKey by remember { mutableStateOf(ocrStorage.getGeminiApiKey() ?: "") }
         var isDirectKeyVisible by remember { mutableStateOf(false) }
+
+        val isGemini = selectedPromptProvider == "gemini"
+        val currentKeyInput = if (isGemini) promptGeminiKey else promptAnthropicKey
 
         AlertDialog(
             onDismissRequest = { showOcrKeyPromptDialog = false },
@@ -2084,17 +2096,67 @@ fun TransactionBottomSheet(
                         lineHeight = 18.sp
                     )
 
+                    // 2 Pilihan Provider (Anthropic vs Gemini)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            onClick = { selectedPromptProvider = "anthropic" },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (!isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
+                            contentColor = if (!isGemini) androidx.compose.ui.graphics.Color.White else AppText(),
+                            border = if (!isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    AppStr.ocrProviderAnthropic,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+
+                        Surface(
+                            onClick = { selectedPromptProvider = "gemini" },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
+                            contentColor = if (isGemini) androidx.compose.ui.graphics.Color.White else AppText(),
+                            border = if (isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    AppStr.ocrProviderGemini,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
                     Text(
-                        AppStr.ocrApiKeyHint,
+                        if (isGemini) AppStr.ocrGeminiKeyHint else AppStr.ocrApiKeyHint,
                         fontSize = 11.sp,
                         color = AppText().copy(alpha = 0.6f),
                         lineHeight = 15.sp
                     )
 
                     com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
-                        value = directKeyInput,
-                        onValueChange = { directKeyInput = it },
-                        placeholder = { Text(AppStr.ocrApiKeyLabel) },
+                        value = currentKeyInput,
+                        onValueChange = {
+                            if (isGemini) promptGeminiKey = it else promptAnthropicKey = it
+                        },
+                        placeholder = { Text(if (isGemini) AppStr.ocrGeminiKeyLabel else AppStr.ocrApiKeyLabel) },
                         visualTransformation = if (isDirectKeyVisible) VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { isDirectKeyVisible = !isDirectKeyVisible }) {
@@ -2113,8 +2175,14 @@ fun TransactionBottomSheet(
             confirmButton = {
                 KumaButton(
                     onClick = {
-                        if (directKeyInput.isNotBlank()) {
-                            ocrStorage.saveApiKey(directKeyInput)
+                        ocrStorage.saveSelectedProvider(selectedPromptProvider)
+                        val activeKey = if (isGemini) promptGeminiKey else promptAnthropicKey
+                        if (activeKey.isNotBlank()) {
+                            if (isGemini) {
+                                ocrStorage.saveGeminiApiKey(promptGeminiKey)
+                            } else {
+                                ocrStorage.saveApiKey(promptAnthropicKey)
+                            }
                             Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
                             showOcrKeyPromptDialog = false
                             showOcrSourceChooser = true

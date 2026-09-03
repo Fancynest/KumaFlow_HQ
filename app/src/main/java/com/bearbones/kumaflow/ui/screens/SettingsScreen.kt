@@ -27,6 +27,7 @@ import com.bearbones.kumaflow.ui.components.KumaExpressiveIcon
 import androidx.compose.material.icons.Icons
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -1099,8 +1100,14 @@ fun SettingsScreen(
 
         if (showOcrDialog) {
             val ocrStorage = remember { com.bearbones.kumaflow.utils.OcrSecureStorage(context) }
-            var apiKeyInput by remember { mutableStateOf(ocrStorage.getApiKey() ?: "") }
+            var selectedProvider by remember { mutableStateOf(ocrStorage.getSelectedProvider()) }
+            var anthropicKeyInput by remember { mutableStateOf(ocrStorage.getApiKey() ?: "") }
+            var geminiKeyInput by remember { mutableStateOf(ocrStorage.getGeminiApiKey() ?: "") }
             var isKeyVisible by remember { mutableStateOf(false) }
+
+            val isGemini = selectedProvider == "gemini"
+            val hasCurrentKey = if (isGemini) ocrStorage.hasGeminiApiKey() else ocrStorage.hasApiKey()
+            val currentKeyInput = if (isGemini) geminiKeyInput else anthropicKeyInput
 
             AlertDialog(
                 onDismissRequest = { showOcrDialog = false },
@@ -1119,16 +1126,77 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            AppStr.ocrApiKeyHint,
+                            AppStr.ocrProviderLabel,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText().copy(alpha = 0.8f)
+                        )
+
+                        // 2 Pilihan Provider (Anthropic vs Gemini)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                onClick = { selectedProvider = "anthropic" },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (!isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
+                                contentColor = if (!isGemini) Color.White else AppText(),
+                                border = if (!isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        AppStr.ocrProviderAnthropic,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                onClick = { selectedProvider = "gemini" },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
+                                contentColor = if (isGemini) Color.White else AppText(),
+                                border = if (isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        AppStr.ocrProviderGemini,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Text(
+                            if (isGemini) AppStr.ocrGeminiKeyHint else AppStr.ocrApiKeyHint,
                             fontSize = 12.sp,
                             color = AppText().copy(alpha = 0.7f),
                             lineHeight = 16.sp
                         )
 
                         com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
-                            value = apiKeyInput,
-                            onValueChange = { apiKeyInput = it },
-                            placeholder = { Text(AppStr.ocrApiKeyLabel) },
+                            value = currentKeyInput,
+                            onValueChange = {
+                                if (isGemini) {
+                                    geminiKeyInput = it
+                                } else {
+                                    anthropicKeyInput = it
+                                }
+                            },
+                            placeholder = { Text(if (isGemini) AppStr.ocrGeminiKeyLabel else AppStr.ocrApiKeyLabel) },
                             visualTransformation = if (isKeyVisible) VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
                             trailingIcon = {
                                 IconButton(onClick = { isKeyVisible = !isKeyVisible }) {
@@ -1149,17 +1217,22 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                if (ocrStorage.hasApiKey()) AppStr.ocrApiKeyConfigured else AppStr.ocrApiKeyNotConfigured,
+                                if (hasCurrentKey) AppStr.ocrApiKeyConfigured else AppStr.ocrApiKeyNotConfigured,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (ocrStorage.hasApiKey()) AppGreen() else AppRed()
+                                color = if (hasCurrentKey) AppGreen() else AppRed()
                             )
 
-                            if (ocrStorage.hasApiKey()) {
+                            if (hasCurrentKey) {
                                 TextButton(
                                     onClick = {
-                                        ocrStorage.deleteApiKey()
-                                        apiKeyInput = ""
+                                        if (isGemini) {
+                                            ocrStorage.deleteGeminiApiKey()
+                                            geminiKeyInput = ""
+                                        } else {
+                                            ocrStorage.deleteApiKey()
+                                            anthropicKeyInput = ""
+                                        }
                                         Toast.makeText(context, AppStr.ocrApiKeyDeleted, Toast.LENGTH_SHORT).show()
                                     }
                                 ) {
@@ -1172,9 +1245,17 @@ fun SettingsScreen(
                 confirmButton = {
                     com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
-                            if (apiKeyInput.isNotBlank()) {
-                                ocrStorage.saveApiKey(apiKeyInput)
-                                Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
+                            ocrStorage.saveSelectedProvider(selectedProvider)
+                            if (isGemini) {
+                                if (geminiKeyInput.isNotBlank()) {
+                                    ocrStorage.saveGeminiApiKey(geminiKeyInput)
+                                    Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                if (anthropicKeyInput.isNotBlank()) {
+                                    ocrStorage.saveApiKey(anthropicKeyInput)
+                                    Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
+                                }
                             }
                             showOcrDialog = false
                         },

@@ -18,6 +18,11 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import kotlin.coroutines.resume
 
+enum class OcrProvider {
+    ANTHROPIC,
+    GEMINI
+}
+
 data class ReceiptItem(
     val name: String,
     val price: Long
@@ -43,6 +48,26 @@ object ReceiptOcrUtils {
             .build()
     }
 
+    private val extractionPromptTemplate = """
+        Ekstrak data dari teks struk belanja berikut. Kembalikan HANYA format JSON valid tanpa penjelasan atau blok markdown:
+        {
+          "merchant_name": string|null,
+          "date": string|null (format YYYY-MM-DD),
+          "total": number|null,
+          "items": [
+            {"name": string, "price": number}
+          ]
+        }
+        Catatan:
+        - Angka nominal dalam Rupiah murni tanpa titik atau koma ribuan (contoh: 25000, 150000).
+        - Jika ada nama toko/merchant di bagian atas struk, ambil sebagai merchant_name.
+        - Jika total akhir/grand total ditemukan, ambil sebagai total.
+        - Field yang tidak ditemukan isi dengan null.
+
+        Teks struk:
+        %s
+    """.trimIndent()
+
     /**
      * Ekstrak seluruh teks mentah dari file gambar struk menggunakan Google ML Kit Text Recognition.
      */
@@ -67,9 +92,13 @@ object ReceiptOcrUtils {
     }
 
     /**
-     * Mem-parsing teks struk mentah menjadi JSON terstruktur menggunakan Anthropic Claude API (model claude-haiku-4-5-20251001).
+     * Mem-parsing teks struk mentah menjadi JSON terstruktur menggunakan AI (Anthropic Claude atau Google Gemini).
      */
-    suspend fun parseReceiptWithAI(rawText: String, apiKey: String): ReceiptParseResult = withContext(Dispatchers.IO) {
+    suspend fun parseReceiptWithAI(
+        rawText: String,
+        apiKey: String,
+        provider: OcrProvider = OcrProvider.ANTHROPIC
+    ): ReceiptParseResult = withContext(Dispatchers.IO) {
         if (rawText.isBlank()) {
             return@withContext ReceiptParseResult(
                 rawText = rawText,
@@ -80,31 +109,24 @@ object ReceiptOcrUtils {
 
         if (apiKey.isBlank()) {
             val fallback = fallbackRegexParse(rawText)
+            val providerName = if (provider == OcrProvider.GEMINI) "Google Gemini" else "Anthropic"
             return@withContext fallback.copy(
-                errorMessage = "API key Anthropic belum dikonfigurasi"
+                errorMessage = "API key $providerName belum dikonfigurasi"
             )
         }
 
-        try {
-            val prompt = """
-                Ekstrak data dari teks struk belanja berikut. Kembalikan HANYA format JSON valid tanpa penjelasan atau blok markdown:
-                {
-                  "merchant_name": string|null,
-                  "date": string|null (format YYYY-MM-DD),
-                  "total": number|null,
-                  "items": [
-                    {"name": string, "price": number}
-                  ]
-                }
-                Catatan:
-                - Angka nominal dalam Rupiah murni tanpa titik atau koma ribuan (contoh: 25000, 150000).
-                - Jika ada nama toko/merchant di bagian atas struk, ambil sebagai merchant_name.
-                - Jika total akhir/grand total ditemukan, ambil sebagai total.
-                - Field yang tidak ditemukan isi dengan null.
+        return@withContext when (provider) {
+            OcrProvider.ANTHROPIC -> parseWithAnthropic(rawText, apiKey)
+            OcrProvider.GEMINI -> parseWithGemini(rawText, apiKey)
+        }
+    }
 
-                Teks struk:
-                $rawText
-            """.trimIndent()
+    /**
+     * Mem-parsing teks struk mentah menggunakan Anthropic Claude API (model claude-haiku-4-5-20251001).
+     */
+    private fun parseWithAnthropic(rawText: String, apiKey: String): ReceiptParseResult {
+        try {
+            val prompt = extractionPromptTemplate.format(rawText)
 
             val messagesArray = JSONArray().apply {
                 put(JSONObject().apply {
@@ -134,7 +156,7 @@ object ReceiptOcrUtils {
 
             if (!response.isSuccessful) {
                 val fallback = fallbackRegexParse(rawText)
-                return@withContext fallback.copy(
+                return fallback.copy(
                     errorMessage = "HTTP ${response.code}: $responseBody"
                 )
             }
@@ -143,48 +165,116 @@ object ReceiptOcrUtils {
             val contentArray = resObj.optJSONArray("content")
             val rawAiText = if (contentArray != null && contentArray.length() > 0) {
                 contentArray.getJSONObject(0).optString("text", "")
-            } else {
-                ""
-            }
+            } else ""
 
-            // Bersihkan markdown jika model mengembalikan ```json ... ```
-            val cleanedJson = cleanJsonString(rawAiText)
-            val parsedJson = JSONObject(cleanedJson)
-
-            val merchant = parsedJson.optString("merchant_name").takeIf { it.isNotBlank() && it != "null" }
-            val dateStr = parsedJson.optString("date").takeIf { it.isNotBlank() && it != "null" }
-            val totalNum = if (parsedJson.has("total") && !parsedJson.isNull("total")) {
-                parsedJson.optLong("total", 0L).takeIf { it > 0 }
-            } else null
-
-            val itemsList = mutableListOf<ReceiptItem>()
-            val itemsJsonArray = parsedJson.optJSONArray("items")
-            if (itemsJsonArray != null) {
-                for (i in 0 until itemsJsonArray.length()) {
-                    val itm = itemsJsonArray.getJSONObject(i)
-                    val itmName = itm.optString("name", "").trim()
-                    val itmPrice = itm.optLong("price", 0L)
-                    if (itmName.isNotBlank() && itmPrice > 0) {
-                        itemsList.add(ReceiptItem(itmName, itmPrice))
-                    }
-                }
-            }
-
-            return@withContext ReceiptParseResult(
-                merchantName = merchant,
-                date = dateStr,
-                total = totalNum ?: itemsList.sumOf { it.price }.takeIf { it > 0 },
-                items = itemsList,
-                rawText = rawText,
-                isSuccess = true
-            )
+            return parseJsonReceiptResult(rawAiText, rawText)
 
         } catch (e: Exception) {
             val fallback = fallbackRegexParse(rawText)
-            return@withContext fallback.copy(
-                errorMessage = e.localizedMessage ?: "Gagal parsing dengan AI"
+            return fallback.copy(
+                errorMessage = e.localizedMessage ?: "Gagal parsing dengan Anthropic"
             )
         }
+    }
+
+    /**
+     * Mem-parsing teks struk mentah menggunakan Google Gemini API (model gemini-3.1-flash-lite).
+     */
+    private fun parseWithGemini(rawText: String, apiKey: String): ReceiptParseResult {
+        try {
+            val prompt = extractionPromptTemplate.format(rawText)
+
+            val requestJson = JSONObject().apply {
+                put("contents", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("parts", JSONArray().apply {
+                            put(JSONObject().apply { put("text", prompt) })
+                        })
+                    })
+                })
+                put("generationConfig", JSONObject().apply {
+                    put("responseMimeType", "application/json")
+                })
+            }
+
+            val requestBody = requestJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey.trim()}"
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("content-type", "application/json")
+                .post(requestBody)
+                .build()
+
+            val response = httpClient.newCall(request).execute()
+            val responseBody = response.body?.string() ?: ""
+
+            if (!response.isSuccessful) {
+                val fallback = fallbackRegexParse(rawText)
+                return fallback.copy(
+                    errorMessage = "HTTP ${response.code}: $responseBody"
+                )
+            }
+
+            val resObj = JSONObject(responseBody)
+            val candidates = resObj.optJSONArray("candidates")
+            val rawAiText = if (candidates != null && candidates.length() > 0) {
+                val content = candidates.getJSONObject(0).optJSONObject("content")
+                val parts = content?.optJSONArray("parts")
+                if (parts != null && parts.length() > 0) {
+                    parts.getJSONObject(0).optString("text", "")
+                } else ""
+            } else ""
+
+            return parseJsonReceiptResult(rawAiText, rawText)
+
+        } catch (e: Exception) {
+            val fallback = fallbackRegexParse(rawText)
+            return fallback.copy(
+                errorMessage = e.localizedMessage ?: "Gagal parsing dengan Gemini"
+            )
+        }
+    }
+
+    /**
+     * Mem-parsing teks JSON keluaran AI menjadi ReceiptParseResult.
+     */
+    private fun parseJsonReceiptResult(rawAiText: String, rawText: String): ReceiptParseResult {
+        if (rawAiText.isBlank()) {
+            return fallbackRegexParse(rawText).copy(errorMessage = "Respon AI kosong")
+        }
+
+        val cleanedJson = cleanJsonString(rawAiText)
+        val parsedJson = JSONObject(cleanedJson)
+
+        val merchant = parsedJson.optString("merchant_name").takeIf { it.isNotBlank() && it != "null" }
+        val dateStr = parsedJson.optString("date").takeIf { it.isNotBlank() && it != "null" }
+        val totalNum = if (parsedJson.has("total") && !parsedJson.isNull("total")) {
+            parsedJson.optLong("total", 0L).takeIf { it > 0 }
+        } else null
+
+        val itemsList = mutableListOf<ReceiptItem>()
+        val itemsJsonArray = parsedJson.optJSONArray("items")
+        if (itemsJsonArray != null) {
+            for (i in 0 until itemsJsonArray.length()) {
+                val itm = itemsJsonArray.getJSONObject(i)
+                val itmName = itm.optString("name", "").trim()
+                val itmPrice = itm.optLong("price", 0L)
+                if (itmName.isNotBlank() && itmPrice > 0) {
+                    itemsList.add(ReceiptItem(itmName, itmPrice))
+                }
+            }
+        }
+
+        return ReceiptParseResult(
+            merchantName = merchant,
+            date = dateStr,
+            total = totalNum ?: itemsList.sumOf { it.price }.takeIf { it > 0 },
+            items = itemsList,
+            rawText = rawText,
+            isSuccess = true
+        )
     }
 
     /**
