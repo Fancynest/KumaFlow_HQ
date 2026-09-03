@@ -478,7 +478,11 @@ fun MainScreen(
     var onShakeHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
     val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(onShake = { onShakeHandler?.invoke() })
 
-    LaunchedEffect(selectedItemIndex) { if (pagerState.currentPage != selectedItemIndex) pagerState.animateScrollToPage(selectedItemIndex) }
+    LaunchedEffect(selectedItemIndex) {
+        if (pagerState.currentPage != selectedItemIndex) {
+            if (selectedItemIndex == 4) pagerState.scrollToPage(4) else pagerState.animateScrollToPage(selectedItemIndex)
+        }
+    }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) { if (!pagerState.isScrollInProgress) selectedItemIndex = pagerState.currentPage }
 
     var selectedMonth by remember { mutableIntStateOf(java.time.LocalDateTime.now().monthValue) }
@@ -1041,7 +1045,7 @@ fun MainScreen(
                         },
                         tiltState = sharedTiltState,
                         onSetShakeHandler = { onShakeHandler = it },
-                        onOpenSettings = { scope.launch { pagerState.animateScrollToPage(4) }; selectedItemIndex = 4 }
+                        onOpenSettings = { scope.launch { pagerState.scrollToPage(4) }; selectedItemIndex = 4 }
                     )
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
                         profile = userProfile,
