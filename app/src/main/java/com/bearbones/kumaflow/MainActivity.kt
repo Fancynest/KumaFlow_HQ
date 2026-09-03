@@ -475,6 +475,9 @@ fun MainScreen(
     val userProfile = userProfileState ?: UserProfile(userName = "User")
     var selectedItemIndex by remember { mutableIntStateOf(0) }
 
+    var onShakeHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(onShake = { onShakeHandler?.invoke() })
+
     LaunchedEffect(selectedItemIndex) { if (pagerState.currentPage != selectedItemIndex) pagerState.animateScrollToPage(selectedItemIndex) }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) { if (!pagerState.isScrollInProgress) selectedItemIndex = pagerState.currentPage }
 
@@ -893,7 +896,12 @@ fun MainScreen(
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
                 exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
             ) {
-                CustomBottomNav(pagerState, haptic) { scope.launch { pagerState.animateScrollToPage(it) }; selectedItemIndex = it }
+                CustomBottomNav(
+                    pagerState = pagerState,
+                    haptic = haptic,
+                    tiltState = sharedTiltState,
+                    isNavMotionEnabled = userProfile.isNavMotionEnabled
+                ) { scope.launch { pagerState.animateScrollToPage(it) }; selectedItemIndex = it }
             }
         }
     ) { paddingValues ->
@@ -1134,7 +1142,9 @@ fun MainScreen(
                                     Toast.makeText(context, "Reconciliation Error: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
-                        }
+                        },
+                        tiltState = sharedTiltState,
+                        onSetShakeHandler = { onShakeHandler = it }
                     )
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
                         profile = userProfile,
@@ -2793,6 +2803,7 @@ fun backupAppToJSON(context: Context) {
                 put("lastMilestoneNotified", profile.lastMilestoneNotified)
                 put("savingsWallets", profile.savingsWallets)
                 put("savingsGoals", profile.savingsGoals)
+                put("isNavMotionEnabled", profile.isNavMotionEnabled)
                 put("qrisFilePath", profile.qrisFilePath)
                 put("qrisHolderName", profile.qrisHolderName)
                 put("bankName", profile.bankName)
@@ -3016,6 +3027,8 @@ fun SettingsGroupCard(
 fun CustomBottomNav(
     pagerState: androidx.compose.foundation.pager.PagerState,
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
+    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
+    isNavMotionEnabled: Boolean = true,
     onItemSelected: (Int) -> Unit
 ) {
     val items = listOf(
@@ -3083,14 +3096,48 @@ fun CustomBottomNav(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f).padding(vertical = 4.dp)
                 ) {
-                    KumaExpressiveIcon(
-                        imageVector = pair.first,
-                        contentDescription = null,
-                        tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        size = 28.dp,
-                        iconPadding = 2.dp
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        if (isSelected && isNavMotionEnabled) {
+                            val tilt = tiltState.value
+                            val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                            val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+
+                            // Echo Layer 2 (Outer - subtle, ±3.5px)
+                            Icon(
+                                imageVector = pair.first,
+                                contentDescription = null,
+                                tint = AppPrimary().copy(alpha = 0.15f),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .graphicsLayer {
+                                        translationX = tx * 3.5f
+                                        translationY = ty * 3.5f
+                                    }
+                            )
+
+                            // Echo Layer 1 (Inner - medium, ±1.8px)
+                            Icon(
+                                imageVector = pair.first,
+                                contentDescription = null,
+                                tint = AppPrimary().copy(alpha = 0.30f),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .graphicsLayer {
+                                        translationX = tx * 1.8f
+                                        translationY = ty * 1.8f
+                                    }
+                            )
+                        }
+
+                        KumaExpressiveIcon(
+                            imageVector = pair.first,
+                            contentDescription = null,
+                            tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            size = 28.dp,
+                            iconPadding = 2.dp
+                        )
+                    }
                     Text(
                         pair.second,
                         fontSize = 11.sp,

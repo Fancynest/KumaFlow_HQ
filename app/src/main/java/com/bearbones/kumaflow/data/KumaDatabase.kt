@@ -105,7 +105,8 @@ data class UserProfile(
     val bankAccount: String = "",
     val hasSeenTutorial: Boolean = true,
     val savingsWallets: String = "",
-    val savingsGoals: String = "{}"
+    val savingsGoals: String = "{}",
+    val isNavMotionEnabled: Boolean = true
 )
 
 @Entity(tableName = "virtual_wallets")
@@ -612,6 +613,12 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
     }
 }
 
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN isNavMotionEnabled INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -623,7 +630,7 @@ val MIGRATION_29_30 = object : Migration(29, 30) {
         com.bearbones.kumaflow.duo.model.DuoConflictLog::class,
         VirtualWallet::class
     ],
-    version = 30,
+    version = 31,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -639,7 +646,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
                     .build()
                 INSTANCE = instance
                 instance

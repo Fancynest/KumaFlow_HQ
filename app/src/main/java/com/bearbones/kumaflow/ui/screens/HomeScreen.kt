@@ -108,7 +108,9 @@ fun HomeScreen(
     onOpenRoulette: () -> Unit,
     onOpenSplitBill: () -> Unit = {},
     onReconcile: (String, Long) -> Unit = { _, _ -> },
-    onAddTransaction: (Boolean) -> Unit = {}
+    onAddTransaction: (Boolean) -> Unit = {},
+    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>? = null,
+    onSetShakeHandler: (((() -> Unit)?) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val locale = java.util.Locale.forLanguageTag("id-ID")
@@ -541,7 +543,9 @@ fun HomeScreen(
                                 currencySymbol = curSym,
                                 formatHide = formatHideStable,
                                 onWalletClick = onWalletClickStable,
-                                onOrderChange = onOrderChangeStable
+                                onOrderChange = onOrderChangeStable,
+                                tiltState = tiltState,
+                                onSetShakeHandler = onSetShakeHandler
                             )
 
                     Spacer(modifier = Modifier.height(32.dp))

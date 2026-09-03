@@ -156,10 +156,12 @@ fun WalletCardStack(
     currencySymbol: String,
     formatHide: (Long) -> String,
     onWalletClick: (String) -> Unit,
-    onOrderChange: (List<VirtualWallet>) -> Unit
+    onOrderChange: (List<VirtualWallet>) -> Unit,
+    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>? = null,
+    onSetShakeHandler: (((() -> Unit)?) -> Unit)? = null
 ) {
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    WalletCardStackImpl(userName, wallets, balances, currencySymbol, formatHide, onWalletClick, onOrderChange, isBrutal)
+    WalletCardStackImpl(userName, wallets, balances, currencySymbol, formatHide, onWalletClick, onOrderChange, isBrutal, tiltState, onSetShakeHandler)
 }
 
 @Composable
@@ -171,7 +173,9 @@ fun WalletCardStackImpl(
     formatHide: (Long) -> String,
     onWalletClick: (String) -> Unit,
     onOrderChange: (List<VirtualWallet>) -> Unit,
-    isBrutal: Boolean
+    isBrutal: Boolean,
+    externalTiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>? = null,
+    onSetShakeHandler: (((() -> Unit)?) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -204,13 +208,22 @@ fun WalletCardStackImpl(
     var isReconcileHold by remember { mutableStateOf(false) }
     var zoomedWallet by remember { mutableStateOf<VirtualWallet?>(null) }
     
-    val tiltState = rememberTiltState(onShake = {
+    val onShakeAction = {
         if (popState == 2) {
             poppedCard = null
             popState = 0
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
-    })
+    }
+
+    DisposableEffect(onSetShakeHandler, popState) {
+        onSetShakeHandler?.invoke(onShakeAction)
+        onDispose {
+            onSetShakeHandler?.invoke(null)
+        }
+    }
+
+    val tiltState = externalTiltState ?: rememberTiltState(onShake = onShakeAction)
 
 
     // Cards area: first card full + subsequent cards peek

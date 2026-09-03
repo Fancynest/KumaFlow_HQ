@@ -180,6 +180,8 @@ object AppStr {
     val amoledDesc get() = if(isId) "Latar belakang hitam murni" else "Pure black background"
     val liquidGlass get() = if(isId) "Kuma Glass UI" else "Kuma Glass UI"
     val liquidGlassDesc get() = if(isId) "Efek kaca transparan premium" else "Premium transparent glass effect"
+    val navMotionEffect get() = if(isId) "Efek Gerak Navigasi" else "Navigation Motion Effect"
+    val navMotionEffectDesc get() = if(isId) "Icon navigasi aktif bergerak halus mengikuti kemiringan HP" else "Active nav icon shifts subtly with phone tilt"
     val edit get() = if(isId) "Edit" else "Edit"
     val delete get() = if(isId) "Hapus" else "Delete"
     val delConf get() = if(isId) "Yakin hapus transaksi ini?" else "Delete this transaction?"

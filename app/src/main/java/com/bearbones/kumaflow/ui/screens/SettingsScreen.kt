@@ -1436,6 +1436,30 @@ fun SettingsScreen(
                             )
                         }
 
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp)) {
+                                Text(AppStr.navMotionEffect, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
+                                Text(AppStr.navMotionEffectDesc, fontSize = 10.sp, color = AppText().copy(alpha = 0.6f))
+                            }
+                            Switch(
+                                checked = currentProfile.isNavMotionEnabled,
+                                onCheckedChange = { isChecked ->
+                                    scope.launch {
+                                        dao.saveProfile(currentProfile.copy(isNavMotionEnabled = isChecked))
+                                        onForceUpdate()
+                                    }
+                                },
+                                modifier = Modifier.scale(0.8f)
+                            )
+                        }
+
                     }
                 },
                 confirmButton = {

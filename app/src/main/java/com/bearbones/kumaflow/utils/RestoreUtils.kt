@@ -41,7 +41,8 @@ object RestoreUtils {
             freezeCount = pObj.optInt("freezeCount", 0),
             lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0),
             savingsWallets = pObj.optString("savingsWallets", ""),
-            savingsGoals = pObj.optString("savingsGoals", "{}")
+            savingsGoals = pObj.optString("savingsGoals", "{}"),
+            isNavMotionEnabled = pObj.optBoolean("isNavMotionEnabled", true)
         )
         
         var restoredQrisPath = pObj.optString("qrisFilePath", "")
