@@ -101,6 +101,7 @@ object AppStr {
     val ocrApiKeyConfigured get() = if(isId) "Tersimpan (Terenkripsi)" else "Configured (Encrypted)"
     val openSettings get() = if(isId) "Buka Pengaturan" else "Open Settings"
     val deleteApiKey get() = if(isId) "Hapus API Key" else "Delete API Key"
+    val cameraPermissionDenied get() = if(isId) "Izin kamera diperlukan untuk memindai struk belanja" else "Camera permission is required to scan receipts"
 
     const val VERSION = "v7.0.0"
     val dat get() = if(isId) "Data" else "Data"

@@ -1282,7 +1282,7 @@ fun TransactionBottomSheet(
         }
     }
 
-    fun launchCameraCapture() {
+    fun executeCameraLaunch() {
         try {
             val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
             val uri = androidx.core.content.FileProvider.getUriForFile(
@@ -1294,6 +1294,29 @@ fun TransactionBottomSheet(
             cameraLauncher.launch(uri)
         } catch (e: Exception) {
             Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            executeCameraLaunch()
+        } else {
+            Toast.makeText(context, AppStr.cameraPermissionDenied, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchCameraCapture() {
+        val hasCamPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasCamPermission) {
+            executeCameraLaunch()
+        } else {
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
     }
 

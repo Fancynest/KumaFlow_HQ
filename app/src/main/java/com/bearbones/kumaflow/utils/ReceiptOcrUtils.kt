@@ -1,4 +1,4 @@
-﻿package com.bearbones.kumaflow.utils
+package com.bearbones.kumaflow.utils
 
 import android.content.Context
 import android.net.Uri
@@ -217,16 +217,56 @@ object ReceiptOcrUtils {
             merchant = lines.firstOrNull { it.length > 2 && !it.contains(Regex("\\d{4}")) }
         }
 
-        // Cari pola total / grand total / bayar
-        val totalPattern = Pattern.compile("(?i)(?:total|grand total|tagihan|jumlah|bayar)[^\\d]*([\\d.,]+)")
+        // Cari pola grand total / total / bayar dengan prioritas & hindari kata subtotal
+        val grandTotalPattern = Pattern.compile("(?i)\\b(?:grand\\s*total|total\\s*akhir)\\b[^\\d]*([\\d.,]+)")
+        val totalPattern = Pattern.compile("(?i)(?<!sub)\\btotal\\b[^\\d]*([\\d.,]+)")
+        val generalPattern = Pattern.compile("(?i)\\b(?:tagihan|jumlah\\s*bayar|bayar|jumlah)\\b[^\\d]*([\\d.,]+)")
+
+        // Prioritas 1: Cari "Grand Total" atau "Total Akhir"
         for (line in lines) {
-            val matcher = totalPattern.matcher(line)
+            val matcher = grandTotalPattern.matcher(line)
             if (matcher.find()) {
                 val numStr = matcher.group(1)?.replace(".", "")?.replace(",", "") ?: ""
                 val parsed = numStr.toLongOrNull()
                 if (parsed != null && parsed > 0) {
                     foundTotal = parsed
                     break
+                }
+            }
+        }
+
+        // Prioritas 2: Cari "Total" yang bukan subtotal
+        if (foundTotal == null) {
+            for (line in lines) {
+                if (line.contains("subtotal", ignoreCase = true) || line.contains("sub total", ignoreCase = true)) {
+                    continue
+                }
+                val matcher = totalPattern.matcher(line)
+                if (matcher.find()) {
+                    val numStr = matcher.group(1)?.replace(".", "")?.replace(",", "") ?: ""
+                    val parsed = numStr.toLongOrNull()
+                    if (parsed != null && parsed > 0) {
+                        foundTotal = parsed
+                        break
+                    }
+                }
+            }
+        }
+
+        // Prioritas 3: Fallback ke tagihan / jumlah bayar / bayar / jumlah
+        if (foundTotal == null) {
+            for (line in lines) {
+                if (line.contains("subtotal", ignoreCase = true) || line.contains("sub total", ignoreCase = true)) {
+                    continue
+                }
+                val matcher = generalPattern.matcher(line)
+                if (matcher.find()) {
+                    val numStr = matcher.group(1)?.replace(".", "")?.replace(",", "") ?: ""
+                    val parsed = numStr.toLongOrNull()
+                    if (parsed != null && parsed > 0) {
+                        foundTotal = parsed
+                        break
+                    }
                 }
             }
         }
