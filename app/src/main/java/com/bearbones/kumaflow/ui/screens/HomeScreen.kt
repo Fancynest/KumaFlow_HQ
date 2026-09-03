@@ -254,30 +254,41 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("$greeting, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), modifier = Modifier.weight(1f))
+                        Text(
+                            "$greeting, $displayName!",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = AppText(),
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        )
 
-                        KumaIconButton(
-                            onClick = onOpenSettings,
-                            modifier = Modifier.size(40.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = AppStr.set,
-                                tint = AppText().copy(alpha = 0.8f),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        
-                        if (com.bearbones.kumaflow.utils.BirthdayUtils.isBirthdayToday(context)) {
-                            val comp by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.birthday))
-                            com.airbnb.lottie.compose.LottieAnimation(
-                                composition = comp,
-                                iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .clickable { showBirthdayMessage = true }
-                            )
+                            if (com.bearbones.kumaflow.utils.BirthdayUtils.isBirthdayToday(context)) {
+                                val comp by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.birthday))
+                                com.airbnb.lottie.compose.LottieAnimation(
+                                    composition = comp,
+                                    iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .clickable { showBirthdayMessage = true }
+                                )
+                            }
+
+                            KumaIconButton(
+                                onClick = onOpenSettings,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = AppStr.set,
+                                    tint = AppText().copy(alpha = 0.8f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                         
                         // Lottie Fire Streak hibernated
