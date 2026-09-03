@@ -470,7 +470,7 @@ fun MainScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    val pagerState = rememberPagerState(pageCount = { 5 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     val transactionListWithSplits by dao.getAllTransactionsWithSplits().collectAsState(initial = emptyList())
     val userProfile = userProfileState ?: UserProfile(userName = "User")
     var selectedItemIndex by remember { mutableIntStateOf(0) }
@@ -478,11 +478,7 @@ fun MainScreen(
     var onShakeHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
     val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(onShake = { onShakeHandler?.invoke() })
 
-    LaunchedEffect(selectedItemIndex) {
-        if (pagerState.currentPage != selectedItemIndex) {
-            if (selectedItemIndex == 4) pagerState.scrollToPage(4) else pagerState.animateScrollToPage(selectedItemIndex)
-        }
-    }
+    LaunchedEffect(selectedItemIndex) { if (pagerState.currentPage != selectedItemIndex) pagerState.animateScrollToPage(selectedItemIndex) }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) { if (!pagerState.isScrollInProgress) selectedItemIndex = pagerState.currentPage }
 
     var selectedMonth by remember { mutableIntStateOf(java.time.LocalDateTime.now().monthValue) }
@@ -575,7 +571,8 @@ fun MainScreen(
     var showQrTransfer by remember { mutableStateOf(false) }
     var showDuoSync by remember { mutableStateOf(false) }
     var showDuoPairing by remember { mutableStateOf(false) }
-    LaunchedEffect(showBottomSheet, isSpeedDialOpen) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen) }
+    var showSettingsOverlay by remember { mutableStateOf(false) }
+    LaunchedEffect(showBottomSheet, isSpeedDialOpen, showSettingsOverlay) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen || showSettingsOverlay) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     val totalTxCount = transactionListWithSplits.size
 
@@ -703,8 +700,10 @@ fun MainScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showBottomSheet || isSpeedDialOpen || pagerState.currentPage != 0 || isSelectionMode) {
-        if (isSpeedDialOpen) {
+    androidx.activity.compose.BackHandler(enabled = showSettingsOverlay || showBottomSheet || isSpeedDialOpen || pagerState.currentPage != 0 || isSelectionMode) {
+        if (showSettingsOverlay) {
+            showSettingsOverlay = false
+        } else if (isSpeedDialOpen) {
             isSpeedDialOpen = false
         } else if (showBottomSheet) {
             showBottomSheet = false
@@ -769,7 +768,7 @@ fun MainScreen(
         floatingActionButton = {},
         bottomBar = {
             androidx.compose.animation.AnimatedVisibility(
-                visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
+                visible = !showBottomSheet && !showSettingsOverlay && !showQrTransfer && !showDuoSync && !showDuoPairing,
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
                 exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
             ) {
@@ -1045,7 +1044,7 @@ fun MainScreen(
                         },
                         tiltState = sharedTiltState,
                         onSetShakeHandler = { onShakeHandler = it },
-                        onOpenSettings = { scope.launch { pagerState.scrollToPage(4) }; selectedItemIndex = 4 }
+                        onOpenSettings = { showSettingsOverlay = true }
                     )
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
                         profile = userProfile,
@@ -1087,13 +1086,6 @@ fun MainScreen(
                         paddingValues = paddingValues,
                         onMonthChange = { m, y -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); selectedMonth = m; selectedYear = y },
                         onOpenWrapped = onOpenWrapped
-                    )
-                    4 -> SettingsScreen(
-                        currentProfile = userProfile, monthlyTransactionsWithSplits = monthlyTransactionsWithSplits, allTransactionsWithSplits = transactionListWithSplits, dao = dao, selectedMonth = selectedMonth, selectedYear = selectedYear,
-                        paddingValues = paddingValues,
-                        onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) },
-                        onOpenQrTransfer = { showQrTransfer = true },
-                        onOpenDuoSync = { showDuoSync = true }
                     )
                 }
             }
@@ -1244,6 +1236,42 @@ fun MainScreen(
                 dismissButton = { KumaTextButton(onClick = { showBackupReminder = false }) { Text(AppStr.later, color = AppText()) } },
                 shape = RoundedCornerShape(28.dp), containerColor = AppSurface(), titleContentColor = AppText(), textContentColor = AppText()
             )
+        }
+
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showSettingsOverlay,
+            enter = androidx.compose.animation.slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = androidx.compose.animation.core.tween(300)
+            ) + androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)),
+            exit = androidx.compose.animation.slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = androidx.compose.animation.core.tween(250)
+            ) + androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(250))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppBg())
+                    .kumaClickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) { /* Prevent click through */ }
+            ) {
+                SettingsScreen(
+                    currentProfile = userProfile,
+                    monthlyTransactionsWithSplits = monthlyTransactionsWithSplits,
+                    allTransactionsWithSplits = transactionListWithSplits,
+                    dao = dao,
+                    selectedMonth = selectedMonth,
+                    selectedYear = selectedYear,
+                    paddingValues = paddingValues,
+                    onForceUpdate = { forceUpdateTrigger++; updateKumaWidget(context) },
+                    onOpenQrTransfer = { showQrTransfer = true },
+                    onOpenDuoSync = { showDuoSync = true },
+                    onClose = { showSettingsOverlay = false }
+                )
+            }
         }
 
         if (showQrTransfer && userProfileState != null) {

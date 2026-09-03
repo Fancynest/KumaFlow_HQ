@@ -140,7 +140,8 @@ fun SettingsScreen(
     paddingValues: PaddingValues,
     onForceUpdate: () -> Unit,
     onOpenQrTransfer: () -> Unit,
-    onOpenDuoSync: () -> Unit
+    onOpenDuoSync: () -> Unit,
+    onClose: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -224,7 +225,18 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp))
-            Text(AppStr.set, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(AppStr.set, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
+                if (onClose != null) {
+                    IconButton(onClick = onClose) {
+                        KumaExpressiveIcon(Icons.Default.Close, contentDescription = AppStr.close, tint = AppText())
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -1745,7 +1757,8 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             color = AppText().copy(alpha = 0.5f)
         )
-        Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding() + 24.dp))
+        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        Spacer(modifier = Modifier.height(maxOf(paddingValues.calculateBottomPadding(), navBottom) + 24.dp))
     }
 
     if (isRestoring) {
