@@ -2807,74 +2807,95 @@ private fun NavSlotItem(
     label: String,
     isSelected: Boolean,
     isNavMotionEnabled: Boolean,
+    shape: androidx.compose.ui.graphics.Shape,
     tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isDark = LocalIsDark.current
+
+    Box(
         modifier = modifier
             .fillMaxHeight()
-            .kumaClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
+            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .clip(shape)
+            .background(
+                if (isPressed && !isSelected) {
+                    if (isDark) Color.White.copy(alpha = 0.08f) else AppPrimary().copy(alpha = 0.10f)
+                } else {
+                    Color.Transparent
+                }
             )
-            .padding(vertical = 4.dp)
+            .bouncyScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple(
+                    color = if (isDark) Color.White.copy(alpha = 0.2f) else AppPrimary().copy(alpha = 0.25f)
+                ),
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (isSelected && isNavMotionEnabled) {
-                val tilt = tiltState.value
-                val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (isSelected && isNavMotionEnabled) {
+                    val tilt = tiltState.value
+                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
 
-                // Echo Layer 2 (Outer - subtle, ±3.5px)
-                Icon(
+                    // Echo Layer 2 (Outer - subtle, ±3.5px)
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppPrimary().copy(alpha = 0.15f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .graphicsLayer {
+                                translationX = tx * 3.5f
+                                translationY = ty * 3.5f
+                            }
+                    )
+
+                    // Echo Layer 1 (Inner - medium, ±1.8px)
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AppPrimary().copy(alpha = 0.30f),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .graphicsLayer {
+                                translationX = tx * 1.8f
+                                translationY = ty * 1.8f
+                            }
+                    )
+                }
+
+                KumaExpressiveIcon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = AppPrimary().copy(alpha = 0.15f),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .graphicsLayer {
-                            translationX = tx * 3.5f
-                            translationY = ty * 3.5f
-                        }
-                )
-
-                // Echo Layer 1 (Inner - medium, ±1.8px)
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = AppPrimary().copy(alpha = 0.30f),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .graphicsLayer {
-                            translationX = tx * 1.8f
-                            translationY = ty * 1.8f
-                        }
+                    tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+                    containerColor = Color.Transparent,
+                    size = 24.dp,
+                    iconPadding = 0.dp
                 )
             }
 
-            KumaExpressiveIcon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                containerColor = Color.Transparent,
-                size = 24.dp,
-                iconPadding = 0.dp
+            Spacer(Modifier.height(3.dp))
+
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                color = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
-
-        Spacer(Modifier.height(3.dp))
-
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
-            color = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 
@@ -3004,6 +3025,7 @@ fun CustomBottomNav(
                     label = AppStr.home,
                     isSelected = pagerState.currentPage == 0,
                     isNavMotionEnabled = isNavMotionEnabled,
+                    shape = organicTabShape,
                     tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -3018,6 +3040,7 @@ fun CustomBottomNav(
                     label = AppStr.hist,
                     isSelected = pagerState.currentPage == 1,
                     isNavMotionEnabled = isNavMotionEnabled,
+                    shape = organicTabShape,
                     tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -3035,6 +3058,7 @@ fun CustomBottomNav(
                     label = if (AppStr.isId) "Tabungan" else "Savings",
                     isSelected = pagerState.currentPage == 2,
                     isNavMotionEnabled = isNavMotionEnabled,
+                    shape = organicTabShape,
                     tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -3049,6 +3073,7 @@ fun CustomBottomNav(
                     label = AppStr.rep,
                     isSelected = pagerState.currentPage == 3,
                     isNavMotionEnabled = isNavMotionEnabled,
+                    shape = organicTabShape,
                     tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
