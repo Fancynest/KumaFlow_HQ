@@ -87,9 +87,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:2.8.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
     
-    // QR Code Processing
+    // QR Code & OCR Processing
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
     
     // HTTP Server for Local WiFi QR Transfer
     implementation("org.nanohttpd:nanohttpd:2.3.1")

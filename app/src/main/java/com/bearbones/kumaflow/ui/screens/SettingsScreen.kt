@@ -162,6 +162,7 @@ fun SettingsScreen(
     var showCategoryDialog by remember { mutableStateOf(false) }
     var showWalletDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var showOcrDialog by remember { mutableStateOf(false) }
 
     var pinInput by remember { mutableStateOf("") }
     var targetInput by remember { mutableStateOf(currentProfile.monthlyTarget.toString()) }
@@ -260,7 +261,8 @@ fun SettingsScreen(
                         AppStr.manageCat to Icons.Default.DashboardCustomize,
                         AppStr.tar to Icons.Default.Adjust,
                         AppStr.catBudget to Icons.Default.PieChart,
-                        AppStr.splitBillCfg to Icons.Default.QrCodeScanner
+                        AppStr.splitBillCfg to Icons.Default.QrCodeScanner,
+                        AppStr.ocrSettingsTitle to Icons.Default.DocumentScanner
                     ),
                     onClick = { label ->
                         when(label) {
@@ -270,6 +272,7 @@ fun SettingsScreen(
                             AppStr.manageCat -> showCategoryDialog = true
                             AppStr.catBudget -> showCatBudgetDialog = true
                             AppStr.splitBillCfg -> showQrisDialog = true
+                            AppStr.ocrSettingsTitle -> showOcrDialog = true
                         }
                     }
                 )
@@ -1091,6 +1094,100 @@ fun SettingsScreen(
                     }
                 },
                 confirmButton = {}
+            )
+        }
+
+        if (showOcrDialog) {
+            val ocrStorage = remember { com.bearbones.kumaflow.utils.OcrSecureStorage(context) }
+            var apiKeyInput by remember { mutableStateOf(ocrStorage.getApiKey() ?: "") }
+            var isKeyVisible by remember { mutableStateOf(false) }
+
+            AlertDialog(
+                onDismissRequest = { showOcrDialog = false },
+                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KumaExpressiveIcon(Icons.Default.DocumentScanner, null, tint = AppPrimary())
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(AppStr.ocrSettingsTitle, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            AppStr.ocrApiKeyHint,
+                            fontSize = 12.sp,
+                            color = AppText().copy(alpha = 0.7f),
+                            lineHeight = 16.sp
+                        )
+
+                        com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                            value = apiKeyInput,
+                            onValueChange = { apiKeyInput = it },
+                            placeholder = { Text(AppStr.ocrApiKeyLabel) },
+                            visualTransformation = if (isKeyVisible) VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { isKeyVisible = !isKeyVisible }) {
+                                    Icon(
+                                        if (isKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        tint = AppPrimary()
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                if (ocrStorage.hasApiKey()) AppStr.ocrApiKeyConfigured else AppStr.ocrApiKeyNotConfigured,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (ocrStorage.hasApiKey()) AppGreen() else AppRed()
+                            )
+
+                            if (ocrStorage.hasApiKey()) {
+                                TextButton(
+                                    onClick = {
+                                        ocrStorage.deleteApiKey()
+                                        apiKeyInput = ""
+                                        Toast.makeText(context, AppStr.ocrApiKeyDeleted, Toast.LENGTH_SHORT).show()
+                                    }
+                                ) {
+                                    Text(AppStr.deleteApiKey, color = AppRed(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    com.bearbones.kumaflow.ui.components.KumaButton(
+                        onClick = {
+                            if (apiKeyInput.isNotBlank()) {
+                                ocrStorage.saveApiKey(apiKeyInput)
+                                Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
+                            }
+                            showOcrDialog = false
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(AppStr.save, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showOcrDialog = false }) {
+                        Text(AppStr.close, color = AppText().copy(alpha = 0.6f))
+                    }
+                }
             )
         }
 

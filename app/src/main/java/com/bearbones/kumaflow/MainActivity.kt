@@ -1198,6 +1198,105 @@ fun TransactionBottomSheet(
 
     val allowedMathChars = setOf('0','1','2','3','4','5','6','7','8','9','+','-','*','/','(',')',' ','.')
 
+    val scope = rememberCoroutineScope()
+    val ocrStorage = remember { com.bearbones.kumaflow.utils.OcrSecureStorage(context) }
+    var isOcrLoading by remember { mutableStateOf(false) }
+    var showOcrKeyPromptDialog by remember { mutableStateOf(false) }
+    var showOcrSourceChooser by remember { mutableStateOf(false) }
+    var tempCameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun processReceiptImage(uri: Uri) {
+        val apiKey = ocrStorage.getApiKey()
+        if (apiKey.isNullOrBlank()) {
+            showOcrKeyPromptDialog = true
+            return
+        }
+
+        isOcrLoading = true
+        scope.launch {
+            try {
+                val rawText = com.bearbones.kumaflow.utils.ReceiptOcrUtils.extractRawText(context, uri)
+                if (rawText.isBlank()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                        isOcrLoading = false
+                    }
+                    return@launch
+                }
+
+                val parseResult = com.bearbones.kumaflow.utils.ReceiptOcrUtils.parseReceiptWithAI(rawText, apiKey)
+
+                withContext(Dispatchers.Main) {
+                    if (parseResult.isSuccess) {
+                        parseResult.merchantName?.let { merchant ->
+                            if (merchant.isNotBlank()) name = merchant
+                        }
+
+                        parseResult.date?.let { parsedDate ->
+                            try {
+                                val localDate = java.time.LocalDate.parse(parsedDate, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                                val formattedDate = localDate.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                                txDateStr = formattedDate
+                                txTimestamp = localDate.atStartOfDay().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            } catch (_: Exception) {}
+                        }
+
+                        parseResult.total?.let { totalVal ->
+                            if (totalVal > 0) {
+                                if (initialSplits.isNotEmpty()) {
+                                    initialSplits[0] = initialSplits[0].copy(amount = totalVal.toString())
+                                }
+                            }
+                        }
+
+                        Toast.makeText(context, AppStr.ocrSuccessToast, Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                    }
+                    isOcrLoading = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                    isOcrLoading = false
+                }
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            processReceiptImage(uri)
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            tempCameraImageUri?.let { uri ->
+                processReceiptImage(uri)
+            }
+        }
+    }
+
+    fun launchCameraCapture() {
+        try {
+            val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                cacheFile
+            )
+            tempCameraImageUri = uri
+            cameraLauncher.launch(uri)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1222,6 +1321,45 @@ fun TransactionBottomSheet(
                 fontWeight = FontWeight.ExtraBold,
                 color = AppText()
             )
+
+            // Scan Struk Button
+            if (txMode == 0) {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        if (!ocrStorage.hasApiKey()) {
+                            showOcrKeyPromptDialog = true
+                        } else {
+                            showOcrSourceChooser = true
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = AppPrimary().copy(alpha = 0.12f),
+                    contentColor = AppPrimary()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isOcrLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = AppPrimary()
+                            )
+                        } else {
+                            KumaExpressiveIcon(Icons.Default.DocumentScanner, null, tint = AppPrimary(), size = 18.dp, containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            if (isOcrLoading) AppStr.scanningReceipt else AppStr.scanReceipt,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = AppPrimary()
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1824,6 +1962,149 @@ fun TransactionBottomSheet(
             dismissButton = {
                 KumaTextButton(onClick = { showNewCategoryDialog = false }) {
                     Text(AppStr.no, color = AppText())
+                }
+            }
+        )
+    }
+
+    if (showOcrSourceChooser) {
+        AlertDialog(
+            onDismissRequest = { showOcrSourceChooser = false },
+            title = { Text(AppStr.chooseSource, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Option 1: Camera
+                    Surface(
+                        onClick = {
+                            showOcrSourceChooser = false
+                            launchCameraCapture()
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = AppPrimary().copy(alpha = 0.12f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            KumaExpressiveIcon(Icons.Default.CameraAlt, null, tint = AppPrimary(), size = 28.dp)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(AppStr.camera, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
+                                Text(AppStr.scanReceiptDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
+                            }
+                        }
+                    }
+
+                    // Option 2: Gallery
+                    Surface(
+                        onClick = {
+                            showOcrSourceChooser = false
+                            galleryLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        color = AppPrimary().copy(alpha = 0.12f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            KumaExpressiveIcon(Icons.Default.PhotoLibrary, null, tint = AppPrimary(), size = 28.dp)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(AppStr.gallery, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
+                                Text("Pilih foto struk dari galeri", fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                KumaTextButton(onClick = { showOcrSourceChooser = false }) {
+                    Text(AppStr.close, color = AppText())
+                }
+            }
+        )
+    }
+
+    if (showOcrKeyPromptDialog) {
+        var directKeyInput by remember { mutableStateOf("") }
+        var isDirectKeyVisible by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { showOcrKeyPromptDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    KumaExpressiveIcon(Icons.Default.Key, null, tint = AppPrimary())
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(AppStr.ocrApiKeyRequiredTitle, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        AppStr.ocrApiKeyRequiredDesc,
+                        fontSize = 13.sp,
+                        color = AppText().copy(alpha = 0.8f),
+                        lineHeight = 18.sp
+                    )
+
+                    Text(
+                        AppStr.ocrApiKeyHint,
+                        fontSize = 11.sp,
+                        color = AppText().copy(alpha = 0.6f),
+                        lineHeight = 15.sp
+                    )
+
+                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                        value = directKeyInput,
+                        onValueChange = { directKeyInput = it },
+                        placeholder = { Text(AppStr.ocrApiKeyLabel) },
+                        visualTransformation = if (isDirectKeyVisible) VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { isDirectKeyVisible = !isDirectKeyVisible }) {
+                                Icon(
+                                    if (isDirectKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    tint = AppPrimary()
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                KumaButton(
+                    onClick = {
+                        if (directKeyInput.isNotBlank()) {
+                            ocrStorage.saveApiKey(directKeyInput)
+                            Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
+                            showOcrKeyPromptDialog = false
+                            showOcrSourceChooser = true
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(AppStr.save, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                KumaTextButton(onClick = { showOcrKeyPromptDialog = false }) {
+                    Text(AppStr.close, color = AppText())
                 }
             }
         )
