@@ -82,6 +82,10 @@ object AppStr {
     val tar get() = if(isId) "Target Global" else "Global Target"
     val catBudget get() = if(isId) "Budget Kategori" else "Category Budget"
     // OCR & Receipt Scanning
+    val addTxOptionTitle get() = if(isId) "Pilih Cara Mencatat" else "Choose Entry Method"
+    val manualEntryTitle get() = if(isId) "Catat Normal" else "Normal Entry"
+    val manualEntryDesc get() = if(isId) "Input transaksi manual ke formulir" else "Manually enter transaction details"
+    val scanReceiptOptionTitle get() = if(isId) "Scan Struk (OCR AI)" else "Scan Receipt (AI OCR)"
     val scanReceipt get() = if(isId) "Scan Struk" else "Scan Receipt"
     val scanReceiptDesc get() = if(isId) "Foto struk untuk isi form transaksi otomatis" else "Capture receipt to auto-fill transaction"
     val scanningReceipt get() = if(isId) "Membaca data struk dengan AI..." else "Scanning receipt with AI..."
@@ -89,6 +93,7 @@ object AppStr {
     val chooseSource get() = if(isId) "Pilih Sumber Gambar" else "Choose Image Source"
     val camera get() = if(isId) "Kamera" else "Camera"
     val gallery get() = if(isId) "Galeri Foto" else "Photo Gallery"
+    val galleryPickDesc get() = if(isId) "Pilih foto struk dari galeri foto" else "Choose receipt photo from gallery"
     val ocrSuccessToast get() = if(isId) "Data struk berhasil dimasukkan!" else "Receipt data filled successfully!"
     val ocrApiKeyRequiredTitle get() = if(isId) "API Key AI Diperlukan" else "AI API Key Required"
     val ocrApiKeyRequiredDesc get() = if(isId) "Fitur Scan Struk AI memerlukan API Key (Anthropic Claude atau Google Gemini gratis). Masukkan API Key Anda di bawah." else "AI Receipt Scan requires an API Key (Anthropic Claude or free Google Gemini). Please enter your API Key below."

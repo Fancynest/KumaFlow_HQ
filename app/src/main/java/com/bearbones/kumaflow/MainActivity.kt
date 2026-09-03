@@ -563,11 +563,13 @@ fun MainScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showAddOptionsDialog by remember { mutableStateOf(false) }
+    var autoTriggerOcr by remember { mutableStateOf(false) }
     var showBackupReminder by remember { mutableStateOf(false) }
     var showQrTransfer by remember { mutableStateOf(false) }
     var showDuoSync by remember { mutableStateOf(false) }
     var showDuoPairing by remember { mutableStateOf(false) }
-    LaunchedEffect(showBottomSheet) { onOverlayStateChange(showBottomSheet) }
+    LaunchedEffect(showBottomSheet, showAddOptionsDialog) { onOverlayStateChange(showBottomSheet || showAddOptionsDialog) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     val totalTxCount = transactionListWithSplits.size
 
@@ -579,9 +581,12 @@ fun MainScreen(
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = showBottomSheet || pagerState.currentPage != 0 || isSelectionMode) {
-        if (showBottomSheet) {
+    androidx.activity.compose.BackHandler(enabled = showBottomSheet || showAddOptionsDialog || pagerState.currentPage != 0 || isSelectionMode) {
+        if (showAddOptionsDialog) {
+            showAddOptionsDialog = false
+        } else if (showBottomSheet) {
             showBottomSheet = false
+            autoTriggerOcr = false
         } else if (isSelectionMode) {
             selectedTxs = emptySet()
         } else if (pagerState.currentPage != 0) {
@@ -698,8 +703,7 @@ fun MainScreen(
                             indication = null,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                transactionToEdit = null
-                                showBottomSheet = true
+                                showAddOptionsDialog = true
                                 if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
                                     tutorialState.next()
                                 }
@@ -1068,7 +1072,13 @@ fun MainScreen(
                         .glassCard(32.dp, AppBg(), useHaze = true)
                 ) {
                     TransactionBottomSheet(
-                        profile = userProfile, transactionToEdit = transactionToEdit, onDismiss = { showBottomSheet = false },
+                        profile = userProfile,
+                        transactionToEdit = transactionToEdit,
+                        autoTriggerOcr = autoTriggerOcr,
+                        onDismiss = {
+                            showBottomSheet = false
+                            autoTriggerOcr = false
+                        },
                         onSave = { txList ->
                             scope.launch {
                                 try {
@@ -1087,6 +1097,83 @@ fun MainScreen(
                     )
                 }
             }
+        }
+
+        if (showAddOptionsDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddOptionsDialog = false },
+                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) Color.Transparent else AppSurface(),
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KumaExpressiveIcon(Icons.Default.Add, null, tint = AppPrimary())
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(AppStr.addTxOptionTitle, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Option 1: Catat Normal
+                        Surface(
+                            onClick = {
+                                showAddOptionsDialog = false
+                                transactionToEdit = null
+                                autoTriggerOcr = false
+                                showBottomSheet = true
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = AppPrimary().copy(alpha = 0.12f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                KumaExpressiveIcon(Icons.Default.Edit, null, tint = AppPrimary(), size = 28.dp)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text(AppStr.manualEntryTitle, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
+                                    Text(AppStr.manualEntryDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
+                                }
+                            }
+                        }
+
+                        // Option 2: Scan Struk (OCR AI)
+                        Surface(
+                            onClick = {
+                                showAddOptionsDialog = false
+                                transactionToEdit = null
+                                autoTriggerOcr = true
+                                showBottomSheet = true
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = AppPrimary().copy(alpha = 0.12f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                KumaExpressiveIcon(Icons.Default.DocumentScanner, null, tint = AppPrimary(), size = 28.dp)
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column {
+                                    Text(AppStr.scanReceiptOptionTitle, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
+                                    Text(AppStr.scanReceiptDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    KumaTextButton(onClick = { showAddOptionsDialog = false }) {
+                        Text(AppStr.close, color = AppText())
+                    }
+                }
+            )
         }
 
         if (showBackupReminder) {
@@ -1139,6 +1226,7 @@ data class SplitItemUi(var id: String, var wallet: String, var amount: String)
 fun TransactionBottomSheet(
     profile: UserProfile,
     transactionToEdit: TransactionWithSplits?,
+    autoTriggerOcr: Boolean = false,
     onDismiss: () -> Unit,
     onSave: (List<Pair<KumaTransaction, List<TransactionSplit>>>) -> Unit,
     onUpdateProfile: (UserProfile) -> Unit
@@ -1205,6 +1293,16 @@ fun TransactionBottomSheet(
     var showOcrKeyPromptDialog by remember { mutableStateOf(false) }
     var showOcrSourceChooser by remember { mutableStateOf(false) }
     var tempCameraImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(autoTriggerOcr) {
+        if (autoTriggerOcr) {
+            if (!ocrStorage.hasActiveApiKey()) {
+                showOcrKeyPromptDialog = true
+            } else {
+                showOcrSourceChooser = true
+            }
+        }
+    }
 
     fun processReceiptImage(uri: Uri) {
         val selectedProvider = ocrStorage.getSelectedProvider()
@@ -2051,7 +2149,7 @@ fun TransactionBottomSheet(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
                                 Text(AppStr.gallery, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
-                                Text("Pilih foto struk dari galeri", fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
+                                Text(AppStr.galleryPickDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
                             }
                         }
                     }
