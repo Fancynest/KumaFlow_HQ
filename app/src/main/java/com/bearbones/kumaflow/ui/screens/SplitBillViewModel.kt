@@ -194,11 +194,6 @@ class SplitBillViewModel : ViewModel() {
         }
     }
 
-    // Math & rounding logic
-    private fun roundUpToHundreds(amount: Double): Long {
-        return (ceil(amount / 100.0) * 100).toLong()
-    }
-
     fun calculateEqualSplit(): Long {
         val s = _state.value
         val people = s.numberOfPeople.toIntOrNull() ?: 1
@@ -207,7 +202,7 @@ class SplitBillViewModel : ViewModel() {
         if (cleanBill <= 0.0) return 0L
         val taxPct = s.taxPercentage.toDoubleOrNull() ?: 0.0
         val finalBill = cleanBill * (1.0 + (taxPct / 100.0))
-        return roundUpToHundreds(finalBill / people)
+        return kotlin.math.round(finalBill / people).toLong()
     }
 
     fun calculateTahuDiriSplit(): TahuDiriResult {
@@ -216,8 +211,8 @@ class SplitBillViewModel : ViewModel() {
 
         val itemized = s.customItems.map { person ->
             val subtotal = person.totalPrice
-            val taxAmount = (subtotal * (taxPct / 100.0)).toLong()
-            val finalPrice = roundUpToHundreds(subtotal * (1.0 + (taxPct / 100.0)))
+            val finalPrice = kotlin.math.round(subtotal * (1.0 + (taxPct / 100.0))).toLong()
+            val taxAmount = maxOf(0L, finalPrice - subtotal)
             PersonShare(
                 id = person.id,
                 name = person.name.ifBlank { "Peserta" },

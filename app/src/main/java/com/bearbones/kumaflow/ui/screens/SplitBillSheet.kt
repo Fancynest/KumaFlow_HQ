@@ -302,7 +302,7 @@ fun SplitBillSheet(
                 val peopleCount = state.numberOfPeople.toIntOrNull() ?: 1
                 val cleanBill = state.totalBillStr.replace("[^0-9]".toRegex(), "").toDoubleOrNull() ?: 0.0
                 val taxPct = state.taxPercentage.toDoubleOrNull() ?: 0.0
-                val grandTotal = (cleanBill * (1.0 + (taxPct / 100.0))).toLong()
+                val grandTotal = kotlin.math.round(cleanBill * (1.0 + (taxPct / 100.0))).toLong()
 
                 Box(
                     modifier = Modifier

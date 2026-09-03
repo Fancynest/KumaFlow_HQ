@@ -984,7 +984,6 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
                     .kumaClickable(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null
@@ -2815,32 +2814,48 @@ private fun NavSlotItem(
     val isPressed by interactionSource.collectIsPressedAsState()
     val isDark = LocalIsDark.current
 
+    val pressedAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = 100),
+        label = "navSlotPressed"
+    )
+
     Box(
         modifier = modifier
             .fillMaxHeight()
             .padding(horizontal = 6.dp, vertical = 6.dp)
             .clip(shape)
             .background(
-                if (isPressed && !isSelected) {
-                    if (isDark) Color.White.copy(alpha = 0.08f) else AppPrimary().copy(alpha = 0.10f)
+                if (pressedAlpha > 0.01f && !isSelected) {
+                    if (isDark) Color.White.copy(alpha = 0.14f * pressedAlpha) else AppPrimary().copy(alpha = 0.20f * pressedAlpha)
                 } else {
                     Color.Transparent
                 }
             )
-            .bouncyScale(interactionSource)
             .clickable(
                 interactionSource = interactionSource,
-                indication = ripple(
-                    color = if (isDark) Color.White.copy(alpha = 0.2f) else AppPrimary().copy(alpha = 0.25f)
-                ),
+                indication = null,
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
     ) {
+        val contentScale by androidx.compose.animation.core.animateFloatAsState(
+            targetValue = if (isPressed) 0.94f else 1f,
+            animationSpec = androidx.compose.animation.core.spring(
+                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+            ),
+            label = "navSlotScale"
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = contentScale
+                    scaleY = contentScale
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 if (isSelected && isNavMotionEnabled) {
@@ -2958,9 +2973,13 @@ fun CustomBottomNav(
         animationSpec = dialSpringSpec,
         label = "fabRotation"
     )
+    val navInsetsBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val totalNavHeight = 68.dp + navInsetsBottom
 
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .requiredHeight(totalNavHeight),
         contentAlignment = Alignment.BottomCenter
     ) {
         // 1. Flush Nav Bar Container
