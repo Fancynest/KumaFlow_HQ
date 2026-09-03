@@ -115,7 +115,7 @@ object AppStr {
     val deleteApiKey get() = if(isId) "Hapus API Key" else "Delete API Key"
     val cameraPermissionDenied get() = if(isId) "Izin kamera diperlukan untuk memindai struk belanja" else "Camera permission is required to scan receipts"
 
-    const val VERSION = "v7.0.0"
+    const val VERSION = "v7.1.0"
     val dat get() = if(isId) "Data" else "Data"
     val expPdf get() = if(isId) "Ekspor ke PDF" else "Export to PDF"
     val expCsv get() = if(isId) "Ekspor ke CSV" else "Export to CSV"
