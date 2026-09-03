@@ -2242,6 +2242,34 @@ fun TransactionBottomSheet(
                         }
                     }
 
+                    // Clickable URL Button to get API key directly
+                    Surface(
+                        onClick = {
+                            try {
+                                val targetUrl = if (isGemini) "https://aistudio.google.com/api-keys" else "https://console.anthropic.com/settings/keys"
+                                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(targetUrl)))
+                            } catch (_: Exception) {}
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = AppPrimary().copy(alpha = 0.12f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            KumaExpressiveIcon(Icons.Default.ArrowForward, null, tint = AppPrimary(), size = 18.dp, containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (isGemini) AppStr.ocrOpenAiStudio else AppStr.ocrOpenAnthropicConsole,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppPrimary(),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
                     Text(
                         if (isGemini) AppStr.ocrGeminiKeyHint else AppStr.ocrApiKeyHint,
                         fontSize = 11.sp,
