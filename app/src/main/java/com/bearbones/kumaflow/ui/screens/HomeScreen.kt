@@ -110,7 +110,8 @@ fun HomeScreen(
     onReconcile: (String, Long) -> Unit = { _, _ -> },
     onAddTransaction: (Boolean) -> Unit = {},
     tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>? = null,
-    onSetShakeHandler: (((() -> Unit)?) -> Unit)? = null
+    onSetShakeHandler: (((() -> Unit)?) -> Unit)? = null,
+    onOpenSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val locale = java.util.Locale.forLanguageTag("id-ID")
@@ -254,6 +255,18 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("$greeting, $displayName!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText(), modifier = Modifier.weight(1f))
+
+                        KumaIconButton(
+                            onClick = onOpenSettings,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = AppStr.set,
+                                tint = AppText().copy(alpha = 0.8f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                         
                         if (com.bearbones.kumaflow.utils.BirthdayUtils.isBirthdayToday(context)) {
                             val comp by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.birthday))

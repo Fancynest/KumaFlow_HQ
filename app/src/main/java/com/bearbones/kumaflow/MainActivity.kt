@@ -647,249 +647,7 @@ fun MainScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        floatingActionButton = {
-            val isSelectionModeActive = isSelectionMode || showBottomSheet
-            val showFab = selectedItemIndex == 0 && isFabVisible && !isSelectionModeActive
-            
-            androidx.compose.animation.AnimatedVisibility(
-                visible = showFab,
-                enter = androidx.compose.animation.scaleIn(),
-                exit = androidx.compose.animation.scaleOut()
-            ) {
-                val fabInteractionSource = remember { MutableInteractionSource() }
-                val isPressed by fabInteractionSource.collectIsPressedAsState()
-                
-                val progress by androidx.compose.animation.core.animateFloatAsState(
-                    targetValue = if (isPressed) 1f else 0f,
-                    animationSpec = androidx.compose.animation.core.spring(
-                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
-                    ),
-                    label = "fabMorph"
-                )
-                
-                val morph = remember(targetFabShapeIndex) { 
-                    androidx.graphics.shapes.Morph(androidx.graphics.shapes.RoundedPolygon.circle(), m3Shapes[targetFabShapeIndex]) 
-                }
-                val fabShape = remember(progress) { MorphPolygonShape(morph, progress) }
-                
-                val isDark = LocalIsDark.current
-                val bgColor = if (LocalIsLiquidGlass.current) {
-                    if (isDark) Color(0xFF2C2C2E).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
-                } else {
-                    AppPrimary()
-                }
-                val fgColor = if (LocalIsLiquidGlass.current) AppPrimary() else Color.White
-                val isLiquidGlass = LocalIsLiquidGlass.current
-                
-                val tutorialState = com.bearbones.kumaflow.ui.tutorial.LocalTutorialState.current
-
-                val dialSpringSpec = androidx.compose.animation.core.spring<Float>(
-                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                    stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
-                )
-                val dialProgress by androidx.compose.animation.core.animateFloatAsState(
-                    targetValue = if (isSpeedDialOpen) 1f else 0f,
-                    animationSpec = dialSpringSpec,
-                    label = "dialProgress"
-                )
-                val fabRotation by androidx.compose.animation.core.animateFloatAsState(
-                    targetValue = if (isSpeedDialOpen) 45f else 0f,
-                    animationSpec = dialSpringSpec,
-                    label = "fabRotation"
-                )
-
-                Box(
-                    contentAlignment = Alignment.BottomEnd,
-                    modifier = if (dialProgress > 0.01f) {
-                        Modifier
-                            .size(width = 260.dp, height = 180.dp)
-                            .kumaClickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { isSpeedDialOpen = false }
-                    } else {
-                        Modifier.size(70.dp)
-                    }
-                ) {
-                    // Option 1: Scan Struk (Atas FAB)
-                    if (dialProgress > 0.01f) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End,
-                            modifier = Modifier
-                                .offset(
-                                    x = (-4).dp * dialProgress,
-                                    y = (-78).dp * dialProgress
-                                )
-                                .graphicsLayer {
-                                    scaleX = dialProgress
-                                    scaleY = dialProgress
-                                    alpha = dialProgress.coerceIn(0f, 1f)
-                                }
-                                .kumaClickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        isSpeedDialOpen = false
-                                        transactionToEdit = null
-                                        autoTriggerOcr = true
-                                        showBottomSheet = true
-                                    }
-                                )
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = AppSurface().copy(alpha = 0.95f),
-                                border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                                shadowElevation = 4.dp
-                            ) {
-                                Text(
-                                    AppStr.scanReceiptOptionTitle,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppText(),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .graphicsLayer {
-                                        shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                                        shape = RoundedCornerShape(18.dp)
-                                        clip = true
-                                    }
-                                    .background(bgColor)
-                                    .border(
-                                        width = if (isLiquidGlass) 1.dp else 0.dp,
-                                        color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                                        shape = RoundedCornerShape(18.dp)
-                                    )
-                            ) {
-                                Icon(
-                                    Icons.Default.DocumentScanner,
-                                    contentDescription = AppStr.scanReceiptOptionTitle,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = fgColor
-                                )
-                            }
-                        }
-                    }
-
-                    // Option 2: Catat Normal (Kiri FAB)
-                    if (dialProgress > 0.01f) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End,
-                            modifier = Modifier
-                                .offset(
-                                    x = (-78).dp * dialProgress,
-                                    y = (-8).dp * dialProgress
-                                )
-                                .graphicsLayer {
-                                    scaleX = dialProgress
-                                    scaleY = dialProgress
-                                    alpha = dialProgress.coerceIn(0f, 1f)
-                                }
-                                .kumaClickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        isSpeedDialOpen = false
-                                        transactionToEdit = null
-                                        autoTriggerOcr = false
-                                        showBottomSheet = true
-                                    }
-                                )
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = AppSurface().copy(alpha = 0.95f),
-                                border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                                shadowElevation = 4.dp
-                            ) {
-                                Text(
-                                    AppStr.manualEntryTitle,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppText(),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .graphicsLayer {
-                                        shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                                        shape = RoundedCornerShape(18.dp)
-                                        clip = true
-                                    }
-                                    .background(bgColor)
-                                    .border(
-                                        width = if (isLiquidGlass) 1.dp else 0.dp,
-                                        color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                                        shape = RoundedCornerShape(18.dp)
-                                    )
-                            ) {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = AppStr.manualEntryTitle,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = fgColor
-                                )
-                            }
-                        }
-                    }
-
-                    // Main FAB
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(70.dp)
-                            .tutorialTarget(TutorialStep.HOME_ADD_BTN)
-                            .bouncyScale(fabInteractionSource)
-                            .graphicsLayer {
-                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                                shape = fabShape
-                                clip = true
-                            }
-                            .background(bgColor)
-                            .border(
-                                width = if (isLiquidGlass) 1.dp else 0.dp,
-                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                                shape = fabShape
-                            )
-                            .kumaClickable(
-                                interactionSource = fabInteractionSource,
-                                indication = null,
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    isSpeedDialOpen = !isSpeedDialOpen
-                                    if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
-                                        tutorialState.next()
-                                    }
-                                }
-                            )
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .graphicsLayer { rotationZ = fabRotation },
-                            tint = fgColor
-                        )
-                    }
-                }
-            }
-        },
+        floatingActionButton = {},
         bottomBar = {
             androidx.compose.animation.AnimatedVisibility(
                 visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
@@ -900,8 +658,27 @@ fun MainScreen(
                     pagerState = pagerState,
                     haptic = haptic,
                     tiltState = sharedTiltState,
-                    isNavMotionEnabled = userProfile.isNavMotionEnabled
-                ) { scope.launch { pagerState.animateScrollToPage(it) }; selectedItemIndex = it }
+                    isNavMotionEnabled = userProfile.isNavMotionEnabled,
+                    isSpeedDialOpen = isSpeedDialOpen,
+                    onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
+                    onOpenNormalEntry = {
+                        isSpeedDialOpen = false
+                        transactionToEdit = null
+                        autoTriggerOcr = false
+                        showBottomSheet = true
+                    },
+                    onOpenOcrEntry = {
+                        isSpeedDialOpen = false
+                        transactionToEdit = null
+                        autoTriggerOcr = true
+                        showBottomSheet = true
+                    },
+                    targetFabShapeIndex = targetFabShapeIndex,
+                    m3Shapes = m3Shapes
+                ) {
+                    scope.launch { pagerState.animateScrollToPage(it) }
+                    selectedItemIndex = it
+                }
             }
         }
     ) { paddingValues ->
@@ -1144,7 +921,8 @@ fun MainScreen(
                             }
                         },
                         tiltState = sharedTiltState,
-                        onSetShakeHandler = { onShakeHandler = it }
+                        onSetShakeHandler = { onShakeHandler = it },
+                        onOpenSettings = { scope.launch { pagerState.animateScrollToPage(4) }; selectedItemIndex = 4 }
                     )
                     1 -> com.bearbones.kumaflow.ui.screens.HistoryScreen(
                         profile = userProfile,
@@ -3023,130 +2801,442 @@ fun SettingsGroupCard(
 }
 
 @Composable
+private fun NavSlotItem(
+    modifier: Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    isSelected: Boolean,
+    isNavMotionEnabled: Boolean,
+    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .fillMaxHeight()
+            .kumaClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(vertical = 4.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (isSelected && isNavMotionEnabled) {
+                val tilt = tiltState.value
+                val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+
+                // Echo Layer 2 (Outer - subtle, ±3.5px)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = AppPrimary().copy(alpha = 0.15f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .graphicsLayer {
+                            translationX = tx * 3.5f
+                            translationY = ty * 3.5f
+                        }
+                )
+
+                // Echo Layer 1 (Inner - medium, ±1.8px)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = AppPrimary().copy(alpha = 0.30f),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .graphicsLayer {
+                            translationX = tx * 1.8f
+                            translationY = ty * 1.8f
+                        }
+                )
+            }
+
+            KumaExpressiveIcon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+                containerColor = Color.Transparent,
+                size = 24.dp,
+                iconPadding = 0.dp
+            )
+        }
+
+        Spacer(Modifier.height(3.dp))
+
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+            color = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun CustomBottomNav(
     pagerState: androidx.compose.foundation.pager.PagerState,
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
     tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
     isNavMotionEnabled: Boolean = true,
+    isSpeedDialOpen: Boolean,
+    onToggleSpeedDial: () -> Unit,
+    onOpenNormalEntry: () -> Unit,
+    onOpenOcrEntry: () -> Unit,
+    targetFabShapeIndex: Int,
+    m3Shapes: List<androidx.graphics.shapes.RoundedPolygon>,
     onItemSelected: (Int) -> Unit
 ) {
-    val items = listOf(
-        Pair(Icons.Rounded.Home, AppStr.home),
-        Pair(Icons.Rounded.History, AppStr.hist),
-        Pair(Icons.Rounded.AccountBalanceWallet, if (AppStr.isId) "Tabungan" else "Savings"),
-        Pair(Icons.Rounded.Equalizer, AppStr.rep),
-        Pair(Icons.Rounded.Settings, AppStr.set)
-    )
-    val itemCount = items.size
+    val isLiquidGlass = LocalIsLiquidGlass.current
+    val isDark = LocalIsDark.current
+    val navShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
-            .height(75.dp)
-            .glassCard(32.dp, AppSurface(), useHaze = true)
-            .border(1.dp, AppText().copy(alpha = 0.1f), RoundedCornerShape(32.dp))
-            .pointerInput(Unit) {
-                detectDragGestures { change, _ ->
-                    change.consume()
-                    val segmentWidth = size.width / itemCount.toFloat()
-                    val targetIndex = (change.position.x / segmentWidth).toInt().coerceIn(0, itemCount - 1)
-                    if (targetIndex != pagerState.currentPage) {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onItemSelected(targetIndex)
-                    }
+    val fabInteractionSource = remember { MutableInteractionSource() }
+    val isPressed by fabInteractionSource.collectIsPressedAsState()
+
+    val progress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "fabMorph"
+    )
+
+    val morph = remember(targetFabShapeIndex) {
+        androidx.graphics.shapes.Morph(androidx.graphics.shapes.RoundedPolygon.circle(), m3Shapes[targetFabShapeIndex])
+    }
+    val fabShape = remember(progress) { MorphPolygonShape(morph, progress) }
+
+    val bgColor = if (isLiquidGlass) {
+        if (isDark) Color(0xFF2C2C2E).copy(alpha = 0.7f) else Color.White.copy(alpha = 0.7f)
+    } else {
+        AppPrimary()
+    }
+    val fgColor = if (isLiquidGlass) AppPrimary() else Color.White
+
+    val tutorialState = com.bearbones.kumaflow.ui.tutorial.LocalTutorialState.current
+
+    val dialSpringSpec = androidx.compose.animation.core.spring<Float>(
+        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+    )
+    val dialProgress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isSpeedDialOpen) 1f else 0f,
+        animationSpec = dialSpringSpec,
+        label = "dialProgress"
+    )
+    val fabRotation by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isSpeedDialOpen) 45f else 0f,
+        animationSpec = dialSpringSpec,
+        label = "fabRotation"
+    )
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        // 1. Flush Nav Bar Container
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    shape = navShape
+                    clip = true
+                    shadowElevation = if (isLiquidGlass) 0f else 10.dp.toPx()
+                }
+                .background(AppSurface())
+                .border(
+                    width = if (isLiquidGlass) 1.dp else 0.5.dp,
+                    color = if (isLiquidGlass) Color.White.copy(0.25f) else AppText().copy(alpha = 0.08f),
+                    shape = navShape
+                )
+                .navigationBarsPadding()
+                .height(68.dp)
+        ) {
+            val segmentWidth = maxWidth / 5
+
+            val currentSlotFloat = remember(pagerState.currentPage, pagerState.currentPageOffsetFraction) {
+                val page = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, 4f)
+                when {
+                    page <= 1f -> page
+                    page >= 2f && page <= 3f -> page + 1f
+                    page > 1f && page < 2f -> 1f + (page - 1f) * 2f
+                    else -> -1f
                 }
             }
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { offset ->
-                    val segmentWidth = size.width / itemCount.toFloat()
-                    val targetIndex = (offset.x / segmentWidth).toInt().coerceIn(0, itemCount - 1)
-                    if (targetIndex != pagerState.currentPage) {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onItemSelected(targetIndex)
-                    }
-                })
+
+            val organicTabShape = RoundedCornerShape(
+                topStart = 20.dp,
+                topEnd = 14.dp,
+                bottomStart = 16.dp,
+                bottomEnd = 22.dp
+            )
+
+            // Sliding Organic Squircle Frame
+            if (currentSlotFloat in 0f..4f) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = segmentWidth * currentSlotFloat)
+                        .width(segmentWidth)
+                        .fillMaxHeight()
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
+                        .clip(organicTabShape)
+                        .background(if (isDark) Color.White.copy(alpha = 0.12f) else AppPrimary().copy(alpha = 0.15f))
+                        .border(1.dp, if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.04f), organicTabShape)
+                )
             }
-    ) {
-        val segmentWidth = maxWidth / itemCount
-        val exactPosition = (pagerState.currentPage + pagerState.currentPageOffsetFraction).coerceIn(0f, (itemCount - 1).toFloat())
-        val indicatorOffset = segmentWidth * exactPosition
 
-        // Sliding Pill Frame
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Slot 0: Beranda (Page 0)
+                NavSlotItem(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Rounded.Home,
+                    label = AppStr.home,
+                    isSelected = pagerState.currentPage == 0,
+                    isNavMotionEnabled = isNavMotionEnabled,
+                    tiltState = tiltState,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onItemSelected(0)
+                    }
+                )
+
+                // Slot 1: Riwayat (Page 1)
+                NavSlotItem(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Rounded.History,
+                    label = AppStr.hist,
+                    isSelected = pagerState.currentPage == 1,
+                    isNavMotionEnabled = isNavMotionEnabled,
+                    tiltState = tiltState,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onItemSelected(1)
+                    }
+                )
+
+                // Slot 2: Spacer for Center FAB
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Slot 3: Tabungan (Page 2)
+                NavSlotItem(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    label = if (AppStr.isId) "Tabungan" else "Savings",
+                    isSelected = pagerState.currentPage == 2,
+                    isNavMotionEnabled = isNavMotionEnabled,
+                    tiltState = tiltState,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onItemSelected(2)
+                    }
+                )
+
+                // Slot 4: Laporan (Page 3)
+                NavSlotItem(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Rounded.Equalizer,
+                    label = AppStr.rep,
+                    isSelected = pagerState.currentPage == 3,
+                    isNavMotionEnabled = isNavMotionEnabled,
+                    tiltState = tiltState,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onItemSelected(3)
+                    }
+                )
+            }
+        }
+
+        // 2. Center Protruding FAB & Speed Dial Container
         Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
-                .offset(x = indicatorOffset)
-                .width(segmentWidth)
-                .fillMaxHeight()
-                .padding(6.dp)
-                .clip(RoundedCornerShape(32.dp))
-                .background(if (LocalIsDark.current) Color.White.copy(alpha = 0.12f) else AppPrimary().copy(alpha = 0.15f))
-                .border(1.dp, if (LocalIsDark.current) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.03f), RoundedCornerShape(32.dp))
-        )
-
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
+                .navigationBarsPadding()
+                .padding(bottom = 6.dp)
+                .offset(y = (-26).dp)
         ) {
-            items.forEachIndexed { index, pair ->
-                val isSelected = pagerState.currentPage == index
+            // Speed Dial Option 1: Catat Normal (Kiri-Atas)
+            if (dialProgress > 0.01f) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f).padding(vertical = 4.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isSelected && isNavMotionEnabled) {
-                            val tilt = tiltState.value
-                            val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                            val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-
-                            // Echo Layer 2 (Outer - subtle, ±3.5px)
-                            Icon(
-                                imageVector = pair.first,
-                                contentDescription = null,
-                                tint = AppPrimary().copy(alpha = 0.15f),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .graphicsLayer {
-                                        translationX = tx * 3.5f
-                                        translationY = ty * 3.5f
-                                    }
-                            )
-
-                            // Echo Layer 1 (Inner - medium, ±1.8px)
-                            Icon(
-                                imageVector = pair.first,
-                                contentDescription = null,
-                                tint = AppPrimary().copy(alpha = 0.30f),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .graphicsLayer {
-                                        translationX = tx * 1.8f
-                                        translationY = ty * 1.8f
-                                    }
-                            )
+                    modifier = Modifier
+                        .offset(
+                            x = (-64).dp * dialProgress,
+                            y = (-70).dp * dialProgress
+                        )
+                        .graphicsLayer {
+                            scaleX = dialProgress
+                            scaleY = dialProgress
+                            alpha = dialProgress.coerceIn(0f, 1f)
                         }
-
-                        KumaExpressiveIcon(
-                            imageVector = pair.first,
-                            contentDescription = null,
-                            tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            size = 28.dp,
-                            iconPadding = 2.dp
+                        .kumaClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onOpenNormalEntry()
+                            }
+                        )
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AppSurface().copy(alpha = 0.95f),
+                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            AppStr.manualEntryTitle,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText(),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                    Text(
-                        pair.second,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .graphicsLayer {
+                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                shape = RoundedCornerShape(16.dp)
+                                clip = true
+                            }
+                            .background(bgColor)
+                            .border(
+                                width = if (isLiquidGlass) 1.dp else 0.dp,
+                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = AppStr.manualEntryTitle,
+                            modifier = Modifier.size(22.dp),
+                            tint = fgColor
+                        )
+                    }
                 }
+            }
+
+            // Speed Dial Option 2: Scan Struk (Kanan-Atas)
+            if (dialProgress > 0.01f) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .offset(
+                            x = (64).dp * dialProgress,
+                            y = (-70).dp * dialProgress
+                        )
+                        .graphicsLayer {
+                            scaleX = dialProgress
+                            scaleY = dialProgress
+                            alpha = dialProgress.coerceIn(0f, 1f)
+                        }
+                        .kumaClickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onOpenOcrEntry()
+                            }
+                        )
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AppSurface().copy(alpha = 0.95f),
+                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            AppStr.scanReceiptOptionTitle,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText(),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .graphicsLayer {
+                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                shape = RoundedCornerShape(16.dp)
+                                clip = true
+                            }
+                            .background(bgColor)
+                            .border(
+                                width = if (isLiquidGlass) 1.dp else 0.dp,
+                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.DocumentScanner,
+                            contentDescription = AppStr.scanReceiptOptionTitle,
+                            modifier = Modifier.size(22.dp),
+                            tint = fgColor
+                        )
+                    }
+                }
+            }
+
+            // Main Center FAB Button
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(62.dp)
+                    .tutorialTarget(TutorialStep.HOME_ADD_BTN)
+                    .bouncyScale(fabInteractionSource)
+                    .graphicsLayer {
+                        shadowElevation = if (isLiquidGlass) 0f else 8.dp.toPx()
+                        shape = fabShape
+                        clip = true
+                    }
+                    .background(bgColor)
+                    .border(
+                        width = 3.dp,
+                        color = AppSurface(),
+                        shape = fabShape
+                    )
+                    .border(
+                        width = if (isLiquidGlass) 1.dp else 0.dp,
+                        color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                        shape = fabShape
+                    )
+                    .kumaClickable(
+                        interactionSource = fabInteractionSource,
+                        indication = null,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onToggleSpeedDial()
+                            if (tutorialState.currentStep == TutorialStep.HOME_ADD_BTN) {
+                                tutorialState.next()
+                            }
+                        }
+                    )
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .graphicsLayer { rotationZ = fabRotation },
+                    tint = fgColor
+                )
             }
         }
     }
