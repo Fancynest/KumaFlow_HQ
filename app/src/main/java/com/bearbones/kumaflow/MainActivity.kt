@@ -567,7 +567,6 @@ fun MainScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showBottomSheet by remember { mutableStateOf(false) }
     var isSpeedDialOpen by remember { mutableStateOf(false) }
-    var autoTriggerOcr by remember { mutableStateOf(false) }
     var showBackupReminder by remember { mutableStateOf(false) }
     var showQrTransfer by remember { mutableStateOf(false) }
     var showDuoSync by remember { mutableStateOf(false) }
@@ -575,6 +574,122 @@ fun MainScreen(
     LaunchedEffect(showBottomSheet, isSpeedDialOpen) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     val totalTxCount = transactionListWithSplits.size
+
+    val ocrStorage = remember { com.bearbones.kumaflow.utils.OcrSecureStorage(context) }
+    var isMainOcrScanning by remember { mutableStateOf(false) }
+    var showMainOcrSourceChooser by remember { mutableStateOf(false) }
+    var showMainOcrKeyPromptDialog by remember { mutableStateOf(false) }
+    var mainCameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingOcrResult by remember { mutableStateOf<com.bearbones.kumaflow.utils.ReceiptParseResult?>(null) }
+
+    fun processMainReceiptImage(uri: Uri) {
+        val selectedProvider = ocrStorage.getSelectedProvider()
+        val provider = if (selectedProvider == "gemini") {
+            com.bearbones.kumaflow.utils.OcrProvider.GEMINI
+        } else {
+            com.bearbones.kumaflow.utils.OcrProvider.ANTHROPIC
+        }
+        val apiKey = ocrStorage.getActiveApiKey()
+        if (apiKey.isNullOrBlank()) {
+            showMainOcrKeyPromptDialog = true
+            return
+        }
+
+        isMainOcrScanning = true
+        scope.launch {
+            try {
+                val rawText = com.bearbones.kumaflow.utils.ReceiptOcrUtils.extractRawText(context, uri)
+                if (rawText.isBlank()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                        isMainOcrScanning = false
+                    }
+                    return@launch
+                }
+
+                val parseResult = com.bearbones.kumaflow.utils.ReceiptOcrUtils.parseReceiptWithAI(rawText, apiKey, provider)
+
+                withContext(Dispatchers.Main) {
+                    isMainOcrScanning = false
+                    if (parseResult.isSuccess) {
+                        pendingOcrResult = parseResult
+                        transactionToEdit = null
+                        showBottomSheet = true
+                    } else {
+                        Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
+                    isMainOcrScanning = false
+                }
+            }
+        }
+    }
+
+    val mainGalleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            processMainReceiptImage(uri)
+        }
+    }
+
+    val mainCameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            mainCameraImageUri?.let { uri ->
+                processMainReceiptImage(uri)
+            }
+        }
+    }
+
+    val mainCameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    cacheFile
+                )
+                mainCameraImageUri = uri
+                mainCameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, AppStr.cameraPermissionDenied, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchMainCameraCapture() {
+        val hasCamPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasCamPermission) {
+            try {
+                val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    cacheFile
+                )
+                mainCameraImageUri = uri
+                mainCameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Camera error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            mainCameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+    }
 
     // FAB shape state - changes when sheet closes, but only visible when pressed
     var targetFabShapeIndex by remember { mutableIntStateOf(if (m3Shapes.size > 1) (1..m3Shapes.lastIndex).random() else 0) }
@@ -589,7 +704,7 @@ fun MainScreen(
             isSpeedDialOpen = false
         } else if (showBottomSheet) {
             showBottomSheet = false
-            autoTriggerOcr = false
+            pendingOcrResult = null
         } else if (isSelectionMode) {
             selectedTxs = emptySet()
         } else if (pagerState.currentPage != 0) {
@@ -664,14 +779,18 @@ fun MainScreen(
                     onOpenNormalEntry = {
                         isSpeedDialOpen = false
                         transactionToEdit = null
-                        autoTriggerOcr = false
+                        pendingOcrResult = null
                         showBottomSheet = true
                     },
                     onOpenOcrEntry = {
                         isSpeedDialOpen = false
                         transactionToEdit = null
-                        autoTriggerOcr = true
-                        showBottomSheet = true
+                        pendingOcrResult = null
+                        if (!ocrStorage.hasActiveApiKey()) {
+                            showMainOcrKeyPromptDialog = true
+                        } else {
+                            showMainOcrSourceChooser = true
+                        }
                     },
                     targetFabShapeIndex = targetFabShapeIndex,
                     m3Shapes = m3Shapes
@@ -1050,12 +1169,13 @@ fun MainScreen(
                     TransactionBottomSheet(
                         profile = userProfile,
                         transactionToEdit = transactionToEdit,
-                        autoTriggerOcr = autoTriggerOcr,
+                        initialOcrResult = pendingOcrResult,
                         onDismiss = {
                             showBottomSheet = false
-                            autoTriggerOcr = false
+                            pendingOcrResult = null
                         },
                         onSave = { txList ->
+                            pendingOcrResult = null
                             scope.launch {
                                 try {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1074,6 +1194,37 @@ fun MainScreen(
                 }
             }
         }
+
+        if (showMainOcrSourceChooser) {
+            com.bearbones.kumaflow.ui.components.OcrSourceChooserDialog(
+                onDismiss = { showMainOcrSourceChooser = false },
+                onChooseCamera = {
+                    showMainOcrSourceChooser = false
+                    launchMainCameraCapture()
+                },
+                onChooseGallery = {
+                    showMainOcrSourceChooser = false
+                    mainGalleryLauncher.launch(
+                        androidx.activity.result.PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                        )
+                    )
+                }
+            )
+        }
+
+        if (showMainOcrKeyPromptDialog) {
+            com.bearbones.kumaflow.ui.components.OcrKeyPromptDialog(
+                ocrStorage = ocrStorage,
+                onDismiss = { showMainOcrKeyPromptDialog = false },
+                onKeySaved = {
+                    showMainOcrKeyPromptDialog = false
+                    showMainOcrSourceChooser = true
+                }
+            )
+        }
+
+        com.bearbones.kumaflow.ui.components.OcrScanningDialog(isScanning = isMainOcrScanning)
 
         if (showBackupReminder) {
             AlertDialog(
@@ -1125,7 +1276,7 @@ data class SplitItemUi(var id: String, var wallet: String, var amount: String)
 fun TransactionBottomSheet(
     profile: UserProfile,
     transactionToEdit: TransactionWithSplits?,
-    autoTriggerOcr: Boolean = false,
+    initialOcrResult: com.bearbones.kumaflow.utils.ReceiptParseResult? = null,
     onDismiss: () -> Unit,
     onSave: (List<Pair<KumaTransaction, List<TransactionSplit>>>) -> Unit,
     onUpdateProfile: (UserProfile) -> Unit
@@ -1193,13 +1344,28 @@ fun TransactionBottomSheet(
     var showOcrSourceChooser by remember { mutableStateOf(false) }
     var tempCameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    LaunchedEffect(autoTriggerOcr) {
-        if (autoTriggerOcr) {
-            if (!ocrStorage.hasActiveApiKey()) {
-                showOcrKeyPromptDialog = true
-            } else {
-                showOcrSourceChooser = true
+    LaunchedEffect(initialOcrResult) {
+        if (initialOcrResult != null && initialOcrResult.isSuccess) {
+            txMode = 0
+            initialOcrResult.merchantName?.let { merchant ->
+                if (merchant.isNotBlank()) name = merchant
             }
+            initialOcrResult.date?.let { parsedDate ->
+                try {
+                    val localDate = java.time.LocalDate.parse(parsedDate, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                    val formattedDate = localDate.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                    txDateStr = formattedDate
+                    txTimestamp = localDate.atStartOfDay().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                } catch (_: Exception) {}
+            }
+            initialOcrResult.total?.let { totalVal ->
+                if (totalVal > 0) {
+                    if (initialSplits.isNotEmpty()) {
+                        initialSplits[0] = initialSplits[0].copy(amount = totalVal.toString())
+                    }
+                }
+            }
+            Toast.makeText(context, AppStr.ocrSuccessToast, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1995,236 +2161,35 @@ fun TransactionBottomSheet(
     }
 
     if (showOcrSourceChooser) {
-        AlertDialog(
-            onDismissRequest = { showOcrSourceChooser = false },
-            title = { Text(AppStr.chooseSource, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Option 1: Camera
-                    Surface(
-                        onClick = {
-                            showOcrSourceChooser = false
-                            launchCameraCapture()
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        color = AppPrimary().copy(alpha = 0.12f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            KumaExpressiveIcon(Icons.Default.CameraAlt, null, tint = AppPrimary(), size = 28.dp)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(AppStr.camera, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
-                                Text(AppStr.scanReceiptDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
-                            }
-                        }
-                    }
-
-                    // Option 2: Gallery
-                    Surface(
-                        onClick = {
-                            showOcrSourceChooser = false
-                            galleryLauncher.launch(
-                                androidx.activity.result.PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        color = AppPrimary().copy(alpha = 0.12f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            KumaExpressiveIcon(Icons.Default.PhotoLibrary, null, tint = AppPrimary(), size = 28.dp)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text(AppStr.gallery, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = AppText())
-                                Text(AppStr.galleryPickDesc, fontSize = 11.sp, color = AppText().copy(alpha = 0.6f))
-                            }
-                        }
-                    }
-                }
+        com.bearbones.kumaflow.ui.components.OcrSourceChooserDialog(
+            onDismiss = { showOcrSourceChooser = false },
+            onChooseCamera = {
+                showOcrSourceChooser = false
+                launchCameraCapture()
             },
-            confirmButton = {},
-            dismissButton = {
-                KumaTextButton(onClick = { showOcrSourceChooser = false }) {
-                    Text(AppStr.close, color = AppText())
-                }
+            onChooseGallery = {
+                showOcrSourceChooser = false
+                galleryLauncher.launch(
+                    androidx.activity.result.PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
             }
         )
     }
 
     if (showOcrKeyPromptDialog) {
-        var selectedPromptProvider by remember { mutableStateOf(ocrStorage.getSelectedProvider()) }
-        var promptAnthropicKey by remember { mutableStateOf(ocrStorage.getApiKey() ?: "") }
-        var promptGeminiKey by remember { mutableStateOf(ocrStorage.getGeminiApiKey() ?: "") }
-        var isDirectKeyVisible by remember { mutableStateOf(false) }
-
-        val isGemini = selectedPromptProvider == "gemini"
-        val currentKeyInput = if (isGemini) promptGeminiKey else promptAnthropicKey
-
-        AlertDialog(
-            onDismissRequest = { showOcrKeyPromptDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    KumaExpressiveIcon(Icons.Default.Key, null, tint = AppPrimary())
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(AppStr.ocrApiKeyRequiredTitle, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        AppStr.ocrApiKeyRequiredDesc,
-                        fontSize = 13.sp,
-                        color = AppText().copy(alpha = 0.8f),
-                        lineHeight = 18.sp
-                    )
-
-                    // 2 Pilihan Provider (Anthropic vs Gemini)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            onClick = { selectedPromptProvider = "anthropic" },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (!isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
-                            contentColor = if (!isGemini) androidx.compose.ui.graphics.Color.White else AppText(),
-                            border = if (!isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    AppStr.ocrProviderAnthropic,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-
-                        Surface(
-                            onClick = { selectedPromptProvider = "gemini" },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isGemini) AppPrimary() else AppSurface().copy(alpha = 0.6f),
-                            contentColor = if (isGemini) androidx.compose.ui.graphics.Color.White else AppText(),
-                            border = if (isGemini) null else BorderStroke(1.dp, AppText().copy(alpha = 0.15f)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    AppStr.ocrProviderGemini,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
-
-                    // Clickable URL Button to get API key directly
-                    Surface(
-                        onClick = {
-                            try {
-                                val targetUrl = if (isGemini) "https://aistudio.google.com/api-keys" else "https://console.anthropic.com/settings/keys"
-                                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(targetUrl)))
-                            } catch (_: Exception) {}
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = AppPrimary().copy(alpha = 0.12f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            KumaExpressiveIcon(Icons.Default.ArrowForward, null, tint = AppPrimary(), size = 18.dp, containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (isGemini) AppStr.ocrOpenAiStudio else AppStr.ocrOpenAnthropicConsole,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppPrimary(),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    Text(
-                        if (isGemini) AppStr.ocrGeminiKeyHint else AppStr.ocrApiKeyHint,
-                        fontSize = 11.sp,
-                        color = AppText().copy(alpha = 0.6f),
-                        lineHeight = 15.sp
-                    )
-
-                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
-                        value = currentKeyInput,
-                        onValueChange = {
-                            if (isGemini) promptGeminiKey = it else promptAnthropicKey = it
-                        },
-                        placeholder = { Text(if (isGemini) AppStr.ocrGeminiKeyLabel else AppStr.ocrApiKeyLabel) },
-                        visualTransformation = if (isDirectKeyVisible) VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { isDirectKeyVisible = !isDirectKeyVisible }) {
-                                Icon(
-                                    if (isDirectKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = null,
-                                    tint = AppPrimary()
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                KumaButton(
-                    onClick = {
-                        ocrStorage.saveSelectedProvider(selectedPromptProvider)
-                        val activeKey = if (isGemini) promptGeminiKey else promptAnthropicKey
-                        if (activeKey.isNotBlank()) {
-                            if (isGemini) {
-                                ocrStorage.saveGeminiApiKey(promptGeminiKey)
-                            } else {
-                                ocrStorage.saveApiKey(promptAnthropicKey)
-                            }
-                            Toast.makeText(context, AppStr.ocrApiKeySaved, Toast.LENGTH_SHORT).show()
-                            showOcrKeyPromptDialog = false
-                            showOcrSourceChooser = true
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(AppStr.save, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                KumaTextButton(onClick = { showOcrKeyPromptDialog = false }) {
-                    Text(AppStr.close, color = AppText())
-                }
+        com.bearbones.kumaflow.ui.components.OcrKeyPromptDialog(
+            ocrStorage = ocrStorage,
+            onDismiss = { showOcrKeyPromptDialog = false },
+            onKeySaved = {
+                showOcrKeyPromptDialog = false
+                showOcrSourceChooser = true
             }
         )
     }
+
+    com.bearbones.kumaflow.ui.components.OcrScanningDialog(isScanning = isOcrLoading)
 
     if (showSplitBill) {
         val splitViewModel: com.bearbones.kumaflow.ui.screens.SplitBillViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
@@ -3103,6 +3068,9 @@ fun CustomBottomNav(
         }
 
         // 2. Center Protruding FAB & Speed Dial Container
+        val dial1Interaction = remember { MutableInteractionSource() }
+        val dial2Interaction = remember { MutableInteractionSource() }
+
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -3124,8 +3092,9 @@ fun CustomBottomNav(
                             scaleY = dialProgress
                             alpha = dialProgress.coerceIn(0f, 1f)
                         }
-                        .kumaClickable(
-                            interactionSource = remember { MutableInteractionSource() },
+                        .bouncyScale(dial1Interaction, scaleDown = 0.88f)
+                        .clickable(
+                            interactionSource = dial1Interaction,
                             indication = null,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -3188,8 +3157,9 @@ fun CustomBottomNav(
                             scaleY = dialProgress
                             alpha = dialProgress.coerceIn(0f, 1f)
                         }
-                        .kumaClickable(
-                            interactionSource = remember { MutableInteractionSource() },
+                        .bouncyScale(dial2Interaction, scaleDown = 0.88f)
+                        .clickable(
+                            interactionSource = dial2Interaction,
                             indication = null,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
