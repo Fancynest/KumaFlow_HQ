@@ -895,33 +895,38 @@ fun MainScreen(
                         val path = androidx.compose.ui.graphics.Path().apply {
                             val h = size.height
                             val w = screenWidth
+                            val centerX = w * 2.0f
+                            // Menjaga proporsi benang hati agar tidak gepeng di layar lebar / tablet landscape:
+                            // Pada ponsel (portrait), w <= h * 0.48f sehingga unitW = w (100% identik dengan tampilan ponsel).
+                            // Pada tablet landscape (w >> h), unitW dibatasi proporsional terhadap tinggi layar agar rasio hati alami (~1:1).
+                            val unitW = minOf(w, h * 0.48f)
 
                             // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
                             moveTo(0f, h * 0.2f)
                             cubicTo(
-                                w * 0.5f, h * 0.2f,
-                                w * 0.8f, h * 0.8f,
-                                w * 2.0f, h * 0.8f // Bottom tip of the heart (Boundary of History/Report)
+                                centerX - unitW * 1.5f, h * 0.2f,
+                                centerX - unitW * 1.2f, h * 0.8f,
+                                centerX, h * 0.8f // Bottom tip of the heart
                             )
                             
-                            // Screen 2: Right lobe of heart (in Report)
+                            // Screen 2: Right lobe of heart
                             cubicTo(
-                                w * 2.8f, h * 0.8f,
-                                w * 2.5f, h * 0.1f,
-                                w * 2.0f, h * 0.4f // Center dip of heart
+                                centerX + unitW * 0.8f, h * 0.8f,
+                                centerX + unitW * 0.5f, h * 0.1f,
+                                centerX, h * 0.4f // Center dip of heart
                             )
                             
-                            // Screen 2 to 3: Left lobe of heart (in History)
+                            // Screen 2 to 3: Left lobe of heart
                             cubicTo(
-                                w * 1.5f, h * 0.1f,
-                                w * 1.2f, h * 0.8f,
-                                w * 2.0f, h * 0.8f // Crosses back at the bottom tip
+                                centerX - unitW * 0.5f, h * 0.1f,
+                                centerX - unitW * 0.8f, h * 0.8f,
+                                centerX, h * 0.8f // Crosses back at the bottom tip
                             )
                             
                             // Screen 3 to 4: Exit to Settings
                             cubicTo(
-                                w * 2.5f, h * 0.8f,
-                                w * 3.5f, h * 0.2f,
+                                centerX + unitW * 0.5f, h * 0.8f,
+                                centerX + unitW * 1.5f, h * 0.2f,
                                 w * 4.0f, h * 0.6f
                             )
                         }
