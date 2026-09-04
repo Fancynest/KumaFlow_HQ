@@ -477,7 +477,10 @@ fun MainScreen(
     var selectedItemIndex by remember { mutableIntStateOf(0) }
 
     var onShakeHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
-    val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(onShake = { onShakeHandler?.invoke() })
+    val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(
+        onShake = { onShakeHandler?.invoke() },
+        enabled = userProfile.isParallaxEnabled
+    )
 
     LaunchedEffect(selectedItemIndex) { if (pagerState.currentPage != selectedItemIndex) pagerState.animateScrollToPage(selectedItemIndex) }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) { if (!pagerState.isScrollInProgress) selectedItemIndex = pagerState.currentPage }
@@ -2692,6 +2695,7 @@ fun backupAppToJSON(context: Context) {
                 put("savingsWallets", profile.savingsWallets)
                 put("savingsGoals", profile.savingsGoals)
                 put("isNavMotionEnabled", profile.isNavMotionEnabled)
+                put("isParallaxEnabled", profile.isParallaxEnabled)
                 put("qrisFilePath", profile.qrisFilePath)
                 put("qrisHolderName", profile.qrisHolderName)
                 put("bankName", profile.bankName)

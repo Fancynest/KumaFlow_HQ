@@ -110,6 +110,7 @@ class QrTransferServer(port: Int = 8080) : NanoHTTPD(port) {
             put("isLiquidGlass", profile.isLiquidGlass)
             put("isPremiumGlassBlur", profile.isPremiumGlassBlur)
             put("isNavMotionEnabled", profile.isNavMotionEnabled)
+            put("isParallaxEnabled", profile.isParallaxEnabled)
             put("currentStreak", profile.currentStreak)
             put("lastActiveDate", profile.lastActiveDate)
             put("freezeCount", profile.freezeCount)

@@ -1472,6 +1472,31 @@ fun SettingsScreen(
                             )
                         }
 
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp)) {
+                                Text(AppStr.parallaxEffect, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppText())
+                                Text(AppStr.parallaxEffectDesc, fontSize = 10.sp, color = AppText().copy(alpha = 0.6f))
+                            }
+                            Switch(
+                                checked = currentProfile.isParallaxEnabled,
+                                onCheckedChange = { isChecked ->
+                                    sharedPrefs.edit().putBoolean("enable_parallax", isChecked).apply()
+                                    scope.launch {
+                                        dao.saveProfile(currentProfile.copy(isParallaxEnabled = isChecked))
+                                        onForceUpdate()
+                                    }
+                                },
+                                modifier = Modifier.scale(0.8f)
+                            )
+                        }
+
                     }
                 },
                 confirmButton = {

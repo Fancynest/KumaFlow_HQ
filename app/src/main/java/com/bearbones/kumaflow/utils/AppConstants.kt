@@ -182,6 +182,8 @@ object AppStr {
     val liquidGlassDesc get() = if(isId) "Efek kaca transparan premium" else "Premium transparent glass effect"
     val navMotionEffect get() = if(isId) "Efek Gerak Navigasi" else "Navigation Motion Effect"
     val navMotionEffectDesc get() = if(isId) "Icon navigasi aktif bergerak halus mengikuti kemiringan HP" else "Active nav icon shifts subtly with phone tilt"
+    val parallaxEffect get() = if(isId) "Efek Parallax Kartu" else "Card Parallax Effect"
+    val parallaxEffectDesc get() = if(isId) "Kartu bergerak mengikuti kemiringan HP (matikan jika sensor gyro terasa melompat-lompat)" else "Cards tilt with device motion (disable if virtual gyro feels jittery)"
     val edit get() = if(isId) "Edit" else "Edit"
     val delete get() = if(isId) "Hapus" else "Delete"
     val delConf get() = if(isId) "Yakin hapus transaksi ini?" else "Delete this transaction?"

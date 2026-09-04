@@ -42,7 +42,8 @@ object RestoreUtils {
             lastMilestoneNotified = pObj.optInt("lastMilestoneNotified", 0),
             savingsWallets = pObj.optString("savingsWallets", ""),
             savingsGoals = pObj.optString("savingsGoals", "{}"),
-            isNavMotionEnabled = pObj.optBoolean("isNavMotionEnabled", true)
+            isNavMotionEnabled = pObj.optBoolean("isNavMotionEnabled", true),
+            isParallaxEnabled = pObj.optBoolean("isParallaxEnabled", true)
         )
         
         var restoredQrisPath = pObj.optString("qrisFilePath", "")

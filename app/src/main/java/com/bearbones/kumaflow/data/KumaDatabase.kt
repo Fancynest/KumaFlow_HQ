@@ -106,7 +106,8 @@ data class UserProfile(
     val hasSeenTutorial: Boolean = true,
     val savingsWallets: String = "",
     val savingsGoals: String = "{}",
-    val isNavMotionEnabled: Boolean = true
+    val isNavMotionEnabled: Boolean = true,
+    val isParallaxEnabled: Boolean = true
 )
 
 @Entity(tableName = "virtual_wallets")
@@ -619,6 +620,12 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
     }
 }
 
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_profile ADD COLUMN isParallaxEnabled INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 @Database(
     entities = [
         KumaTransaction::class,
@@ -630,7 +637,7 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
         com.bearbones.kumaflow.duo.model.DuoConflictLog::class,
         VirtualWallet::class
     ],
-    version = 31,
+    version = 32,
     exportSchema = false
 )
 abstract class KumaDatabase : RoomDatabase() {
@@ -646,7 +653,7 @@ abstract class KumaDatabase : RoomDatabase() {
                     KumaDatabase::class.java,
                     "kuma_database"
                 )
-                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
+                    .addMigrations(MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32)
                     .build()
                 INSTANCE = instance
                 instance

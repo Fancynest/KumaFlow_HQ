@@ -19,8 +19,13 @@ data class TiltState(
 )
 
 @Composable
-fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
+fun rememberTiltState(
+    onShake: (() -> Unit)? = null,
+    enabled: Boolean? = null
+): State<TiltState> {
     val context = LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE) }
+    val isParallaxOn = enabled ?: sharedPrefs.getBoolean("enable_parallax", true)
     val tiltState = remember { mutableStateOf(TiltState()) }
 
     // Animated values for buttery smooth spring-based interpolation
@@ -31,6 +36,17 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
     // Target values that the sensor writes to (raw filtered)
     val targetX = remember { mutableFloatStateOf(0f) }
     val targetY = remember { mutableFloatStateOf(0f) }
+
+    // Reset immediately when parallax is disabled
+    LaunchedEffect(isParallaxOn) {
+        if (!isParallaxOn) {
+            targetX.floatValue = 0f
+            targetY.floatValue = 0f
+            animX.snapTo(0f)
+            animY.snapTo(0f)
+            tiltState.value = TiltState()
+        }
+    }
 
     // Check if user has disabled animations (accessibility)
     val animationsEnabled = remember {
@@ -91,10 +107,40 @@ fun rememberTiltState(onShake: (() -> Unit)? = null): State<TiltState> {
             }
     }
 
-    DisposableEffect(animationsEnabled) {
-        if (!animationsEnabled) {
+    DisposableEffect(animationsEnabled, isParallaxOn) {
+        if (!animationsEnabled || !isParallaxOn) {
             tiltState.value = TiltState()
-            return@DisposableEffect onDispose {}
+            if (!animationsEnabled || onShake == null) {
+                return@DisposableEffect onDispose {}
+            }
+            // When parallax is disabled, still allow shake detection (e.g. shake to unpop card)
+            val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            var lastShakeTime = 0L
+            val shakeListener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent) {
+                    if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                        val gX = event.values[0] / SensorManager.GRAVITY_EARTH
+                        val gY = event.values[1] / SensorManager.GRAVITY_EARTH
+                        val gZ = event.values[2] / SensorManager.GRAVITY_EARTH
+                        val gForce = Math.sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
+                        if (gForce > 2.2f) {
+                            val now = System.currentTimeMillis()
+                            if (now - lastShakeTime > 1000) {
+                                lastShakeTime = now
+                                onShake.invoke()
+                            }
+                        }
+                    }
+                }
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            }
+            accelSensor?.let {
+                sensorManager.registerListener(shakeListener, it, SensorManager.SENSOR_DELAY_UI)
+            }
+            return@DisposableEffect onDispose {
+                sensorManager.unregisterListener(shakeListener)
+            }
         }
 
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
