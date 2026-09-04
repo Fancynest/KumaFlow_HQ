@@ -824,7 +824,8 @@ fun MainScreen(
         }
     ) { paddingValues ->
         val effectivePadding = if (windowSize.isTablet) PaddingValues(0.dp) else paddingValues
-        Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxSize()) {
             if (windowSize.isTablet) {
                 androidx.compose.animation.AnimatedVisibility(
                     visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
@@ -1152,22 +1153,23 @@ fun MainScreen(
                     )
                 }
             }
-        }
 
-        androidx.compose.animation.AnimatedVisibility(
-            visible = isSpeedDialOpen,
-            enter = androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.fadeOut()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .kumaClickable(
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                        indication = null
-                    ) { isSpeedDialOpen = false }
-            )
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isSpeedDialOpen,
+                enter = androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .kumaClickable(
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null
+                        ) { isSpeedDialOpen = false }
+                )
+            }
         }
+    }
 
         androidx.compose.animation.AnimatedVisibility(
             visible = showBottomSheet,

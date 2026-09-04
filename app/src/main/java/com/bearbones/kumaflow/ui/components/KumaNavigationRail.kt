@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Edit
@@ -195,7 +196,7 @@ fun KumaNavigationRail(
                             )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Close,
+                            imageVector = Icons.Default.Add,
                             contentDescription = "Menu Tambah",
                             modifier = Modifier
                                 .size(26.dp)
@@ -355,133 +356,143 @@ fun KumaNavigationRail(
 
         // 2. Speed Dial Items (Fanning out to the right into the content area)
         if (dialProgress > 0.01f) {
-            // Speed Dial Option 1: Catat Normal (Top Right)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .padding(top = 70.dp)
-                    .offset(
-                        x = 94.dp * dialProgress,
-                        y = (-20).dp * dialProgress
-                    )
-                    .graphicsLayer {
-                        scaleX = dialProgress
-                        scaleY = dialProgress
-                        alpha = dialProgress.coerceIn(0f, 1f)
-                    }
-                    .bouncyScale(dial1Interaction, scaleDown = 0.88f)
-                    .clickable(
-                        interactionSource = dial1Interaction,
-                        indication = null,
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onOpenNormalEntry()
-                        }
-                    )
+            Box(
+                modifier = Modifier.wrapContentSize(align = Alignment.TopStart, unbounded = true)
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
+                // Speed Dial Option 1: Catat Normal (Top Right)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(48.dp)
+                        .wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                        .statusBarsPadding()
+                        .padding(top = 70.dp)
+                        .offset(
+                            x = 94.dp * dialProgress,
+                            y = (-20).dp * dialProgress
+                        )
                         .graphicsLayer {
-                            shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                            shape = RoundedCornerShape(16.dp)
-                            clip = true
+                            scaleX = dialProgress
+                            scaleY = dialProgress
+                            alpha = dialProgress.coerceIn(0f, 1f)
                         }
-                        .background(bgColor)
-                        .border(
-                            width = if (isLiquidGlass) 1.dp else 0.dp,
-                            color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                            shape = RoundedCornerShape(16.dp)
+                        .bouncyScale(dial1Interaction, scaleDown = 0.88f)
+                        .clickable(
+                            interactionSource = dial1Interaction,
+                            indication = null,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onOpenNormalEntry()
+                            }
                         )
                 ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = AppStr.manualEntryTitle,
-                        modifier = Modifier.size(20.dp),
-                        tint = fgColor
-                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .graphicsLayer {
+                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                shape = RoundedCornerShape(16.dp)
+                                clip = true
+                            }
+                            .background(bgColor)
+                            .border(
+                                width = if (isLiquidGlass) 1.dp else 0.dp,
+                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = AppStr.manualEntryTitle,
+                            modifier = Modifier.size(20.dp),
+                            tint = fgColor
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AppSurface().copy(alpha = 0.95f),
+                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            AppStr.manualEntryTitle,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText(),
+                            softWrap = false,
+                            maxLines = 1,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
                 }
-                Spacer(Modifier.width(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = AppSurface().copy(alpha = 0.95f),
-                    border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                    shadowElevation = 4.dp
-                ) {
-                    Text(
-                        AppStr.manualEntryTitle,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppText(),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
-                }
-            }
 
-            // Speed Dial Option 2: Scan Struk AI OCR (Bottom Right)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .statusBarsPadding()
-                    .padding(top = 70.dp)
-                    .offset(
-                        x = 94.dp * dialProgress,
-                        y = 44.dp * dialProgress
-                    )
-                    .graphicsLayer {
-                        scaleX = dialProgress
-                        scaleY = dialProgress
-                        alpha = dialProgress.coerceIn(0f, 1f)
-                    }
-                    .bouncyScale(dial2Interaction, scaleDown = 0.88f)
-                    .clickable(
-                        interactionSource = dial2Interaction,
-                        indication = null,
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onOpenOcrEntry()
-                        }
-                    )
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
+                // Speed Dial Option 2: Scan Struk AI OCR (Bottom Right)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(48.dp)
+                        .wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                        .statusBarsPadding()
+                        .padding(top = 70.dp)
+                        .offset(
+                            x = 94.dp * dialProgress,
+                            y = 44.dp * dialProgress
+                        )
                         .graphicsLayer {
-                            shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
-                            shape = RoundedCornerShape(16.dp)
-                            clip = true
+                            scaleX = dialProgress
+                            scaleY = dialProgress
+                            alpha = dialProgress.coerceIn(0f, 1f)
                         }
-                        .background(bgColor)
-                        .border(
-                            width = if (isLiquidGlass) 1.dp else 0.dp,
-                            color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
-                            shape = RoundedCornerShape(16.dp)
+                        .bouncyScale(dial2Interaction, scaleDown = 0.88f)
+                        .clickable(
+                            interactionSource = dial2Interaction,
+                            indication = null,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onOpenOcrEntry()
+                            }
                         )
                 ) {
-                    Icon(
-                        Icons.Default.DocumentScanner,
-                        contentDescription = AppStr.scanReceiptOptionTitle,
-                        modifier = Modifier.size(20.dp),
-                        tint = fgColor
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = AppSurface().copy(alpha = 0.95f),
-                    border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                    shadowElevation = 4.dp
-                ) {
-                    Text(
-                        AppStr.scanReceiptOptionTitle,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppText(),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .graphicsLayer {
+                                shadowElevation = if (isLiquidGlass) 0f else 6.dp.toPx()
+                                shape = RoundedCornerShape(16.dp)
+                                clip = true
+                            }
+                            .background(bgColor)
+                            .border(
+                                width = if (isLiquidGlass) 1.dp else 0.dp,
+                                color = if (isLiquidGlass) Color.White.copy(0.3f) else Color.Transparent,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.DocumentScanner,
+                            contentDescription = AppStr.scanReceiptOptionTitle,
+                            modifier = Modifier.size(20.dp),
+                            tint = fgColor
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = AppSurface().copy(alpha = 0.95f),
+                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            AppStr.scanReceiptOptionTitle,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppText(),
+                            softWrap = false,
+                            maxLines = 1,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
                 }
             }
         }

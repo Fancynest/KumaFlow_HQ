@@ -274,16 +274,18 @@ fun HomeScreen(
                                 )
                             }
 
-                            KumaIconButton(
-                                onClick = onOpenSettings,
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = AppStr.set,
-                                    tint = AppText().copy(alpha = 0.8f),
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            if (!windowSize.isTablet) {
+                                KumaIconButton(
+                                    onClick = onOpenSettings,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Settings,
+                                        contentDescription = AppStr.set,
+                                        tint = AppText().copy(alpha = 0.8f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                         
