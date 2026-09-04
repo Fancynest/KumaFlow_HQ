@@ -191,7 +191,7 @@ fun WalletCardStackImpl(
     val walletSidePadding = 12.dp // Padding inside wallet for cards
     // The parent Column in HomeScreen has 24.dp horizontal padding.
     // The Wallet Body will have 0 extra horizontal padding to match Total Balance.
-    val cardWidth = screenWidth - 48.dp - (walletSidePadding * 2)
+    val cardWidth = (screenWidth - 48.dp - (walletSidePadding * 2)).coerceAtMost(436.dp)
     val cardHeight = cardWidth / 1.6f // Maintain nice aspect ratio
     val cardPeek = 48.dp
     val walletCorner = 28.dp
@@ -244,10 +244,14 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
     val walletBorderColor = AppText().copy(alpha = 0.08f)
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            // Removed 16.dp padding so it exactly matches the width of the Total Balance card
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Box(
+            modifier = Modifier
+                .widthIn(max = 460.dp)
+                .fillMaxWidth()
+        ) {
         val stitchColor = AppText().copy(alpha = 0.25f)
         // === WALLET BODY (the beige/gray outer container) ===
         val walletBodyModifier = Modifier
@@ -872,3 +876,6 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
         }
     }
 }
+}
+
+

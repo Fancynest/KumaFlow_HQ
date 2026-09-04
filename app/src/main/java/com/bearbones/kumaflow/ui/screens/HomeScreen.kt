@@ -14,6 +14,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
@@ -202,17 +204,11 @@ fun HomeScreen(
     var showQrisDirectResult by remember { mutableStateOf(false) }
     var qrisDirectAmount by remember { mutableStateOf(0L) }
     var qrisDirectMessage by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
-                bottom = paddingValues.calculateBottomPadding() + 24.dp
-            )
-        ) {
-            item {
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+    val isTwoPane = windowSize.isTablet && (windowSize.isExpanded || windowSize.isLandscape)
+
+    val renderOverview: @Composable () -> Unit = {
+        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                         // Wrapped banner removed
 
                     val greeting = rememberSaveable {
@@ -573,28 +569,34 @@ fun HomeScreen(
                             )
 
                     Spacer(modifier = Modifier.height(32.dp))
+                }
+    }
 
+    val renderSearchAndHeader: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {
+        item {
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                    value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = AppText().copy(alpha = 0.5f)) },
+                    trailingIcon = { if (searchQuery.isNotEmpty()) { KumaIconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), shape = RoundedCornerShape(16.dp), singleLine = true,
+                    colors = getGlassTextFieldColors()
+                )
 
-
-                    com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
-                        value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(AppStr.searchTx) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = AppText().copy(alpha = 0.5f)) },
-                        trailingIcon = { if (searchQuery.isNotEmpty()) { KumaIconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null, tint = AppText()) } } },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), shape = RoundedCornerShape(16.dp), singleLine = true,
-                        colors = getGlassTextFieldColors()
-                    )
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if(AppStr.isId) "Transaksi Hari Ini" else "Today's Transactions", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = AppText())
-                        if (isSelectionMode) {
-                            KumaTextButton(onClick = { clearSelection() }) {
-                                Text(AppStr.cancelBulk, color = AppRed(), fontWeight = FontWeight.Bold)
-                            }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(if(AppStr.isId) "Transaksi Hari Ini" else "Today's Transactions", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = AppText())
+                    if (isSelectionMode) {
+                        KumaTextButton(onClick = { clearSelection() }) {
+                            Text(AppStr.cancelBulk, color = AppRed(), fontWeight = FontWeight.Bold)
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+                Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+
+    val renderTransactions: androidx.compose.foundation.lazy.LazyListScope.() -> Unit = {
 
             if (filteredTx.isEmpty()) {
                 item {
@@ -682,6 +684,52 @@ fun HomeScreen(
                 }
             }
             item { Spacer(modifier = Modifier.height(if (isSelectionMode) 180.dp else 100.dp)) }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isTwoPane) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 16.dp,
+                        bottom = paddingValues.calculateBottomPadding() + 16.dp
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(0.46f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    renderOverview()
+                }
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(0.54f)
+                        .fillMaxHeight()
+                ) {
+                    renderSearchAndHeader()
+                    renderTransactions()
+                }
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                    bottom = paddingValues.calculateBottomPadding() + 24.dp
+                )
+            ) {
+                item {
+                    renderOverview()
+                }
+                renderSearchAndHeader()
+                renderTransactions()
+            }
         }
 
         // ðŸ”¥ BULK ACTION OVERLAY BAR ðŸ”¥

@@ -588,6 +588,7 @@ fun MainScreen(
     var showDuoSync by remember { mutableStateOf(false) }
     var showDuoPairing by remember { mutableStateOf(false) }
     var showSettingsOverlay by remember { mutableStateOf(false) }
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
     LaunchedEffect(showBottomSheet, isSpeedDialOpen, showSettingsOverlay) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen || showSettingsOverlay) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
     val totalTxCount = transactionListWithSplits.size
@@ -783,48 +784,94 @@ fun MainScreen(
         containerColor = Color.Transparent,
         floatingActionButton = {},
         bottomBar = {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = !showBottomSheet && !showSettingsOverlay && !showQrTransfer && !showDuoSync && !showDuoPairing,
-                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
-                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
-            ) {
-                CustomBottomNav(
-                    pagerState = pagerState,
-                    haptic = haptic,
-                    tiltState = sharedTiltState,
-                    isNavMotionEnabled = userProfile.isNavMotionEnabled,
-                    isSpeedDialOpen = isSpeedDialOpen,
-                    onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
-                    onOpenNormalEntry = {
-                        isSpeedDialOpen = false
-                        transactionToEdit = null
-                        pendingOcrResult = null
-                        showBottomSheet = true
-                    },
-                    onOpenOcrEntry = {
-                        isSpeedDialOpen = false
-                        transactionToEdit = null
-                        pendingOcrResult = null
-                        if (!ocrStorage.hasActiveApiKey()) {
-                            showMainOcrKeyPromptDialog = true
-                        } else {
-                            showMainOcrSourceChooser = true
-                        }
-                    },
-                    targetFabShapeIndex = targetFabShapeIndex,
-                    m3Shapes = m3Shapes
+            if (!windowSize.isTablet) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !showBottomSheet && !showSettingsOverlay && !showQrTransfer && !showDuoSync && !showDuoPairing,
+                    enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }),
+                    exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it })
                 ) {
-                    scope.launch { pagerState.animateScrollToPage(it) }
-                    selectedItemIndex = it
+                    CustomBottomNav(
+                        pagerState = pagerState,
+                        haptic = haptic,
+                        tiltState = sharedTiltState,
+                        isNavMotionEnabled = userProfile.isNavMotionEnabled,
+                        isSpeedDialOpen = isSpeedDialOpen,
+                        onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
+                        onOpenNormalEntry = {
+                            isSpeedDialOpen = false
+                            transactionToEdit = null
+                            pendingOcrResult = null
+                            showBottomSheet = true
+                        },
+                        onOpenOcrEntry = {
+                            isSpeedDialOpen = false
+                            transactionToEdit = null
+                            pendingOcrResult = null
+                            if (!ocrStorage.hasActiveApiKey()) {
+                                showMainOcrKeyPromptDialog = true
+                            } else {
+                                showMainOcrSourceChooser = true
+                            }
+                        },
+                        targetFabShapeIndex = targetFabShapeIndex,
+                        m3Shapes = m3Shapes
+                    ) {
+                        scope.launch { pagerState.animateScrollToPage(it) }
+                        selectedItemIndex = it
+                    }
                 }
             }
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(
-            bottom = paddingValues.calculateBottomPadding(),
-            start = paddingValues.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-            end = paddingValues.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
-        )) {
+        val effectivePadding = if (windowSize.isTablet) PaddingValues(0.dp) else paddingValues
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (windowSize.isTablet) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
+                    enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it }),
+                    exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it })
+                ) {
+                    com.bearbones.kumaflow.ui.components.KumaNavigationRail(
+                        pagerState = pagerState,
+                        haptic = haptic,
+                        tiltState = sharedTiltState,
+                        isNavMotionEnabled = userProfile.isNavMotionEnabled,
+                        isSpeedDialOpen = isSpeedDialOpen,
+                        onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
+                        onOpenNormalEntry = {
+                            isSpeedDialOpen = false
+                            transactionToEdit = null
+                            pendingOcrResult = null
+                            showBottomSheet = true
+                        },
+                        onOpenOcrEntry = {
+                            isSpeedDialOpen = false
+                            transactionToEdit = null
+                            pendingOcrResult = null
+                            if (!ocrStorage.hasActiveApiKey()) {
+                                showMainOcrKeyPromptDialog = true
+                            } else {
+                                showMainOcrSourceChooser = true
+                            }
+                        },
+                        targetFabShapeIndex = targetFabShapeIndex,
+                        m3Shapes = m3Shapes,
+                        onOpenSettings = { showSettingsOverlay = true }
+                    ) {
+                        scope.launch { pagerState.animateScrollToPage(it) }
+                        selectedItemIndex = it
+                    }
+                }
+            }
+
+            Box(modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(
+                    bottom = effectivePadding.calculateBottomPadding(),
+                    start = effectivePadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                    end = effectivePadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
+                )) {
             val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true)
             if (isOREasterEgg) {
                 val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
@@ -1139,10 +1186,17 @@ fun MainScreen(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null
                     ) { showBottomSheet = false },
-                contentAlignment = Alignment.BottomCenter
+                contentAlignment = if (windowSize.isTablet) Alignment.Center else Alignment.BottomCenter
             ) {
                 Box(
                     modifier = Modifier
+                        .then(
+                            if (windowSize.isTablet) {
+                                Modifier.widthIn(max = 560.dp).fillMaxWidth().padding(horizontal = 24.dp)
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        )
                         .animateEnterExit(
                             enter = androidx.compose.animation.slideInVertically(
                                 animationSpec = androidx.compose.animation.core.spring(
@@ -1312,6 +1366,7 @@ fun MainScreen(
                 profile = userProfileState,
                 database = com.bearbones.kumaflow.KumaDatabase.getDatabase(context)
             )
+        }
         }
     }
 }

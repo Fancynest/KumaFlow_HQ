@@ -44,6 +44,10 @@ import org.json.JSONObject
 import com.bearbones.kumaflow.glassCard
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import com.bearbones.kumaflow.ui.components.rememberKumaWindowSize
 
 @Composable
 fun SavingsScreen(
@@ -192,66 +196,138 @@ fun SavingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 64.dp)
-        ) {
-            items(savingsWallets) { walletName ->
-                val currentBalance = walletBalances[walletName] ?: 0L
-                val targetAmount = savingsGoalsMap[walletName] ?: 0L
-                val progress = if (targetAmount > 0) (currentBalance.toFloat() / targetAmount.toFloat()).coerceIn(0f, 1f) else 0f
-
-                Box(
+        val windowSize = rememberKumaWindowSize()
+        if (windowSize.isTablet) {
+            if (savingsWallets.isEmpty()) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 6.dp, end = 6.dp) // Prevent shadow clipping
-                        .glassCard(16.dp, AppSurface())
-                        .clickable { selectedGoalForAction = walletName }
+                        .weight(1f)
+                        .padding(top = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = walletName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AppText())
-                        Spacer(modifier = Modifier.height(4.dp))
+                    val composition by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.beruang_kosong))
+                    val progress by com.airbnb.lottie.compose.animateLottieCompositionAsState(composition = composition, iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever)
+                    com.airbnb.lottie.compose.LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.size(150.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (isId) "Belum ada tabungan. Yuk mulai nabung!" else "No savings yet. Start saving now!",
+                        color = AppText().copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 320.dp),
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 64.dp)
+                ) {
+                    items(savingsWallets) { walletName ->
+                        val currentBalance = walletBalances[walletName] ?: 0L
+                        val targetAmount = savingsGoalsMap[walletName] ?: 0L
+                        val progress = if (targetAmount > 0) (currentBalance.toFloat() / targetAmount.toFloat()).coerceIn(0f, 1f) else 0f
 
-                        Text(
-                            text = "$curSym ${formatHide(currentBalance)}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Black,
-                            color = AppPrimary()
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp, end = 6.dp)
+                                .glassCard(16.dp, AppSurface())
+                                .clickable { selectedGoalForAction = walletName }
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(text = walletName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AppText())
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                        if (targetAmount > 0) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("${(progress * 100).toInt()}%", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
-                                Text("Goal: $curSym ${NumberFormat.getInstance(locale).format(targetAmount)}", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                                Text(
+                                    text = "$curSym ${formatHide(currentBalance)}",
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = AppPrimary()
+                                )
+
+                                if (targetAmount > 0) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("${(progress * 100).toInt()}%", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                                        Text("Goal: $curSym ${NumberFormat.getInstance(locale).format(targetAmount)}", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    SavingsProgressBar(progress = progress, modifier = Modifier.fillMaxWidth())
+                                }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            SavingsProgressBar(progress = progress, modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 64.dp)
+            ) {
+                items(savingsWallets) { walletName ->
+                    val currentBalance = walletBalances[walletName] ?: 0L
+                    val targetAmount = savingsGoalsMap[walletName] ?: 0L
+                    val progress = if (targetAmount > 0) (currentBalance.toFloat() / targetAmount.toFloat()).coerceIn(0f, 1f) else 0f
 
-            if (savingsWallets.isEmpty()) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp, end = 6.dp) // Prevent shadow clipping
+                            .glassCard(16.dp, AppSurface())
+                            .clickable { selectedGoalForAction = walletName }
                     ) {
-                        val composition by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.beruang_kosong))
-                        val progress by com.airbnb.lottie.compose.animateLottieCompositionAsState(composition = composition, iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever)
-                        com.airbnb.lottie.compose.LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.size(150.dp))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = if (isId) "Belum ada tabungan. Yuk mulai nabung!" else "No savings yet. Start saving now!",
-                            color = AppText().copy(alpha = 0.5f),
-                            textAlign = TextAlign.Center
-                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = walletName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AppText())
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = "$curSym ${formatHide(currentBalance)}",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black,
+                                color = AppPrimary()
+                            )
+
+                            if (targetAmount > 0) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("${(progress * 100).toInt()}%", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                                    Text("Goal: $curSym ${NumberFormat.getInstance(locale).format(targetAmount)}", fontSize = 12.sp, color = AppText().copy(alpha = 0.6f))
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SavingsProgressBar(progress = progress, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                    }
+                }
+
+                if (savingsWallets.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val composition by com.airbnb.lottie.compose.rememberLottieComposition(com.airbnb.lottie.compose.LottieCompositionSpec.RawRes(com.bearbones.kumaflow.R.raw.beruang_kosong))
+                            val progress by com.airbnb.lottie.compose.animateLottieCompositionAsState(composition = composition, iterations = com.airbnb.lottie.compose.LottieConstants.IterateForever)
+                            com.airbnb.lottie.compose.LottieAnimation(composition = composition, progress = { progress }, modifier = Modifier.size(150.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (isId) "Belum ada tabungan. Yuk mulai nabung!" else "No savings yet. Start saving now!",
+                                color = AppText().copy(alpha = 0.5f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
