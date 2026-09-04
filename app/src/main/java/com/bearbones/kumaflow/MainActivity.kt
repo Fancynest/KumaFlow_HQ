@@ -18,6 +18,7 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.zIndex
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
