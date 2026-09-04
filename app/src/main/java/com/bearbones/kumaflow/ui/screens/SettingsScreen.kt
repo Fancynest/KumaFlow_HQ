@@ -1587,7 +1587,7 @@ fun SettingsScreen(
                                 }
 
                                 val now = java.time.LocalDateTime.now()
-                                val dateStr = java.time.LocalDate.now().toString()
+                                val dateStr = now.format(java.time.format.DateTimeFormatter.ofPattern(currentProfile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
                                 val timeStr = now.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
                                 balances.forEach { (wName, bal) ->

@@ -42,7 +42,17 @@ object CsvExportUtil {
                         // Write data
                         transactions.forEach { txw ->
                             val tx = txw.transaction
-                            val date = tx.date
+                            val date = try {
+                                if (tx.timestamp.isNotBlank()) {
+                                    val dt = java.time.LocalDateTime.parse(tx.timestamp, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                    dt.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.forLanguageTag("id-ID")))
+                                } else {
+                                    val parsed = java.time.LocalDate.parse(tx.date, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                                    parsed.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.forLanguageTag("id-ID")))
+                                }
+                            } catch (_: Exception) {
+                                tx.date
+                            }
                             val type = if (tx.isIncome) "Masuk" else "Keluar"
                             val cat = tx.category.replace(",", "")
                             val name = tx.name.replace(",", " ")
@@ -151,7 +161,18 @@ object CsvExportUtil {
                         val amountColor = if (tx.isIncome) android.graphics.Color.parseColor("#1B5E20") else android.graphics.Color.parseColor("#B71C1C")
                         
                         paint.color = android.graphics.Color.BLACK
-                        page.canvas.drawText(tx.date, 40f, y, paint)
+                        val displayDate = try {
+                            if (tx.timestamp.isNotBlank()) {
+                                val dt = java.time.LocalDateTime.parse(tx.timestamp, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                dt.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.forLanguageTag("id-ID")))
+                            } else {
+                                val parsed = java.time.LocalDate.parse(tx.date, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                                parsed.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.forLanguageTag("id-ID")))
+                            }
+                        } catch (_: Exception) {
+                            tx.date
+                        }
+                        page.canvas.drawText(displayDate, 40f, y, paint)
                         page.canvas.drawText(type, 150f, y, paint)
                         page.canvas.drawText(name, 250f, y, paint)
                         

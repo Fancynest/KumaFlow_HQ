@@ -485,6 +485,22 @@ fun MainScreen(
     var selectedYear by remember { mutableIntStateOf(java.time.LocalDateTime.now().year) }
     var forceUpdateTrigger by remember { mutableIntStateOf(0) }
 
+    LaunchedEffect(transactionListWithSplits, userProfile.dateFormat) {
+        val isoRegex = Regex("""^\d{4}-\d{2}-\d{2}$""")
+        val legacyTxs = transactionListWithSplits.filter { isoRegex.matches(it.transaction.date) }
+        if (legacyTxs.isNotEmpty()) {
+            scope.launch(Dispatchers.IO) {
+                legacyTxs.forEach { item ->
+                    try {
+                        val localDate = java.time.LocalDate.parse(item.transaction.date)
+                        val formatted = localDate.format(java.time.format.DateTimeFormatter.ofPattern(userProfile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                        dao.updateFullTransaction(item.transaction.copy(date = formatted), item.splits)
+                    } catch (_: Exception) {}
+                }
+            }
+        }
+    }
+
 
     // ðŸ”¥ STATE SELECTION HOISTING ðŸ”¥
     var selectedTxs by remember { mutableStateOf(setOf<Int>()) }
@@ -2453,7 +2469,18 @@ fun generatePDF(context: Context, data: List<KumaTransaction>, profile: UserProf
         val formattedAmt = formatter.format(amtVal)
 
         paint.color = android.graphics.Color.BLACK
-        page.canvas.drawText(item.date.take(12), 40f, yPos, paint)
+        val displayDate = try {
+            if (item.timestamp.isNotBlank()) {
+                val dt = java.time.LocalDateTime.parse(item.timestamp, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                dt.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+            } else {
+                val parsed = java.time.LocalDate.parse(item.date, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                parsed.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+            }
+        } catch (_: Exception) {
+            item.date
+        }
+        page.canvas.drawText(displayDate.take(12), 40f, yPos, paint)
         page.canvas.drawText(item.category.take(10), 120f, yPos, paint)
         page.canvas.drawText(item.wallet.take(10), 200f, yPos, paint)
         page.canvas.drawText(item.name.take(25), 280f, yPos, paint)
@@ -2512,7 +2539,18 @@ fun generateCSV(context: Context, data: List<KumaTransaction>, profile: UserProf
         sb.append("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
         data.sortedBy { it.timestamp }.forEach { t ->
             val type = if (t.isIncome) AppStr.inc else AppStr.exp
-            sb.append("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
+            val dateFormatted = try {
+                if (t.timestamp.isNotBlank()) {
+                    val dt = java.time.LocalDateTime.parse(t.timestamp, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    dt.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                } else {
+                    val parsed = java.time.LocalDate.parse(t.date, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                    parsed.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                }
+            } catch (_: Exception) {
+                t.date
+            }
+            sb.append("${dateFormatted},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
         }
         saveToMediaStore(context, filename, "text/csv", "KumaCSV", sb.toString().toByteArray())
     } catch (_: Exception) {
@@ -2527,7 +2565,18 @@ fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserPr
         sb.append("${AppStr.date},${AppStr.cat},${AppStr.walletShort},${AppStr.type},${AppStr.nme},${AppStr.msgInp},${AppStr.cur},${AppStr.amt}\n")
         data.sortedBy { it.timestamp }.forEach { t ->
             val type = if (t.isIncome) AppStr.inc else AppStr.exp
-            sb.append("${t.date},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
+            val dateFormatted = try {
+                if (t.timestamp.isNotBlank()) {
+                    val dt = java.time.LocalDateTime.parse(t.timestamp, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    dt.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                } else {
+                    val parsed = java.time.LocalDate.parse(t.date, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                    parsed.format(java.time.format.DateTimeFormatter.ofPattern(profile.dateFormat, java.util.Locale.forLanguageTag("id-ID")))
+                }
+            } catch (_: Exception) {
+                t.date
+            }
+            sb.append("${dateFormatted},${t.category},${t.wallet},$type,\"${t.name}\",\"${t.message}\",${profile.currency},${t.amount}\n")
         }
         saveToMediaStore(context, filename, "text/csv", "KumaCSV", sb.toString().toByteArray())
     } catch (_: Exception) {

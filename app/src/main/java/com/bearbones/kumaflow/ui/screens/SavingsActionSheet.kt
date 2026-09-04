@@ -288,7 +288,7 @@ fun SavingsActionSheet(
 
                     scope.launch {
                         val dt = LocalDateTime.now()
-                        val dateStr = dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        val dateStr = dt.format(DateTimeFormatter.ofPattern(profile.dateFormat, Locale.forLanguageTag("id-ID")))
                         val timeStr = dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                         val title = if (isAdding) {
                             if (isId) "Isi Tabungan $goalName" else "Deposit to $goalName"

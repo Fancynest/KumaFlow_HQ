@@ -796,7 +796,7 @@ fun SavingsCloseDialog(
                     scope.launch {
                         if (balance > 0) {
                             val dt = LocalDateTime.now()
-                            val dateStr = dt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                            val dateStr = dt.format(DateTimeFormatter.ofPattern(profile.dateFormat, Locale.forLanguageTag("id-ID")))
                             val timeStr = dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                             
                             val txOut = KumaTransaction(id = 0, name = if(AppStr.isId) "Penutupan Tabungan $goalName" else "Savings Closure $goalName", date = dateStr, amount = balance.toString(), isIncome = false, category = "Transfer", wallet = goalName, timestamp = timeStr)
