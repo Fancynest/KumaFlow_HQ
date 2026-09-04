@@ -829,6 +829,7 @@ fun MainScreen(
             if (windowSize.isTablet) {
                 androidx.compose.animation.AnimatedVisibility(
                     visible = !showBottomSheet && !showQrTransfer && !showDuoSync && !showDuoPairing,
+                    modifier = Modifier.zIndex(100f),
                     enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { -it }),
                     exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { -it })
                 ) {

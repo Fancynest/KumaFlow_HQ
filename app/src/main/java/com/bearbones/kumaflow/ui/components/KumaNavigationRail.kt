@@ -357,7 +357,9 @@ fun KumaNavigationRail(
         // 2. Speed Dial Items (Fanning out to the right into the content area)
         if (dialProgress > 0.01f) {
             Box(
-                modifier = Modifier.wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                modifier = Modifier
+                    .wrapContentSize(align = Alignment.TopStart, unbounded = true)
+                    .zIndex(100f)
             ) {
                 // Speed Dial Option 1: Catat Normal (Aligned with FAB)
                 Row(
