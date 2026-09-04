@@ -1156,12 +1156,13 @@ fun MainScreen(
 
             androidx.compose.animation.AnimatedVisibility(
                 visible = isSpeedDialOpen,
-                enter = androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.fadeOut()
+                enter = androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(200)),
+                exit = androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(150))
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(if (windowSize.isTablet) Color.Black.copy(alpha = 0.5f) else Color.Transparent)
                         .kumaClickable(
                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                             indication = null

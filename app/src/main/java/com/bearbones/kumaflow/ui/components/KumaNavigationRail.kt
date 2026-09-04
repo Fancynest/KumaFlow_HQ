@@ -359,17 +359,14 @@ fun KumaNavigationRail(
             Box(
                 modifier = Modifier.wrapContentSize(align = Alignment.TopStart, unbounded = true)
             ) {
-                // Speed Dial Option 1: Catat Normal (Top Right)
+                // Speed Dial Option 1: Catat Normal (Aligned with FAB)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .wrapContentSize(align = Alignment.TopStart, unbounded = true)
                         .statusBarsPadding()
-                        .padding(top = 70.dp)
-                        .offset(
-                            x = 94.dp * dialProgress,
-                            y = (-20).dp * dialProgress
-                        )
+                        .padding(top = 84.dp)
+                        .offset(x = 96.dp * dialProgress)
                         .graphicsLayer {
                             scaleX = dialProgress
                             scaleY = dialProgress
@@ -408,36 +405,33 @@ fun KumaNavigationRail(
                             tint = fgColor
                         )
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = AppSurface().copy(alpha = 0.95f),
-                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                        shadowElevation = 4.dp
+                        shape = RoundedCornerShape(12.dp),
+                        color = AppSurface(),
+                        border = BorderStroke(1.dp, if (isLiquidGlass) Color.White.copy(0.2f) else AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 8.dp
                     ) {
                         Text(
                             AppStr.manualEntryTitle,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppText(),
                             softWrap = false,
                             maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
                         )
                     }
                 }
 
-                // Speed Dial Option 2: Scan Struk AI OCR (Bottom Right)
+                // Speed Dial Option 2: Scan Struk AI OCR (Below Option 1)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .wrapContentSize(align = Alignment.TopStart, unbounded = true)
                         .statusBarsPadding()
-                        .padding(top = 70.dp)
-                        .offset(
-                            x = 94.dp * dialProgress,
-                            y = 44.dp * dialProgress
-                        )
+                        .padding(top = 146.dp)
+                        .offset(x = 96.dp * dialProgress)
                         .graphicsLayer {
                             scaleX = dialProgress
                             scaleY = dialProgress
@@ -476,21 +470,21 @@ fun KumaNavigationRail(
                             tint = fgColor
                         )
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = AppSurface().copy(alpha = 0.95f),
-                        border = BorderStroke(1.dp, AppText().copy(alpha = 0.12f)),
-                        shadowElevation = 4.dp
+                        shape = RoundedCornerShape(12.dp),
+                        color = AppSurface(),
+                        border = BorderStroke(1.dp, if (isLiquidGlass) Color.White.copy(0.2f) else AppText().copy(alpha = 0.12f)),
+                        shadowElevation = 8.dp
                     ) {
                         Text(
                             AppStr.scanReceiptOptionTitle,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppText(),
                             softWrap = false,
                             maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
                         )
                     }
                 }
