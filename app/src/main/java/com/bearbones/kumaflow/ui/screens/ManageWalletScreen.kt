@@ -298,38 +298,44 @@ fun ManageWalletContent(
 
         val configuration = androidx.compose.ui.platform.LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
-        val pagerPageWidth = screenWidth - 64.dp // 32.dp padding on each side
+        val pagerPageWidth = (screenWidth - 64.dp).coerceAtMost(480.dp)
         val cardPreviewHeight = pagerPageWidth / 1.6f
         val pagerHeight = cardPreviewHeight + 30.dp
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(pagerHeight),
-            contentPadding = PaddingValues(horizontal = 32.dp),
-            pageSpacing = 16.dp
-        ) { page ->
-            val isActive = page == editPageIndex
-            val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
-            val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
-            val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
-            val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
-
-            val solidColor = if (previewType == "SOLID") {
-                try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
-            } else Color.Gray
-
-            Box(
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(cardPreviewHeight)
-                    .shadow(12.dp, RoundedCornerShape(24.dp))
-                    
-                    .clip(RoundedCornerShape(24.dp))
-                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
-                    .background(solidColor)
-            ) {
+                    .widthIn(max = 544.dp)
+                    .height(pagerHeight),
+                contentPadding = PaddingValues(horizontal = 32.dp),
+                pageSpacing = 16.dp
+            ) { page ->
+                val isActive = page == editPageIndex
+                val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
+                val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
+                val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
+                val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
+
+                val solidColor = if (previewType == "SOLID") {
+                    try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
+                } else Color.Gray
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 480.dp)
+                        .height(cardPreviewHeight)
+                        .shadow(12.dp, RoundedCornerShape(24.dp))
+                        
+                        .clip(RoundedCornerShape(24.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
+                        .background(solidColor)
+                ) {
                 if (previewType == "GRADIENT") {
                     val parts = previewVal.split(",")
                     if (parts.size >= 2) {
@@ -499,6 +505,7 @@ fun ManageWalletContent(
                 }
             }
         }
+    }
 
         Column(
             modifier = Modifier
@@ -788,7 +795,7 @@ fun WalletSuccessContent(
         if (wallet != null) {
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
-            val cardPreviewWidth = screenWidth - 48.dp // 24.dp padding on each side of the Column
+            val cardPreviewWidth = (screenWidth - 48.dp).coerceAtMost(480.dp)
             val cardPreviewHeight = cardPreviewWidth / 1.6f
 
             val solidColor = if (wallet.backgroundType == "SOLID") {
@@ -800,6 +807,7 @@ fun WalletSuccessContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 480.dp)
                     .height(cardPreviewHeight)
                     .shadow(12.dp, RoundedCornerShape(24.dp))
                     
@@ -954,7 +962,7 @@ fun WalletSuccessContent(
 
         KumaButton(
             onClick = onDone,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp)
         ) {
             Text(stringResource(R.string.manage_wallet_done), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
