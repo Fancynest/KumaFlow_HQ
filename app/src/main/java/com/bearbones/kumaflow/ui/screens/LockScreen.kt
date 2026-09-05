@@ -657,8 +657,22 @@ class MainActivity : FragmentActivity() {
                     // 1. Easter Egg Pride & Bear
                     isPrideTriggered && activeThemeMode == 3 -> lightColorScheme(background = Color(0xFFFCE4EC), surface = Color(0xFFF8BBD0), primary = Color(0xFFD81B60), onPrimary = Color.White, onBackground = Color(0xFF212121), onSurface = Color(0xFF212121))
                     isPrideTriggered && activeThemeMode == 4 -> darkColorScheme(background = Color(0xFF121212), surface = Color(0xFF263238), primary = Color(0xFFAA00FF), onPrimary = Color.White, onBackground = Color.White, onSurface = Color.White)
-                    isBearTriggered && activeThemeMode == 5 -> lightColorScheme(background = Color(0xFFFFF3E0), surface = Color(0xFFFFE0B2), primary = Color(0xFFBF360C), onPrimary = Color.White, onBackground = Color(0xFF3E2723), onSurface = Color(0xFF3E2723))
-                    isBearTriggered && activeThemeMode == 6 -> darkColorScheme(background = Color(0xFF3E2723), surface = Color(0xFF4E342E), primary = Color(0xFFFFCA28), onPrimary = Color.Black, onBackground = Color(0xFFEFEBE9), onSurface = Color(0xFFEFEBE9))
+                    isBearTriggered && activeThemeMode == 5 -> lightColorScheme(
+                        background = Color(0xFFF5EDE0),   // krem warm earthy
+                        surface = Color(0xFFE8D5BC),       // warm tan / kulit beruang
+                        primary = Color(0xFF6D3B1F),       // cokelat kopi dalam
+                        onPrimary = Color.White,
+                        onBackground = Color(0xFF2C1810),  // cokelat arang
+                        onSurface = Color(0xFF2C1810)
+                    )
+                    isBearTriggered && activeThemeMode == 6 -> darkColorScheme(
+                        background = Color(0xFF1A0F0A),   // hitam cokelat dalam
+                        surface = Color(0xFF2D1A12),       // cokelat gelap rich
+                        primary = Color(0xFFD4882A),       // amber tembaga (lebih gelap dari FFCA28, kontras lebih baik)
+                        onPrimary = Color(0xFF1A0F0A),
+                        onBackground = Color(0xFFF0E6D3), // krem hangat
+                        onSurface = Color(0xFFF0E6D3)
+                    )
                     
                     // 2. Brutal
                     isBrutalTriggered && activeThemeMode == 7 -> lightColorScheme(background = com.bearbones.kumaflow.ui.theme.BrutalYellow, surface = com.bearbones.kumaflow.ui.theme.BrutalWhite, primary = com.bearbones.kumaflow.ui.theme.BrutalBlack, onPrimary = com.bearbones.kumaflow.ui.theme.BrutalWhite, onBackground = com.bearbones.kumaflow.ui.theme.BrutalBlack, onSurface = com.bearbones.kumaflow.ui.theme.BrutalBlack)

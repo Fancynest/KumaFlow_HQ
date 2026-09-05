@@ -356,7 +356,21 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     val isPrideThemeActive = (profile.themeMode == 3 || profile.themeMode == 4) && profile.userName.contains("#pride", ignoreCase = true)
+                    val isBearThemeActive = (profile.themeMode == 5 || profile.themeMode == 6) && profile.userName.contains("#bear", ignoreCase = true)
+                    val isSpecialThemeCardActive = isPrideThemeActive || isBearThemeActive
+
                     val prideGradient = androidx.compose.ui.graphics.Brush.linearGradient(colors = listOf(Color(0xFFE40303), Color(0xFFFF8C00), Color(0xFFFFED00), Color(0xFF008026), Color(0xFF24408E), Color(0xFF732982)))
+                    val bearGradient = androidx.compose.ui.graphics.Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF4A2008),   // Cokelat tua
+                            Color(0xFF8B4513),   // Cokelat oranye
+                            Color(0xFFD4882A),   // Kuning emas/tembaga
+                            Color(0xFFF5EDE0),   // Krem/putih
+                            Color(0xFF888888),   // Abu-abu
+                            Color(0xFF1A1A1A),   // Hitam
+                            Color(0xFF1A3A5C)    // Biru navy
+                        )
+                    )
                     val defaultSurfaceColor = AppSurfaceVariant()
 
                     // --- NEW FINANCIAL HUB CARD (Combined) ---
@@ -365,6 +379,8 @@ fun HomeScreen(
                     Box(
                         modifier = if (isPrideThemeActive) {
                             Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(prideGradient).tutorialTarget(TutorialStep.HOME_WALLETS)
+                        } else if (isBearThemeActive) {
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(bearGradient).tutorialTarget(TutorialStep.HOME_WALLETS)
                         } else {
                             Modifier.fillMaxWidth().glassCard(32.dp, defaultSurfaceColor, useHaze = true).tutorialTarget(TutorialStep.HOME_WALLETS)
                         }
@@ -378,12 +394,12 @@ fun HomeScreen(
                             ) {
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(AppStr.totalBalanceTitle, color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(AppStr.totalBalanceTitle, color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Icon(
                                             imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                             contentDescription = "Toggle Privacy",
-                                            tint = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f),
+                                            tint = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f),
                                             modifier = Modifier.clip(CircleShape).clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                 isPrivacyMode = !isPrivacyMode
@@ -399,7 +415,7 @@ fun HomeScreen(
                                         modifier = Modifier, 
                                         fontSize = 42.sp, 
                                         fontWeight = FontWeight.Black, 
-                                        color = if (isPrideThemeActive) Color.White else AppText(), 
+                                        color = if (isSpecialThemeCardActive) Color.White else AppText(), 
                                         minimumFallbackSize = 24.sp
                                     )
                                 }
@@ -412,21 +428,21 @@ fun HomeScreen(
                             val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "exp")
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
-                                    Text("Total Income", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Total Income", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.ArrowUpward, null, tint = if(isPrideThemeActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.ArrowUpward, null, tint = if(isSpecialThemeCardActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        AutoSizeText(text = "$curSym ${formatHide(animatedInc.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedInc.toLong())}", modifier = Modifier, color = if(isSpecialThemeCardActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
                                     }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("Total Expenses", color = if (isPrideThemeActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Total Expenses", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        AutoSizeText(text = "$curSym ${formatHide(animatedExp.toLong())}", modifier = Modifier, color = if(isPrideThemeActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
+                                        AutoSizeText(text = "$curSym ${formatHide(animatedExp.toLong())}", modifier = Modifier, color = if(isSpecialThemeCardActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(Icons.Default.ArrowDownward, null, tint = if(isPrideThemeActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.ArrowDownward, null, tint = if(isSpecialThemeCardActive) Color.White else AppRed(), modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }

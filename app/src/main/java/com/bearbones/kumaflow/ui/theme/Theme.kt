@@ -21,7 +21,7 @@ private val DarkColorScheme = darkColorScheme(
     primary = BearRust,
     background = PitchBlack,
     surface = CardDark, // Background color for card and menu elements
-    onPrimary = Color.White, // Text color overlaid on primary color
+    onPrimary = PitchBlack, // Text color overlaid on primary color
     onBackground = CreamyText, // Primary text color for Dark Mode
     onSurface = CreamyText
 )

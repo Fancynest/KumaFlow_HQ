@@ -376,6 +376,26 @@ fun ManageWalletContent(
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+                        if (isBearReq) {
+                            val alpha = if (resId != 0) 0.25f else 1f
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF4A2008).copy(alpha = alpha),
+                                                Color(0xFF8B4513).copy(alpha = alpha),
+                                                Color(0xFFD4882A).copy(alpha = alpha),
+                                                Color(0xFFF5EDE0).copy(alpha = alpha),
+                                                Color(0xFF888888).copy(alpha = alpha),
+                                                Color(0xFF1A1A1A).copy(alpha = alpha),
+                                                Color(0xFF1A3A5C).copy(alpha = alpha)
+                                            )
+                                        )
+                                    )
+                            )
+                        }
                     }
                 } else if (previewType == "CUSTOM") {
                     val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), previewVal)
@@ -574,6 +594,26 @@ fun ManageWalletContent(
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+                        if (template == "bear" || template == "bear2") {
+                            val alpha = if (resId != 0) 0.25f else 1f
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF4A2008).copy(alpha = alpha),
+                                                Color(0xFF8B4513).copy(alpha = alpha),
+                                                Color(0xFFD4882A).copy(alpha = alpha),
+                                                Color(0xFFF5EDE0).copy(alpha = alpha),
+                                                Color(0xFF888888).copy(alpha = alpha),
+                                                Color(0xFF1A1A1A).copy(alpha = alpha),
+                                                Color(0xFF1A3A5C).copy(alpha = alpha)
+                                            )
+                                        )
+                                    )
+                            )
+                        }
                         if (isSelected) {
                             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
                             Icon(Icons.Default.Check, null, tint = Color.White)
@@ -702,7 +742,7 @@ fun WalletSuccessContent(
         isOR -> Color(0xFFC2185B)
         isBrutal -> Color(0xFF000000)
         isPride -> Color(0xFF9C27B0)
-        isBear -> Color(0xFF795548)
+        isBear -> Color(0xFFD4882A)
         isDark -> Color(0xFF4FC3F7)
         else -> Color(0xFF4CAF50)
     }
@@ -811,6 +851,26 @@ fun WalletSuccessContent(
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        if (isBearReq) {
+                            val alpha = if (resId != 0) 0.25f else 1f
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF4A2008).copy(alpha = alpha),
+                                                Color(0xFF8B4513).copy(alpha = alpha),
+                                                Color(0xFFD4882A).copy(alpha = alpha),
+                                                Color(0xFFF5EDE0).copy(alpha = alpha),
+                                                Color(0xFF888888).copy(alpha = alpha),
+                                                Color(0xFF1A1A1A).copy(alpha = alpha),
+                                                Color(0xFF1A3A5C).copy(alpha = alpha)
+                                            )
+                                        )
+                                    )
                             )
                         }
                     }

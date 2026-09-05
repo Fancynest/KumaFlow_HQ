@@ -608,6 +608,28 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                         modifier = bgParallax
                                     )
                                 }
+                                if (isBearReq) {
+                                    val bearVerticalGradient = remember(resId) {
+                                        val alpha = if (resId != 0) 0.25f else 1f
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF4A2008).copy(alpha = alpha),
+                                                Color(0xFF8B4513).copy(alpha = alpha),
+                                                Color(0xFFD4882A).copy(alpha = alpha),
+                                                Color(0xFFF5EDE0).copy(alpha = alpha),
+                                                Color(0xFF888888).copy(alpha = alpha),
+                                                Color(0xFF1A1A1A).copy(alpha = alpha),
+                                                Color(0xFF1A3A5C).copy(alpha = alpha)
+                                            )
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .then(bgParallax)
+                                            .background(bearVerticalGradient)
+                                    )
+                                }
                             }
                         } else if (wallet.backgroundType == "CUSTOM") {
                             val bgParallax = Modifier
