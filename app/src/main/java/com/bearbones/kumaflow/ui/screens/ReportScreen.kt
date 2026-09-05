@@ -100,7 +100,18 @@ fun ReportScreen(
     val savedIcons = remember(profile.categoryIcons) { try { JSONObject(profile.categoryIcons) } catch (e: Exception) { JSONObject() } }
     var showAllCategories by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).verticalScroll(rememberScrollState())) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .widthIn(max = 800.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
         Spacer(modifier = Modifier.height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp))
         Text(AppStr.rep, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
         Spacer(modifier = Modifier.height(16.dp))
@@ -591,6 +602,7 @@ fun ReportScreen(
         }
         Spacer(modifier = Modifier.height(paddingValues.calculateBottomPadding() + 24.dp))
     }
+}
 }
 fun DrawScope.drawTrendsArea(points: List<Float>, color: Color, isBrutal: Boolean = false) {
     if (points.size < 2) return

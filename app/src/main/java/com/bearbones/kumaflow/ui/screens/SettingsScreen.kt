@@ -217,10 +217,15 @@ fun SettingsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxHeight()
+                .widthIn(max = 800.dp)
+                .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {

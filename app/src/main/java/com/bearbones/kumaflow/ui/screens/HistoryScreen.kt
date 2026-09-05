@@ -182,8 +182,16 @@ fun HistoryScreen(
     }
 
     // MAIN UI
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .widthIn(max = 800.dp)
+                .fillMaxWidth()
+        ) {
             // Header
             Spacer(modifier = Modifier.height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp))
             Row(
