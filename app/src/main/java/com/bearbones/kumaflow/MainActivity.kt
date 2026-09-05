@@ -474,7 +474,7 @@ fun MainScreen(
     val pagerState = rememberPagerState(pageCount = { 4 })
     val transactionListWithSplits by dao.getAllTransactionsWithSplits().collectAsState(initial = emptyList())
     val userProfile = userProfileState ?: UserProfile(userName = "User")
-    var selectedItemIndex by remember { mutableIntStateOf(0) }
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
 
     var onShakeHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
     val sharedTiltState = com.bearbones.kumaflow.ui.components.rememberTiltState(
@@ -485,8 +485,8 @@ fun MainScreen(
     LaunchedEffect(selectedItemIndex) { if (pagerState.currentPage != selectedItemIndex) pagerState.animateScrollToPage(selectedItemIndex) }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) { if (!pagerState.isScrollInProgress) selectedItemIndex = pagerState.currentPage }
 
-    var selectedMonth by remember { mutableIntStateOf(java.time.LocalDateTime.now().monthValue) }
-    var selectedYear by remember { mutableIntStateOf(java.time.LocalDateTime.now().year) }
+    var selectedMonth by rememberSaveable { mutableIntStateOf(java.time.LocalDateTime.now().monthValue) }
+    var selectedYear by rememberSaveable { mutableIntStateOf(java.time.LocalDateTime.now().year) }
     var forceUpdateTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(transactionListWithSplits, userProfile.dateFormat) {
@@ -591,7 +591,7 @@ fun MainScreen(
     var showQrTransfer by remember { mutableStateOf(false) }
     var showDuoSync by remember { mutableStateOf(false) }
     var showDuoPairing by remember { mutableStateOf(false) }
-    var showSettingsOverlay by remember { mutableStateOf(false) }
+    var showSettingsOverlay by rememberSaveable { mutableStateOf(false) }
     val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
     LaunchedEffect(showBottomSheet, isSpeedDialOpen, showSettingsOverlay) { onOverlayStateChange(showBottomSheet || isSpeedDialOpen || showSettingsOverlay) }
     var transactionToEdit by remember { mutableStateOf<TransactionWithSplits?>(null) }
