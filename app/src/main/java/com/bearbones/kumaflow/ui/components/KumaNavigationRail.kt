@@ -31,11 +31,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -112,11 +116,30 @@ fun KumaNavigationRail(
     val dial1Interaction = remember { MutableInteractionSource() }
     val dial2Interaction = remember { MutableInteractionSource() }
 
+    var railCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var fabCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var fabTopPx by remember { mutableFloatStateOf(0f) }
+    var fabHeightPx by remember { mutableFloatStateOf(0f) }
+
+    fun updateFabPosition() {
+        val r = railCoordinates
+        val f = fabCoordinates
+        if (r != null && f != null && r.isAttached && f.isAttached) {
+            val rel = r.localPositionOf(f, Offset.Zero)
+            fabTopPx = rel.y
+            fabHeightPx = f.size.height.toFloat()
+        }
+    }
+
     Box(
         modifier = Modifier
             .width(88.dp)
             .fillMaxHeight()
             .zIndex(10f)
+            .onGloballyPositioned { coords ->
+                railCoordinates = coords
+                updateFabPosition()
+            }
     ) {
         // 1. Sidebar Container Surface
         Box(
@@ -163,7 +186,12 @@ fun KumaNavigationRail(
                 // Action FAB (+)
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .onGloballyPositioned { coords ->
+                            fabCoordinates = coords
+                            updateFabPosition()
+                        }
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -356,19 +384,27 @@ fun KumaNavigationRail(
 
         // 2. Speed Dial Items (Fanning out to the right into the content area)
         if (dialProgress > 0.01f) {
-            Box(
+            val density = LocalDensity.current
+            val defaultFabTopPx = with(density) { 84.dp.toPx() }
+            val defaultFabHeightPx = with(density) { 56.dp.toPx() }
+            val currentFabTop = if (fabTopPx > 0f) fabTopPx else defaultFabTopPx
+            val currentFabHeight = if (fabHeightPx > 0f) fabHeightPx else defaultFabHeightPx
+            val speedDialTop = with(density) {
+                (currentFabTop + (currentFabHeight - 48.dp.toPx()) / 2f).coerceAtLeast(0f).toDp()
+            }
+
+            Column(
                 modifier = Modifier
                     .wrapContentSize(align = Alignment.TopStart, unbounded = true)
-                    .zIndex(100f)
+                    .offset(x = 96.dp * dialProgress, y = speedDialTop)
+                    .zIndex(100f),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Speed Dial Option 1: Catat Normal (Aligned with FAB)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .wrapContentSize(align = Alignment.TopStart, unbounded = true)
-                        .statusBarsPadding()
-                        .padding(top = 84.dp)
-                        .offset(x = 96.dp * dialProgress)
                         .graphicsLayer {
                             scaleX = dialProgress
                             scaleY = dialProgress
@@ -431,9 +467,6 @@ fun KumaNavigationRail(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .wrapContentSize(align = Alignment.TopStart, unbounded = true)
-                        .statusBarsPadding()
-                        .padding(top = 146.dp)
-                        .offset(x = 96.dp * dialProgress)
                         .graphicsLayer {
                             scaleX = dialProgress
                             scaleY = dialProgress
