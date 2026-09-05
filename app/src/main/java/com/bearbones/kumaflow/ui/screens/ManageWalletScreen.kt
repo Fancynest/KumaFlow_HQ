@@ -9,8 +9,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.bearbones.kumaflow.R
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -274,461 +277,731 @@ fun ManageWalletContent(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppText())
-            }
-            Text(
-                text = if (isNewWallet) stringResource(R.string.manage_wallet_title_add) else stringResource(R.string.manage_wallet_title_edit),
-                color = AppText(),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
+    val windowSize = rememberKumaWindowSize()
+    val isTabletLandscape = windowSize.isTablet && windowSize.isLandscape
+    val scope = rememberCoroutineScope()
+
+    val handleSave = {
+        if (name.isNotBlank()) {
+            onSave(
+                activeWalletSnapshot?.name,
+                VirtualWallet(
+                    name = name.trim(),
+                    orderIndex = activeWalletSnapshot?.orderIndex ?: wallets.size,
+                    backgroundType = bgType,
+                    backgroundValue = bgValue,
+                    cardNumber = cardNumber.trim(),
+                    notes = notes.trim(),
+                    cardLabel = cardLabel.trim().ifBlank { "ACCESS CARD" }
+                )
             )
         }
+    }
+    val handleDelete = {
+        walletToDelete = activeWalletSnapshot
+    }
 
-        val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-        val screenWidth = configuration.screenWidthDp.dp
-        val windowSize = rememberKumaWindowSize()
-        val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
-        val pagerPageWidth = (availableWidth - 64.dp).coerceAtMost(360.dp)
-        val cardPreviewHeight = pagerPageWidth / 1.6f
-        val pagerHeight = cardPreviewHeight + 30.dp
-
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+    if (isTabletLandscape) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            HorizontalPager(
-                state = pagerState,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = pagerPageWidth + 64.dp)
-                    .height(pagerHeight),
-                contentPadding = PaddingValues(horizontal = 32.dp),
-                pageSpacing = 16.dp
-            ) { page ->
-                val isActive = page == editPageIndex
-                val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
-                val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
-                val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
-                val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppText())
+                }
+                Text(
+                    text = if (isNewWallet) stringResource(R.string.manage_wallet_title_add) else stringResource(R.string.manage_wallet_title_edit),
+                    color = AppText(),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
 
-                val solidColor = if (previewType == "SOLID") {
-                    try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
-                } else Color.Gray
-
-                Box(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                // Left Pane (45% width, sticky preview)
+                BoxWithConstraints(
                     modifier = Modifier
-                        .width(pagerPageWidth)
-                        .height(cardPreviewHeight)
-                        .shadow(12.dp, RoundedCornerShape(24.dp))
-                        
-                        .clip(RoundedCornerShape(24.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
-                        .background(solidColor)
+                        .weight(0.45f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
                 ) {
-                if (previewType == "GRADIENT") {
-                    val parts = previewVal.split(",")
-                    if (parts.size >= 2) {
-                        var startColor = Color.Gray
-                        var endColor = Color.DarkGray
-                        var valid = false
-                        try {
-                            startColor = Color(android.graphics.Color.parseColor(parts[0].trim()))
-                            endColor = Color(android.graphics.Color.parseColor(parts[1].trim()))
-                            valid = true
-                        } catch (e: Exception) {}
-                        
-                        if (valid) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.linearGradient(
-                                            colors = listOf(startColor, endColor)
-                                        )
-                                    )
+                    val panelWidth = maxWidth
+                    val cardWidth = (panelWidth - 48.dp).coerceAtMost(340.dp)
+                    val cardHeight = cardWidth / 1.6f
+                    val pagerWidth = cardWidth + 24.dp
+                    val pagerHeight = cardHeight + 20.dp
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .width(pagerWidth)
+                                .height(pagerHeight),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            pageSpacing = 8.dp
+                        ) { page ->
+                            val isActive = page == editPageIndex
+                            val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
+                            val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
+                            val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
+                            val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
+
+                            ManageWalletCardPreview(
+                                isNewCard = page == wallets.size,
+                                isActive = isActive,
+                                cardWidth = cardWidth,
+                                cardHeight = cardHeight,
+                                previewType = previewType,
+                                previewVal = previewVal,
+                                previewName = previewName,
+                                previewNumber = previewNumber,
+                                userName = userName,
+                                context = context
                             )
                         }
-                    }
-                } else if (previewType == "TEMPLATE") {
-                    val isPrideReq = previewVal == "pride"
-                    val isBearReq = previewVal == "bear" || previewVal == "bear2"
-                    val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
-                    val isBearAllowed = userName.contains("#bear", ignoreCase = true)
-                    
-                    val shouldRender = when {
-                        isPrideReq -> isPrideAllowed
-                        isBearReq -> isBearAllowed
-                        else -> true
-                    }
-                    
-                    if (shouldRender) {
-                        val resId = context.resources.getIdentifier(previewVal, "drawable", context.packageName)
-                        if (resId != 0) {
-                            Image(
-                                painter = painterResource(id = resId),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        if (isBearReq) {
-                            val alpha = if (resId != 0) 0.25f else 1f
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color(0xFF4A2008).copy(alpha = alpha),
-                                                Color(0xFF8B4513).copy(alpha = alpha),
-                                                Color(0xFFD4882A).copy(alpha = alpha),
-                                                Color(0xFFF5EDE0).copy(alpha = alpha),
-                                                Color(0xFF888888).copy(alpha = alpha),
-                                                Color(0xFF1A1A1A).copy(alpha = alpha),
-                                                Color(0xFF1A3A5C).copy(alpha = alpha)
-                                            )
-                                        )
-                                    )
-                            )
-                        }
-                    }
-                } else if (previewType == "CUSTOM") {
-                    val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), previewVal)
-                    if (file.exists()) {
-                        val bitmap = remember(file.absolutePath, file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
-                        if (bitmap != null) {
-                            Image(
-                                bitmap = bitmap,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+
+                        // Dot indicators
+                        Row(
+                            modifier = Modifier.padding(top = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(wallets.size + 1) { index ->
+                                val isSelected = pagerState.currentPage == index
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (isSelected) 10.dp else 8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isSelected) AppPrimary() else AppText().copy(alpha = 0.25f))
+                                        .clickable {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(index)
+                                            }
+                                        }
+                                )
+                            }
                         }
                     }
                 }
 
-                if (page == wallets.size && !isActive) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Row(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Filled.Add,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("New Card", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        }
-                    }
-                } else {
-                    // Scrim overlays for text legibility
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .align(Alignment.TopCenter)
-                            .background(Brush.verticalGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
-                            ))
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .align(Alignment.BottomCenter)
-                            .background(Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
-                            ))
-                    )
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(Color.Gray.copy(alpha = 0.2f))
+                )
 
-                    Column(
+                // Right Pane (55% width, scrollable form)
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(0.55f)
+                        .fillMaxHeight(),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp)
+                ) {
+                    item {
+                        ManageWalletTextInputs(
+                            name = name,
+                            onNameChange = { name = it },
+                            cardNumber = cardNumber,
+                            onCardNumberChange = { cardNumber = it },
+                            notes = notes,
+                            onNotesChange = { notes = it }
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        ManageWalletAppearancePicker(
+                            bgType = bgType,
+                            bgValue = bgValue,
+                            onSelectBg = { type, value ->
+                                bgType = type
+                                bgValue = value
+                            },
+                            solidColors = solidColors,
+                            templateImages = templateImages,
+                            customCards = customCards,
+                            onAddCustom = onAddCustom,
+                            onEditCustom = onEditCustom,
+                            context = context
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        ManageWalletImportantNote()
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        ManageWalletActionButtons(
+                            isNewWallet = isNewWallet,
+                            showDelete = !isNewWallet && activeWalletSnapshot != null,
+                            onDeleteClick = handleDelete,
+                            onSaveClick = handleSave
+                        )
+                        Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
+                    }
+                }
+            }
+        }
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = AppText())
+                }
+                Text(
+                    text = if (isNewWallet) stringResource(R.string.manage_wallet_title_add) else stringResource(R.string.manage_wallet_title_edit),
+                    color = AppText(),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+            val screenWidth = configuration.screenWidthDp.dp
+            val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
+            val pagerPageWidth = (availableWidth - 64.dp).coerceAtMost(360.dp)
+            val cardPreviewHeight = pagerPageWidth / 1.6f
+            val pagerHeight = cardPreviewHeight + 30.dp
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = pagerPageWidth + 64.dp)
+                        .height(pagerHeight),
+                    contentPadding = PaddingValues(horizontal = 32.dp),
+                    pageSpacing = 8.dp
+                ) { page ->
+                    val isActive = page == editPageIndex
+                    val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
+                    val previewVal = if (isActive) bgValue else if (page == wallets.size) "#D32F2F" else wallets[page].backgroundValue
+                    val previewName = if (isActive) name else if (page == wallets.size) "New Card" else wallets[page].name
+                    val previewNumber = if (isActive) cardNumber else if (page == wallets.size) "" else wallets[page].cardNumber
+
+                    ManageWalletCardPreview(
+                        isNewCard = page == wallets.size,
+                        isActive = isActive,
+                        cardWidth = pagerPageWidth,
+                        cardHeight = cardPreviewHeight,
+                        previewType = previewType,
+                        previewVal = previewVal,
+                        previewName = previewName,
+                        previewNumber = previewNumber,
+                        userName = userName,
+                        context = context
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                ManageWalletTextInputs(
+                    name = name,
+                    onNameChange = { name = it },
+                    cardNumber = cardNumber,
+                    onCardNumberChange = { cardNumber = it },
+                    notes = notes,
+                    onNotesChange = { notes = it }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                ManageWalletAppearancePicker(
+                    bgType = bgType,
+                    bgValue = bgValue,
+                    onSelectBg = { type, value ->
+                        bgType = type
+                        bgValue = value
+                    },
+                    solidColors = solidColors,
+                    templateImages = templateImages,
+                    customCards = customCards,
+                    onAddCustom = onAddCustom,
+                    onEditCustom = onEditCustom,
+                    context = context
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                ManageWalletImportantNote()
+                Spacer(modifier = Modifier.height(24.dp))
+                ManageWalletActionButtons(
+                    isNewWallet = isNewWallet,
+                    showDelete = !isNewWallet && activeWalletSnapshot != null,
+                    onDeleteClick = handleDelete,
+                    onSaveClick = handleSave
+                )
+                Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManageWalletCardPreview(
+    isNewCard: Boolean,
+    isActive: Boolean,
+    cardWidth: Dp,
+    cardHeight: Dp,
+    previewType: String,
+    previewVal: String,
+    previewName: String,
+    previewNumber: String,
+    userName: String,
+    context: Context
+) {
+    val solidColor = if (previewType == "SOLID") {
+        try { Color(android.graphics.Color.parseColor(previewVal)) } catch (e: Exception) { Color.DarkGray }
+    } else Color.Gray
+
+    Box(
+        modifier = Modifier
+            .width(cardWidth)
+            .height(cardHeight)
+            .shadow(12.dp, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
+            .background(solidColor)
+    ) {
+        if (previewType == "GRADIENT") {
+            val parts = previewVal.split(",")
+            if (parts.size >= 2) {
+                var startColor = Color.Gray
+                var endColor = Color.DarkGray
+                var valid = false
+                try {
+                    startColor = Color(android.graphics.Color.parseColor(parts[0].trim()))
+                    endColor = Color(android.graphics.Color.parseColor(parts[1].trim()))
+                    valid = true
+                } catch (e: Exception) {}
+
+                if (valid) {
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 18.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(26.dp)
-                                        .background(Color.White, CircleShape)
-                                        .padding(4.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    androidx.compose.material3.Icon(
-                                        imageVector = Icons.Filled.AccountBalanceWallet,
-                                        contentDescription = null,
-                                        tint = Color(0xFF2A2A2A)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    if (previewName.isBlank()) "" else previewName,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(startColor, endColor)
                                 )
-                            }
-                            Text(
-                                "KumaFlow",
-                                color = Color.White.copy(alpha = 0.5f),
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 10.sp
+                            )
+                    )
+                }
+            }
+        } else if (previewType == "TEMPLATE") {
+            val isPrideReq = previewVal == "pride"
+            val isBearReq = previewVal == "bear" || previewVal == "bear2"
+            val isPrideAllowed = userName.contains("#pride", ignoreCase = true)
+            val isBearAllowed = userName.contains("#bear", ignoreCase = true)
+
+            val shouldRender = when {
+                isPrideReq -> isPrideAllowed
+                isBearReq -> isBearAllowed
+                else -> true
+            }
+
+            if (shouldRender) {
+                val resId = context.resources.getIdentifier(previewVal, "drawable", context.packageName)
+                if (resId != 0) {
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                if (isBearReq) {
+                    val alpha = if (resId != 0) 0.25f else 1f
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF4A2008).copy(alpha = alpha),
+                                        Color(0xFF8B4513).copy(alpha = alpha),
+                                        Color(0xFFD4882A).copy(alpha = alpha),
+                                        Color(0xFFF5EDE0).copy(alpha = alpha),
+                                        Color(0xFF888888).copy(alpha = alpha),
+                                        Color(0xFF1A1A1A).copy(alpha = alpha),
+                                        Color(0xFF1A3A5C).copy(alpha = alpha)
+                                    )
+                                )
+                            )
+                    )
+                }
+            }
+        } else if (previewType == "CUSTOM") {
+            val file = java.io.File(java.io.File(context.filesDir, "custom_cards"), previewVal)
+            if (file.exists()) {
+                val bitmap = remember(file.absolutePath, file.lastModified()) {
+                    android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+
+        if (isNewCard && !isActive) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Row(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Filled.Add,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("New Card", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+        } else {
+            // Scrim overlays for text legibility
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .align(Alignment.TopCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent)
+                        )
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f))
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .background(Color.White, CircleShape)
+                                .padding(4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = Color(0xFF2A2A2A)
                             )
                         }
-                        if (previewNumber.isNotBlank()) {
-                            Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
-                        } else {
-                            Spacer(modifier = Modifier.weight(0.5f))
-                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (previewName.isBlank()) "" else previewName,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
                     }
+                    Text(
+                        "KumaFlow",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.sp
+                    )
+                }
+                if (previewNumber.isNotBlank()) {
+                    Text(previewNumber, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.sp)
+                } else {
+                    Spacer(modifier = Modifier.weight(0.5f))
                 }
             }
         }
     }
+}
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-        ) {
-            val baseFieldMod = Modifier
-                .fillMaxWidth()
-                .glassCard(16.dp, com.bearbones.kumaflow.AppSurfaceVariant())
-                .padding(16.dp)
+@Composable
+private fun ManageWalletTextInputs(
+    name: String,
+    onNameChange: (String) -> Unit,
+    cardNumber: String,
+    onCardNumberChange: (String) -> Unit,
+    notes: String,
+    onNotesChange: (String) -> Unit
+) {
+    val baseFieldMod = Modifier
+        .fillMaxWidth()
+        .glassCard(16.dp, com.bearbones.kumaflow.AppSurfaceVariant())
+        .padding(16.dp)
 
-            Box(modifier = baseFieldMod) {
-                Column {
-                    Text(stringResource(R.string.manage_wallet_name), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
-                    )
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
-                    Spacer(modifier = Modifier.height(12.dp))
+    Box(modifier = baseFieldMod) {
+        Column {
+            Text(stringResource(R.string.manage_wallet_name), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                value = name,
+                onValueChange = onNameChange,
+                textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+            )
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(stringResource(R.string.manage_wallet_card_number), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = cardNumber,
-                        onValueChange = { cardNumber = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
-                    )
-                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
-                    Spacer(modifier = Modifier.height(12.dp))
+            Text(stringResource(R.string.manage_wallet_card_number), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                value = cardNumber,
+                onValueChange = onCardNumberChange,
+                textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+            )
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.Gray.copy(alpha = 0.3f)))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(stringResource(R.string.manage_wallet_notes), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
-                    )
+            Text(stringResource(R.string.manage_wallet_notes), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp)
+            androidx.compose.foundation.text.BasicTextField(
+                value = notes,
+                onValueChange = onNotesChange,
+                textStyle = androidx.compose.ui.text.TextStyle(color = AppText(), fontSize = 16.sp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ManageWalletAppearancePicker(
+    bgType: String,
+    bgValue: String,
+    onSelectBg: (type: String, value: String) -> Unit,
+    solidColors: List<String>,
+    templateImages: List<String>,
+    customCards: List<File>,
+    onAddCustom: () -> Unit,
+    onEditCustom: (File) -> Unit,
+    context: Context
+) {
+    Column {
+        Text(stringResource(R.string.manage_wallet_appearance), color = AppText(), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(solidColors) { colorHex ->
+                val isSelected = bgType == "SOLID" && bgValue == colorHex
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(Color(android.graphics.Color.parseColor(colorHex)))
+                        .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, CircleShape)
+                        .clickable {
+                            onSelectBg("SOLID", colorHex)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) Icon(Icons.Default.Check, null, tint = Color.White)
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(stringResource(R.string.manage_wallet_appearance), color = AppText(), fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(solidColors) { colorHex ->
-                    val isSelected = bgType == "SOLID" && bgValue == colorHex
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(Color(android.graphics.Color.parseColor(colorHex)))
-                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, CircleShape)
-                            .clickable {
-                                bgType = "SOLID"
-                                bgValue = colorHex
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isSelected) Icon(Icons.Default.Check, null, tint = Color.White)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(templateImages) { template ->
+                val isSelected = bgType == "TEMPLATE" && bgValue == template
+                val resId = context.resources.getIdentifier(template, "drawable", context.packageName)
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Gray)
+                        .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
+                        .clickable {
+                            onSelectBg("TEMPLATE", template)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (resId != 0) {
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    if (template == "bear" || template == "bear2") {
+                        val alpha = if (resId != 0) 0.25f else 1f
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0xFF4A2008).copy(alpha = alpha),
+                                            Color(0xFF8B4513).copy(alpha = alpha),
+                                            Color(0xFFD4882A).copy(alpha = alpha),
+                                            Color(0xFFF5EDE0).copy(alpha = alpha),
+                                            Color(0xFF888888).copy(alpha = alpha),
+                                            Color(0xFF1A1A1A).copy(alpha = alpha),
+                                            Color(0xFF1A3A5C).copy(alpha = alpha)
+                                        )
+                                    )
+                                )
+                        )
+                    }
+                    if (isSelected) {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
+                        Icon(Icons.Default.Check, null, tint = Color.White)
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(templateImages) { template ->
-                    val isSelected = bgType == "TEMPLATE" && bgValue == template
-                    val resId = context.resources.getIdentifier(template, "drawable", context.packageName)
-                    Box(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Gray)
-                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
-                            .clickable {
-                                bgType = "TEMPLATE"
-                                bgValue = template
+
+            items(customCards) { file ->
+                val isSelected = bgType == "CUSTOM" && bgValue == file.name
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Gray)
+                        .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
+                        .combinedClickable(
+                            onClick = {
+                                onSelectBg("CUSTOM", file.name)
                             },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (resId != 0) {
-                            Image(
-                                painter = painterResource(id = resId),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        if (template == "bear" || template == "bear2") {
-                            val alpha = if (resId != 0) 0.25f else 1f
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color(0xFF4A2008).copy(alpha = alpha),
-                                                Color(0xFF8B4513).copy(alpha = alpha),
-                                                Color(0xFFD4882A).copy(alpha = alpha),
-                                                Color(0xFFF5EDE0).copy(alpha = alpha),
-                                                Color(0xFF888888).copy(alpha = alpha),
-                                                Color(0xFF1A1A1A).copy(alpha = alpha),
-                                                Color(0xFF1A3A5C).copy(alpha = alpha)
-                                            )
-                                        )
-                                    )
-                            )
-                        }
-                        if (isSelected) {
-                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)))
+                            onLongClick = {
+                                onEditCustom(file)
+                            }
+                        )
+                ) {
+                    val bitmap = remember(file.absolutePath, file.lastModified()) {
+                        android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                    }
+                    if (bitmap != null) {
+                        Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    }
+                    if (isSelected) {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.Center) {
                             Icon(Icons.Default.Check, null, tint = Color.White)
                         }
                     }
                 }
-                
-                items(customCards) { file ->
-                    val isSelected = bgType == "CUSTOM" && bgValue == file.name
-                    Box(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Gray)
-                            .border(if (isSelected) 3.dp else 0.dp, if (isSelected) AppPrimary() else Color.Transparent, RoundedCornerShape(8.dp))
-                            .combinedClickable(
-                                onClick = {
-                                    bgType = "CUSTOM"
-                                    bgValue = file.name
-                                },
-                                onLongClick = {
-                                    onEditCustom(file)
-                                }
-                            )
-                    ) {
-                        val bitmap = remember(file.absolutePath, file.lastModified()) { android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
-                        if (bitmap != null) {
-                            Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                        }
-                        if (isSelected) {
-                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Check, null, tint = Color.White)
+            }
+
+            item {
+                Box(
+                    modifier = Modifier
+                        .width(80.dp)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.DarkGray)
+                        .clickable {
+                            if (customCards.size >= 5) {
+                                Toast.makeText(context, "Maksimal 5 gambar custom", Toast.LENGTH_SHORT).show()
+                            } else {
+                                onAddCustom()
                             }
-                        }
-                    }
-                }
-                
-                item {
-                    Box(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(50.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.DarkGray)
-                            .clickable {
-                                if (customCards.size >= 5) {
-                                    Toast.makeText(context, "Maksimal 5 gambar custom", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    onAddCustom()
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Custom Card", tint = Color.White)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Box(modifier = baseFieldMod) {
-                Column {
-                    Text(stringResource(R.string.manage_wallet_important_note), color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(stringResource(R.string.manage_wallet_important_note_desc), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 20.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                if (!isNewWallet && activeWalletSnapshot != null) {
-                    KumaButton(
-                        onClick = { walletToDelete = activeWalletSnapshot }, 
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                        modifier = Modifier.weight(0.4f)
-                    ) {
-                        Icon(Icons.Default.Delete, null, tint = Color.White)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
-                
-                KumaButton(
-                    onClick = {
-                        if (name.isNotBlank()) {
-                            onSave(
-                                activeWalletSnapshot?.name,
-                                VirtualWallet(
-                                    name = name.trim(),
-                                    orderIndex = activeWalletSnapshot?.orderIndex ?: wallets.size,
-                                    backgroundType = bgType,
-                                    backgroundValue = bgValue,
-                                    cardNumber = cardNumber.trim(),
-                                    notes = notes.trim(),
-                                    cardLabel = cardLabel.trim().ifBlank { "ACCESS CARD" }
-                                )
-                            )
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(if (isNewWallet) stringResource(R.string.manage_wallet_btn_add) else stringResource(R.string.manage_wallet_btn_save), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Add, contentDescription = "Add Custom Card", tint = Color.White)
                 }
             }
-            Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
+        }
+    }
+}
+
+@Composable
+private fun ManageWalletImportantNote() {
+    val baseFieldMod = Modifier
+        .fillMaxWidth()
+        .glassCard(16.dp, com.bearbones.kumaflow.AppSurfaceVariant())
+        .padding(16.dp)
+
+    Box(modifier = baseFieldMod) {
+        Column {
+            Text(stringResource(R.string.manage_wallet_important_note), color = AppText(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(stringResource(R.string.manage_wallet_important_note_desc), color = AppText().copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 20.sp)
+        }
+    }
+}
+
+@Composable
+private fun ManageWalletActionButtons(
+    isNewWallet: Boolean,
+    showDelete: Boolean,
+    onDeleteClick: () -> Unit,
+    onSaveClick: () -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        if (showDelete) {
+            KumaButton(
+                onClick = onDeleteClick, 
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                modifier = Modifier.weight(0.4f)
+            ) {
+                Icon(Icons.Default.Delete, null, tint = Color.White)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+        }
+
+        KumaButton(
+            onClick = onSaveClick,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                if (isNewWallet) stringResource(R.string.manage_wallet_btn_add) else stringResource(R.string.manage_wallet_btn_save),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
