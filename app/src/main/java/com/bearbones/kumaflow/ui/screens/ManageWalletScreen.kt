@@ -52,6 +52,7 @@ import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.LocalIsDark
 import com.bearbones.kumaflow.VirtualWallet
 import com.bearbones.kumaflow.ui.components.KumaButton
+import com.bearbones.kumaflow.ui.components.rememberKumaWindowSize
 import com.bearbones.kumaflow.ui.theme.LocalIsBrutal
 
 import java.io.File
@@ -298,7 +299,9 @@ fun ManageWalletContent(
 
         val configuration = androidx.compose.ui.platform.LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
-        val pagerPageWidth = (screenWidth - 64.dp).coerceAtMost(480.dp)
+        val windowSize = rememberKumaWindowSize()
+        val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
+        val pagerPageWidth = (availableWidth - 64.dp).coerceAtMost(360.dp)
         val cardPreviewHeight = pagerPageWidth / 1.6f
         val pagerHeight = cardPreviewHeight + 30.dp
 
@@ -310,7 +313,7 @@ fun ManageWalletContent(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 544.dp)
+                    .widthIn(max = pagerPageWidth + 64.dp)
                     .height(pagerHeight),
                 contentPadding = PaddingValues(horizontal = 32.dp),
                 pageSpacing = 16.dp
@@ -327,8 +330,7 @@ fun ManageWalletContent(
 
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 480.dp)
+                        .width(pagerPageWidth)
                         .height(cardPreviewHeight)
                         .shadow(12.dp, RoundedCornerShape(24.dp))
                         
@@ -795,7 +797,9 @@ fun WalletSuccessContent(
         if (wallet != null) {
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
-            val cardPreviewWidth = (screenWidth - 48.dp).coerceAtMost(480.dp)
+            val windowSize = rememberKumaWindowSize()
+            val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
+            val cardPreviewWidth = (availableWidth - 48.dp).coerceAtMost(360.dp)
             val cardPreviewHeight = cardPreviewWidth / 1.6f
 
             val solidColor = if (wallet.backgroundType == "SOLID") {
@@ -806,8 +810,7 @@ fun WalletSuccessContent(
             
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 480.dp)
+                    .width(cardPreviewWidth)
                     .height(cardPreviewHeight)
                     .shadow(12.dp, RoundedCornerShape(24.dp))
                     
@@ -962,7 +965,7 @@ fun WalletSuccessContent(
 
         KumaButton(
             onClick = onDone,
-            modifier = Modifier.fillMaxWidth().widthIn(max = 480.dp)
+            modifier = Modifier.fillMaxWidth().widthIn(max = 360.dp)
         ) {
             Text(stringResource(R.string.manage_wallet_done), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
