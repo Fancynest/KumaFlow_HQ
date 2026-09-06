@@ -893,14 +893,14 @@ fun MainScreen(
                         repeatMode = androidx.compose.animation.core.RepeatMode.Restart
                     )
                 )
-                val gutsAnimTime = infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = (2 * Math.PI).toFloat(),
-                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                        animation = androidx.compose.animation.core.tween(6000, easing = androidx.compose.animation.core.LinearEasing),
-                        repeatMode = androidx.compose.animation.core.RepeatMode.Restart
-                    )
-                )
+                val gutsAnimTime = produceState(0.0) {
+                    val startTime = withFrameMillis { it }
+                    while (true) {
+                        withFrameMillis { frameTime ->
+                            value = (frameTime - startTime) / 1000.0
+                        }
+                    }
+                }
 
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val conf = androidx.compose.ui.platform.LocalConfiguration.current
@@ -1049,9 +1049,9 @@ fun MainScreen(
                                 for (p in 0..3) {
                                     val pageBaseX = p * screenWidth
 
-                                    // Crescent Moon Helper (Difference of 2 circles) with soft continuous moonlight aura pulse
+                                     // Crescent Moon Helper (Difference of 2 circles) with soft continuous moonlight aura pulse
                                     fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, baseAlpha: Float, moonIndex: Int) {
-                                        val pulse = (kotlin.math.sin(animT.toDouble() * 1.0 + moonIndex * 2.1).toFloat() + 1f) / 2f
+                                        val pulse = (kotlin.math.sin(animT * 0.45 + moonIndex * 2.1).toFloat() + 1f) / 2f
                                         val currentR = radius * (0.95f + 0.10f * pulse)
                                         val innerR = currentR * 0.85f
                                         val innerCx = cx + currentR * 0.45f
@@ -1068,14 +1068,14 @@ fun MainScreen(
                                             )
                                         }
                                         val auraStroke = (2.5f + 4.5f * pulse).dp.toPx()
-                                        val moonAlpha = (baseAlpha * (0.75f + 0.70f * pulse)).coerceIn(0.15f, 0.70f)
-                                        val moonColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFE8D7FF), pulse)
+                                        val moonAlpha = (baseAlpha * (0.90f + 0.80f * pulse)).coerceIn(0.25f, 0.80f)
+                                        val moonColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFF3E5FF), pulse)
 
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
                                             // Glowing moonlight halo
                                             drawPath(
                                                 path = moonPath,
-                                                color = Color(0xFFD1B3FF).copy(alpha = moonAlpha * 0.45f),
+                                                color = Color(0xFFD1B3FF).copy(alpha = moonAlpha * 0.50f),
                                                 style = Stroke(width = auraStroke)
                                             )
                                             // Moon body
@@ -1086,10 +1086,10 @@ fun MainScreen(
                                         }
                                     }
 
-                                    // 5-Point Star Helper with Smooth Continuous Twinkling (No Pauses)
+                                    // 5-Point Star Helper with Smooth Continuous Twinkling (No Pauses, Never Dead)
                                     fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
-                                        val freq = 2.4 + (starIndex % 4) * 0.7
-                                        val shimmer = (kotlin.math.sin(animT.toDouble() * freq + starIndex * 1.4).toFloat() + 1f) / 2f
+                                        val freq = 1.0 + (starIndex % 4) * 0.35
+                                        val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.5).toFloat() + 1f) / 2f
 
                                         val dynamicOuterR = outerR * (0.85f + 0.30f * shimmer)
                                         val innerR = dynamicOuterR * 0.42f
@@ -1103,8 +1103,8 @@ fun MainScreen(
                                             }
                                             close()
                                         }
-                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), shimmer)
-                                        val starAlpha = (alpha * (0.55f + 1.8f * shimmer)).coerceIn(0.12f, 0.92f)
+                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
+                                        val starAlpha = (alpha * (1.1f + 2.4f * shimmer)).coerceIn(0.20f, 0.95f)
 
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
                                             drawPath(
@@ -1114,10 +1114,10 @@ fun MainScreen(
                                         }
                                     }
 
-                                    // 4-Point Sparkle Star Helper with Smooth Continuous Twinkling (No Pauses)
+                                    // 4-Point Sparkle Star Helper with Smooth Continuous Twinkling (No Pauses, Never Dead)
                                     fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
-                                        val freq = 3.0 + (starIndex % 3) * 0.8
-                                        val shimmer = (kotlin.math.sin(animT.toDouble() * freq + starIndex * 1.8).toFloat() + 1f) / 2f
+                                        val freq = 1.2 + (starIndex % 3) * 0.4
+                                        val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.8).toFloat() + 1f) / 2f
 
                                         val dynamicOuterR = outerR * (0.82f + 0.35f * shimmer)
                                         val innerR = dynamicOuterR * 0.22f
@@ -1131,17 +1131,15 @@ fun MainScreen(
                                             }
                                             close()
                                         }
-                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), shimmer)
-                                        val starAlpha = (alpha * (0.50f + 2.0f * shimmer)).coerceIn(0.12f, 0.95f)
+                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
+                                        val starAlpha = (alpha * (1.0f + 2.6f * shimmer)).coerceIn(0.22f, 0.98f)
 
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
-                                            if (shimmer > 0.45f) {
-                                                drawPath(
-                                                    path = sparklePath,
-                                                    color = Color(0xFFF8F0FF).copy(alpha = (shimmer - 0.45f) * 1.4f * alpha),
-                                                    style = Stroke(width = 2.dp.toPx())
-                                                )
-                                            }
+                                            drawPath(
+                                                path = sparklePath,
+                                                color = Color(0xFFF8F0FF).copy(alpha = starAlpha * 0.55f * shimmer),
+                                                style = Stroke(width = 1.8.dp.toPx())
+                                            )
                                             drawPath(
                                                 path = sparklePath,
                                                 color = starColor.copy(alpha = starAlpha)
@@ -1292,17 +1290,17 @@ fun MainScreen(
                                     random.nextFloat() * 30f - 15f
                                 }
                                 
-                                // Wave breathing calculation with phase shift per song - slowed down and continuous without pauses
-                                val breathPhase = kotlin.math.sin(gutsAnimTime.value.toDouble() * 0.75 + index * 0.6)
+                                // Wave breathing calculation with phase shift per song - continuous smooth breathing without pauses
+                                val breathPhase = kotlin.math.sin(gutsAnimTime.value * 0.55 + index * 0.55)
                                 val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
                                 
-                                // Smooth continuous alpha breathing from 0.22f (subtle) to 0.80f (bright neon)
-                                val songAlpha = (0.22f + 0.58f * breathNorm).coerceIn(0.18f, 0.85f)
+                                // Continuous alpha breathing - always clearly visible (min 0.38f) up to glowing neon (0.88f)
+                                val songAlpha = (0.38f + 0.50f * breathNorm).coerceIn(0.32f, 0.90f)
                                 
-                                // Smooth continuous color transition from electric violet to luminous pastel lavender
-                                val songColor = androidx.compose.ui.graphics.lerp(Color(0xFF9E68F5), Color(0xFFF3E5FF), breathNorm)
+                                // Continuous color transition from electric lavender to brilliant starlight white
+                                val songColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), breathNorm)
                                 
-                                val glowBlur = 4f + 16f * breathNorm
+                                val glowBlur = 6f + 20f * breathNorm
 
                                 Text(
                                     text = song,
@@ -1311,7 +1309,7 @@ fun MainScreen(
                                     fontSize = 26.sp,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
-                                            color = Color(0xFFB388FF).copy(alpha = songAlpha * 0.75f),
+                                            color = Color(0xFFD8B4FE).copy(alpha = songAlpha * 0.85f),
                                             blurRadius = glowBlur
                                         )
                                     ),
@@ -1319,7 +1317,7 @@ fun MainScreen(
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value.toDouble() * 0.6 + index.toDouble()).toFloat() * 14f)
+                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.35 + index.toDouble()).toFloat() * 12f)
                                             rotationZ = rot
                                         }
                                 )
