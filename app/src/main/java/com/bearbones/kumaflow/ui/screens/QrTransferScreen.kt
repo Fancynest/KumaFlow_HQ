@@ -181,7 +181,7 @@ fun SenderView(profile: UserProfile, txs: List<TransactionWithSplits>) {
                         } else {
                             errorMsg = ""
                             val token = java.util.UUID.randomUUID().toString()
-                            server?.updateTokenAndData(token, profile, txs)
+                            server?.updateTokenAndData(token, profile, txs, context)
                             val url = "http://$ip:8080/download-kuma?token=$token"
                             val bmp = generateQrBitmap(url)
                             withContext(Dispatchers.Main) {

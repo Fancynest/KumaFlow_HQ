@@ -2903,7 +2903,8 @@ fun backupAppToJSON(context: Context) {
                 // Do NOT return here, continue backing up profile and wallets
             }
             val root = JSONObject()
-            root.put("backupVersion", 7) // Incremented backup version
+            root.put("backupVersion", 8) // Incremented backup version (includes user_dob & easter_egg_code)
+            val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
 
             val pJson = JSONObject().apply {
                 put("userName", profile.userName)
@@ -2932,6 +2933,8 @@ fun backupAppToJSON(context: Context) {
                 put("savingsGoals", profile.savingsGoals)
                 put("isNavMotionEnabled", profile.isNavMotionEnabled)
                 put("isParallaxEnabled", profile.isParallaxEnabled)
+                put("user_dob", sharedPref.getString("user_dob", "") ?: "")
+                put("easter_egg_code", sharedPref.getString("easter_egg_code", "") ?: "")
                 put("qrisFilePath", profile.qrisFilePath)
                 put("qrisHolderName", profile.qrisHolderName)
                 put("bankName", profile.bankName)

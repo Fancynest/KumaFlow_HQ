@@ -201,6 +201,8 @@ fun SettingsScreen(
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, AppStr.resOk, Toast.LENGTH_SHORT).show()
                         updateKumaWidget(context)
+                        newDob = sharedPref.getString("user_dob", "") ?: ""
+                        newEasterEgg = sharedPref.getString("easter_egg_code", "") ?: ""
                         showRestoreCompleteNote = true
                     }
                 } catch (e: Exception) {

@@ -1,5 +1,6 @@
 package com.bearbones.kumaflow.utils
 
+import android.content.Context
 import android.util.Base64
 import com.bearbones.kumaflow.TransactionWithSplits
 import com.bearbones.kumaflow.UserProfile
@@ -20,9 +21,9 @@ class QrTransferServer(port: Int = 8080) : NanoHTTPD(port) {
     
     var duoListener: DuoServerListener? = null
 
-    fun updateTokenAndData(token: String, profile: UserProfile, txs: List<TransactionWithSplits>) {
+    fun updateTokenAndData(token: String, profile: UserProfile, txs: List<TransactionWithSplits>, context: Context? = null) {
         currentToken.set(token)
-        backupJsonCache = generateBackupJson(profile, txs)
+        backupJsonCache = generateBackupJson(profile, txs, context)
     }
 
     override fun serve(session: IHTTPSession): Response {
@@ -86,7 +87,7 @@ class QrTransferServer(port: Int = 8080) : NanoHTTPD(port) {
         return newFixedLengthResponse(Response.Status.NOT_FOUND, NanoHTTPD.MIME_PLAINTEXT, "Not Found")
     }
 
-    private fun generateBackupJson(profile: UserProfile, txsWithSplits: List<TransactionWithSplits>): String {
+    private fun generateBackupJson(profile: UserProfile, txsWithSplits: List<TransactionWithSplits>, context: Context? = null): String {
         val root = JSONObject()
         root.put("backupVersion", 6)
 
@@ -115,6 +116,11 @@ class QrTransferServer(port: Int = 8080) : NanoHTTPD(port) {
             put("lastActiveDate", profile.lastActiveDate)
             put("freezeCount", profile.freezeCount)
             put("lastMilestoneNotified", profile.lastMilestoneNotified)
+            if (context != null) {
+                val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+                put("user_dob", sharedPref.getString("user_dob", "") ?: "")
+                put("easter_egg_code", sharedPref.getString("easter_egg_code", "") ?: "")
+            }
             put("qrisFilePath", profile.qrisFilePath)
             put("qrisHolderName", profile.qrisHolderName)
             put("bankName", profile.bankName)

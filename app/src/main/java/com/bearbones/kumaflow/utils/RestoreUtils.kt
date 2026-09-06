@@ -107,6 +107,22 @@ object RestoreUtils {
 
         val dao = KumaDatabase.getDatabase(context).transactionDao()
         dao.restoreDatabase(finalProfile, txsWithSplits)
+
+        // Restore shared preferences (DOB, easter egg)
+        val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPref.edit()
+        var hasPrefChanges = false
+        if (pObj.has("user_dob")) {
+            editor.putString("user_dob", pObj.optString("user_dob", ""))
+            hasPrefChanges = true
+        }
+        if (pObj.has("easter_egg_code")) {
+            editor.putString("easter_egg_code", pObj.optString("easter_egg_code", ""))
+            hasPrefChanges = true
+        }
+        if (hasPrefChanges) {
+            editor.apply()
+        }
         
         // Restore virtual wallets
         val virtualWalletsArr = root.optJSONArray("virtualWallets")
