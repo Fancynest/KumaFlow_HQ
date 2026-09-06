@@ -57,22 +57,20 @@ fun SavingsMoreSheet(
     onOpenCloseConfirm: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
     
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(24.dp)
-            ) {
             Text(
                 text = if (AppStr.isId) "Lainnya" else "Others",
                 fontSize = 20.sp,
@@ -127,7 +125,6 @@ fun SavingsMoreSheet(
             
             Spacer(modifier = Modifier.height(32.dp))
         }
-        }
     }
 }
 
@@ -174,16 +171,21 @@ fun SavingsHistorySheet(
         displayedTxs = filtered.sortedByDescending { it.transaction.date }
     }
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxHeight(0.9f)
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(horizontal = 24.dp)
         ) {
-            Column(modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth().widthIn(max = 560.dp).padding(horizontal = 24.dp)) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -307,7 +309,6 @@ fun SavingsHistorySheet(
                 }
             }
         }
-        }
     }
     
     if (showMonthPicker) {
@@ -396,23 +397,22 @@ fun SavingsSettingsSheet(
         if (long > 0) NumberFormat.getInstance(Locale.getDefault()).format(long) else ""
     }
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-            ) {
             Text(if (AppStr.isId) "Pengaturan Tabungan" else "Savings Settings", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -593,7 +593,6 @@ fun SavingsSettingsSheet(
             }
             Spacer(modifier = Modifier.height(48.dp))
         }
-        }
     }
     
     if (showFreqSheet) {
@@ -628,21 +627,20 @@ fun SavingsAutodebitFreqSheet(
     
     val days = listOf("Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu")
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(24.dp)
-            ) {
             Text(if (AppStr.isId) "Kapan waktu autodebit tabungan kamu?" else "When should the autodebit happen?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -775,7 +773,6 @@ fun SavingsAutodebitFreqSheet(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-        }
         }
     }
 }

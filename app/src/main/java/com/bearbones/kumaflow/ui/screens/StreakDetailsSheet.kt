@@ -56,6 +56,7 @@ fun StreakDetailsSheet(
     activeDates: List<LocalDate>,
     onDismiss: () -> Unit
 ) {
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
     val context = LocalContext.current
     val todayStrForFire = LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
     val isActiveTodayFire = profile.lastActiveDate == todayStrForFire
@@ -71,6 +72,7 @@ fun StreakDetailsSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

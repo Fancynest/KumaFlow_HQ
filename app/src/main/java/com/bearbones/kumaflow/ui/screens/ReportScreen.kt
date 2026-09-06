@@ -99,6 +99,7 @@ fun ReportScreen(
     val catTargets = remember(profile.categoryTargets) { try { JSONObject(profile.categoryTargets) } catch (e: Exception) { JSONObject() } }
     val savedIcons = remember(profile.categoryIcons) { try { JSONObject(profile.categoryIcons) } catch (e: Exception) { JSONObject() } }
     var showAllCategories by remember { mutableStateOf(false) }
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -261,7 +262,16 @@ fun ReportScreen(
 
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .then(
+                    if (windowSize.isTablet) {
+                        Modifier
+                            .widthIn(max = 400.dp)
+                            .fillMaxWidth()
+                            .align(Alignment.CenterHorizontally)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+                )
                 .glassCard(32.dp, AppSurface()),
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -411,7 +421,16 @@ fun ReportScreen(
 
         Card(
             modifier = Modifier
-                .fillMaxWidth()
+                .then(
+                    if (windowSize.isTablet) {
+                        Modifier
+                            .widthIn(max = 400.dp)
+                            .fillMaxWidth()
+                            .align(Alignment.CenterHorizontally)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+                )
                 .height(280.dp)
                 .glassCard(32.dp, AppSurface()),
             shape = RoundedCornerShape(32.dp),

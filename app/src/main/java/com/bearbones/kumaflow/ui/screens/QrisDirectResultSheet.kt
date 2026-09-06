@@ -113,24 +113,23 @@ fun QrisDirectResultSheet(
         }
     }
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = AppBg(),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -255,7 +254,6 @@ fun QrisDirectResultSheet(
                     Text(if (AppStr.isId) "Bagikan" else "Share", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
-        }
         }
     }
 }

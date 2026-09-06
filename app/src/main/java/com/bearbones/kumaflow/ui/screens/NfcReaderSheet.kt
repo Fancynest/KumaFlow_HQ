@@ -121,23 +121,22 @@ fun NfcReaderSheet(
         }
     }
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         dragHandle = { BottomSheetDefaults.DragHandle() },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
             Text(
                 "NFC Reader",
                 style = MaterialTheme.typography.headlineSmall,
@@ -274,7 +273,6 @@ fun NfcReaderSheet(
             }
             
             Spacer(modifier = Modifier.height(32.dp))
-        }
         }
     }
 }

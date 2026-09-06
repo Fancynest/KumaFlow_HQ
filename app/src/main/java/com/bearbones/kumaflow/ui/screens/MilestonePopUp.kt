@@ -28,6 +28,7 @@ import com.bearbones.kumaflow.AppSurface
 import com.bearbones.kumaflow.AppText
 import com.bearbones.kumaflow.utils.ShareStreakUtils
 import com.bearbones.kumaflow.ui.components.KumaIconButton
+import com.bearbones.kumaflow.ui.components.rememberKumaWindowSize
 
 @Composable
 fun MilestonePopUp(
@@ -35,6 +36,7 @@ fun MilestonePopUp(
     onDismiss: () -> Unit,
     onShare: () -> Unit
 ) {
+    val windowSize = rememberKumaWindowSize()
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.fire))
     val progress by animateLottieCompositionAsState(
         composition = composition,
@@ -54,6 +56,7 @@ fun MilestonePopUp(
         ) {
             Card(
                 modifier = Modifier
+                    .widthIn(max = 480.dp)
                     .fillMaxWidth(0.85f)
                     .padding(16.dp),
                 shape = RoundedCornerShape(32.dp),

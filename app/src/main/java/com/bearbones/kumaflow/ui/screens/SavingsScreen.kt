@@ -106,6 +106,7 @@ fun SavingsScreen(
     var selectedGoalForAction by remember { mutableStateOf<String?>(null) }
 
     val curSym = if (profile.currency == "IDR") "Rp" else profile.currency
+    val windowSize = rememberKumaWindowSize()
 
     Column(
         modifier = Modifier
@@ -121,6 +122,7 @@ fun SavingsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 800.dp).align(Alignment.CenterHorizontally) else Modifier)
                 .glassCard(16.dp, AppSurface())
         ) {
             Row(
@@ -174,7 +176,9 @@ fun SavingsScreen(
 
         // Title and Add Button
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 800.dp).align(Alignment.CenterHorizontally) else Modifier),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -196,7 +200,6 @@ fun SavingsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val windowSize = rememberKumaWindowSize()
         if (windowSize.isTablet) {
             if (savingsWallets.isEmpty()) {
                 Column(

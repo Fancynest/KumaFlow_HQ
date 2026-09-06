@@ -77,21 +77,20 @@ fun SavingsActionSheet(
     val destLabel = if (isAdding) goalName else selectedWallet
     val destBal = if (isAdding) currentSavingsBal else currentMainBal
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(24.dp)
-            ) {
             // Title
             Text(
                 text = if (isAdding) {
@@ -331,7 +330,6 @@ fun SavingsActionSheet(
             }
 
             Spacer(modifier = Modifier.height(48.dp))
-        }
         }
     }
 }

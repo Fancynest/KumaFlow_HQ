@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 
@@ -19,10 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bearbones.kumaflow.ui.components.KumaTextButton
+import com.bearbones.kumaflow.ui.components.rememberKumaWindowSize
 
 @Composable
 fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
     val context = LocalContext.current
+    val windowSize = rememberKumaWindowSize()
     val sharedPref = context.getSharedPreferences("KumaFlowPrefs", Context.MODE_PRIVATE)
 
     // Verify if this is the user's first time launching the application (defaults to true)
@@ -35,6 +38,7 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
             sharedPref.edit().putBoolean("is_first_time_user", false).apply()
         }
         AlertDialog(
+            modifier = Modifier.widthIn(max = 480.dp),
             onDismissRequest = {
                 // Intentionally left blank to prevent the user from accidentally dismissing the dialog
                 // by tapping outside the pop-up area. Explicit interaction with the "Got it" button is required.
@@ -47,7 +51,7 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
                 )
             },
             text = {
-                Column {
+                Column(modifier = Modifier.widthIn(max = 480.dp)) {
                     Text(text = AppStr.infoReminderDesc)
                     Spacer(modifier = Modifier.height(12.dp))
 

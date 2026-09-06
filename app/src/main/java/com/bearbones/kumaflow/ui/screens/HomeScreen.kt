@@ -206,8 +206,8 @@ fun HomeScreen(
     var qrisDirectAmount by remember { mutableStateOf(0L) }
     var qrisDirectMessage by remember { mutableStateOf("") }
     val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
-    val isTabletPortrait = windowSize.isTablet && !windowSize.isLandscape
-    val isTwoPane = windowSize.isTablet && windowSize.isLandscape
+    val isTwoPane = windowSize.isTablet && (windowSize.isExpanded || windowSize.isLandscape)
+    val isTabletPortrait = windowSize.isTablet && !windowSize.isLandscape && !windowSize.isExpanded
 
     val renderOverview: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -348,10 +348,13 @@ fun HomeScreen(
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                         ) {
                             Box(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                                    .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Box(modifier = Modifier.bouncySheetContent().widthIn(max = 560.dp)) {
+                                Box(modifier = Modifier.bouncySheetContent()) {
                                     StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
                                 }
                             }
@@ -748,8 +751,9 @@ fun HomeScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = if (isTabletPortrait) 600.dp else Dp.Infinity),
+                        .fillMaxHeight()
+                        .then(if (isTabletPortrait) Modifier.widthIn(max = 680.dp) else Modifier)
+                        .fillMaxWidth(),
                     contentPadding = PaddingValues(
                         top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
                         bottom = paddingValues.calculateBottomPadding() + 24.dp

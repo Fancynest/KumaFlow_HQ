@@ -253,13 +253,23 @@ fun DuoReceiverView(profile: UserProfile, database: KumaDatabase, onPaired: (Duo
         Spacer(modifier = Modifier.height(16.dp))
         Text(context.getString(com.bearbones.kumaflow.R.string.duo_msg_pairing_handshake))
     } else if (hasCamPermission) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .widthIn(max = 480.dp)
-                .padding(top = 16.dp)
-                .clip(RoundedCornerShape(24.dp))
+        val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .then(
+                        if (windowSize.isTablet) {
+                            Modifier.widthIn(max = 480.dp).aspectRatio(3f / 4f)
+                        } else {
+                            Modifier.fillMaxSize()
+                        }
+                    )
+                    .padding(top = 16.dp)
+                    .clip(RoundedCornerShape(24.dp))
+            ) {
             val boxWidth = maxWidth
             val boxHeight = maxHeight
             val holeSizeDp = minOf(boxWidth, boxHeight) * 0.7f
@@ -360,6 +370,7 @@ fun DuoReceiverView(profile: UserProfile, database: KumaDatabase, onPaired: (Duo
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
+        }
         }
     } else {
         Text(context.getString(com.bearbones.kumaflow.R.string.duo_err_cam_perm))

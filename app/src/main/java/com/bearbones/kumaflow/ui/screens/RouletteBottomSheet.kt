@@ -105,25 +105,24 @@ fun RouletteBottomSheet(
         Color(0xFFBA68C8), Color(0xFFFF8A65), Color(0xFF4DB6AC), Color(0xFFAED581)
     )
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
         containerColor = AppSurface(),
         dragHandle = { BottomSheetDefaults.DragHandle(color = AppPrimary()) }
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .bouncySheetContent()
+                .fillMaxWidth()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .bouncySheetContent()
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
             Text(
                 text = AppStr.rouletteHeader,
                 fontSize = 20.sp,
@@ -393,7 +392,6 @@ fun RouletteBottomSheet(
             } else {
                 Text(AppStr.rouletteSpinHint, color = AppPrimary(), fontWeight = FontWeight.Bold)
             }
-        }
         }
     }
 

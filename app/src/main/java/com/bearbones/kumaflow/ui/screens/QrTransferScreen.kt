@@ -246,13 +246,23 @@ fun ReceiverView(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
         Text("Downloading and restoring data...", style = MaterialTheme.typography.bodyLarge)
     } else if (hasCamPermission) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .widthIn(max = 480.dp)
-                .padding(top = 16.dp)
-                .clip(RoundedCornerShape(24.dp))
+        val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .then(
+                        if (windowSize.isTablet) {
+                            Modifier.widthIn(max = 480.dp).aspectRatio(3f / 4f)
+                        } else {
+                            Modifier.fillMaxSize()
+                        }
+                    )
+                    .padding(top = 16.dp)
+                    .clip(RoundedCornerShape(24.dp))
+            ) {
             val boxWidth = maxWidth
             val boxHeight = maxHeight
             val holeSizeDp = minOf(boxWidth, boxHeight) * 0.7f
@@ -350,6 +360,7 @@ fun ReceiverView(onBack: () -> Unit) {
                 color = androidx.compose.ui.graphics.Color.White,
                 fontWeight = FontWeight.Bold
             )
+        }
         }
     } else {
         Text("Camera permission is required to scan QR.")

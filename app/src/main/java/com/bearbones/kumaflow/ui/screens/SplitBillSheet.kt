@@ -89,26 +89,25 @@ fun SplitBillSheet(
         )
     }
 
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         containerColor = AppSurface(),
         dragHandle = null,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .bouncySheetContent()
+                .fillMaxSize()
+                .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
+                .padding(horizontal = 16.dp)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .verticalScroll(rememberScrollState())
         ) {
-            Column(
-                modifier = Modifier
-                    .bouncySheetContent()
-                    .fillMaxSize()
-                    .widthIn(max = 560.dp)
-                    .padding(horizontal = 16.dp)
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .verticalScroll(rememberScrollState())
-            ) {
             // Header with Title & Close button
             Row(
                 modifier = Modifier
@@ -681,7 +680,6 @@ fun SplitBillSheet(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-        }
         }
     }
 

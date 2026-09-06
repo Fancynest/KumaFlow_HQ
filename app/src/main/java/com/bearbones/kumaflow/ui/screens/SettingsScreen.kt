@@ -186,6 +186,7 @@ fun SettingsScreen(
     var isRestoring by remember { mutableStateOf(false) }
 
     var showRestoreCompleteNote by remember { mutableStateOf(false) }
+    val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
 
     LaunchedEffect(mainActivity?.pendingRestoreJson) {
         val jsonToRestore = mainActivity?.pendingRestoreJson
@@ -1354,11 +1355,13 @@ fun SettingsScreen(
         if (showThemeDialog) {
             AlertDialog(
                 onDismissRequest = { showThemeDialog = false },
-                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier).glassCard(24.dp, AppSurface()),
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.theme) },
                 text = {
-                    Column {
+                    Column(
+                        modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                    ) {
                         val hasPride = currentProfile.userName.contains("#pride", ignoreCase = true)
                         val hasBear = currentProfile.userName.contains("#bear", ignoreCase = true)
                         val hasBrutal = currentProfile.userName.contains("#brutal", ignoreCase = true)
@@ -1599,10 +1602,16 @@ fun SettingsScreen(
         if (showResetDialog) {
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
-                modifier = Modifier.glassCard(24.dp, AppSurface()),
+                modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier).glassCard(24.dp, AppSurface()),
                 containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
                 title = { Text(AppStr.resetBalConfTitle, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFE53935)) },
-                text = { Text(AppStr.resetBalConfDesc, color = AppText()) },
+                text = {
+                    Column(
+                        modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                    ) {
+                        Text(AppStr.resetBalConfDesc, color = AppText())
+                    }
+                },
                 confirmButton = {
                     com.bearbones.kumaflow.ui.components.KumaButton(
                         onClick = {
@@ -1821,15 +1830,19 @@ fun SettingsScreen(
     if (showRestoreCompleteNote) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showRestoreCompleteNote = false },
-            modifier = Modifier.glassCard(24.dp, AppSurface()),
+            modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier).glassCard(24.dp, AppSurface()),
             containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
             title = { Text(if(AppStr.isId) "Restore Selesai" else "Restore Complete", fontWeight = FontWeight.Bold, color = AppText()) },
             text = {
-                Text(
-                    text = if(AppStr.isId) "Data berhasil dipulihkan.\n\nCatatan: Koneksi Duo Sync tidak di-backup karena alasan keamanan. Jika sebelumnya Anda terhubung dengan partner, silakan lakukan Pairing ulang di menu Duo Sync."
-                           else "Data successfully restored.\n\nNote: Duo Sync pairings are not backed up for security reasons. If you were connected to a partner, please re-pair your devices in the Duo Sync menu.",
-                    color = AppText().copy(alpha = 0.8f)
-                )
+                Column(
+                    modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                ) {
+                    Text(
+                        text = if(AppStr.isId) "Data berhasil dipulihkan.\n\nCatatan: Koneksi Duo Sync tidak di-backup karena alasan keamanan. Jika sebelumnya Anda terhubung dengan partner, silakan lakukan Pairing ulang di menu Duo Sync."
+                               else "Data successfully restored.\n\nNote: Duo Sync pairings are not backed up for security reasons. If you were connected to a partner, please re-pair your devices in the Duo Sync menu.",
+                        color = AppText().copy(alpha = 0.8f)
+                    )
+                }
             },
             confirmButton = {
                 com.bearbones.kumaflow.ui.components.KumaButton(
