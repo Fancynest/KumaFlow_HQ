@@ -611,28 +611,22 @@ class MainActivity : FragmentActivity() {
             val isBearTriggered = userProfile?.userName?.contains("#bear", ignoreCase = true) == true
             val isBrutalTriggered = userProfile?.userName?.contains("#brutal", ignoreCase = true) == true
 
+            val isOREasterEgg = userProfile?.userName?.contains("#OR", ignoreCase = true) == true
+
             val rawThemeMode = userProfile?.themeMode ?: 0
             val activeThemeMode = when {
                 rawThemeMode in 3..4 && isPrideTriggered -> rawThemeMode
                 rawThemeMode in 5..6 && isBearTriggered -> rawThemeMode
                 rawThemeMode in 7..8 && isBrutalTriggered -> rawThemeMode
+                rawThemeMode in 9..10 && isOREasterEgg -> rawThemeMode
                 rawThemeMode > 2 -> 0
                 else -> rawThemeMode
             }
 
-            val isOREasterEgg = userProfile?.userName?.contains("#OR", ignoreCase = true) == true
-
-            val isDark = when {
-                isOREasterEgg -> when(activeThemeMode) {
-                    1 -> false
-                    2 -> true
-                    else -> systemDark
-                }
-                else -> when(activeThemeMode) {
-                    1, 3, 5, 7 -> false
-                    2, 4, 6, 8 -> true
-                    else -> systemDark
-                }
+            val isDark = when(activeThemeMode) {
+                1, 3, 5, 7, 9 -> false
+                2, 4, 6, 8, 10 -> true
+                else -> systemDark
             }
 
             val hazeState = remember { dev.chrisbanes.haze.HazeState() }
@@ -660,12 +654,12 @@ class MainActivity : FragmentActivity() {
 
                     // OR Dark Mode — GUTS era
                     isOREasterEgg && isDark -> darkColorScheme(
-                        background = Color(0xFF0D0A00),   // hitam kehijauan sangat gelap
-                        surface = Color(0xFF1A1A00),       // olive/hijau sangat gelap
-                        primary = Color(0xFFCAFF33),       // chartreuse/lime — warna utama GUTS
-                        onPrimary = Color(0xFF0D0A00),
-                        onBackground = Color(0xFFF0FFD0), // putih kekuningan/lime pucat
-                        onSurface = Color(0xFFF0FFD0)
+                        background = Color(0xFF0D0010),   // hitam-ungu sangat gelap
+                        surface = Color(0xFF1E0A3C),       // deep purple gelap
+                        primary = Color(0xFFB388FF),       // lavender/violet terang — khas GUTS era
+                        onPrimary = Color(0xFF0D0010),
+                        onBackground = Color(0xFFF3E5FF), // putih lavender pucat
+                        onSurface = Color(0xFFF3E5FF)
                     )
 
                     // 1. Easter Egg Pride & Bear

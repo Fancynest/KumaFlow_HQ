@@ -78,6 +78,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -85,10 +86,12 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -890,14 +893,6 @@ fun MainScreen(
                         repeatMode = androidx.compose.animation.core.RepeatMode.Restart
                     )
                 )
-                val pulseOpacity by infiniteTransition.animateFloat(
-                    initialValue = 0.3f,
-                    targetValue = 0.8f,
-                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                        animation = androidx.compose.animation.core.tween(800, easing = androidx.compose.animation.core.LinearEasing),
-                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-                    )
-                )
 
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val conf = androidx.compose.ui.platform.LocalConfiguration.current
@@ -1035,7 +1030,7 @@ fun MainScreen(
                         }
                     }
                 } else {
-                    // GUTS ERA (Dark Mode) - Lightning Bolts
+                    // GUTS ERA (Dark Mode) - Crescent Moons & Stars
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width
                         val h = size.height
@@ -1044,65 +1039,173 @@ fun MainScreen(
                             translate(left = -pageOffset * screenWidth) {
                                 for (p in 0..3) {
                                     val pageBaseX = p * screenWidth
-                                    val boltW = minOf(screenWidth * 0.45f, h * 0.22f)
 
-                                    fun drawBolt(cX: Float, topY: Float, botY: Float, w: Float, strokeWidth: Float, alpha: Float) {
-                                        val midY1 = topY + (botY - topY) * 0.45f
-                                        val midY2 = topY + (botY - topY) * 0.52f
-                                        val bPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(cX, topY)
-                                            lineTo(cX + w * 0.3f, midY1)
-                                            lineTo(cX - w * 0.1f, midY2)
-                                            lineTo(cX + w * 0.2f, botY)
+                                    // Crescent Moon Helper (Difference of 2 circles)
+                                    fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, alpha: Float) {
+                                        val innerR = radius * 0.85f
+                                        val innerCx = cx + radius * 0.45f
+                                        val innerCy = cy - radius * 0.2f
+                                        val moonPath = Path().apply {
+                                            op(
+                                                Path().apply {
+                                                    addOval(Rect(cx - radius, cy - radius, cx + radius, cy + radius))
+                                                },
+                                                Path().apply {
+                                                    addOval(Rect(innerCx - innerR, innerCy - innerR, innerCx + innerR, innerCy + innerR))
+                                                },
+                                                PathOperation.Difference
+                                            )
                                         }
-                                        // Glow
-                                        drawPath(
-                                            path = bPath,
-                                            color = Color(0xFFCAFF33).copy(alpha = alpha * 0.3f),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                width = strokeWidth + 8.dp.toPx(),
-                                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
+                                            // Subtle glow stroke
+                                            drawPath(
+                                                path = moonPath,
+                                                color = Color(0xFFB388FF).copy(alpha = alpha * 0.35f),
+                                                style = Stroke(width = 3.dp.toPx())
                                             )
-                                        )
-                                        // Core
-                                        drawPath(
-                                            path = bPath,
-                                            color = Color(0xFFCAFF33).copy(alpha = alpha),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                width = strokeWidth,
-                                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                            // Moon body
+                                            drawPath(
+                                                path = moonPath,
+                                                color = Color(0xFFB388FF).copy(alpha = alpha)
                                             )
-                                        )
+                                        }
                                     }
 
-                                    // 1 bolt besar di tengah
-                                    drawBolt(
-                                        cX = pageBaseX + screenWidth * 0.5f,
-                                        topY = h * 0.12f,
-                                        botY = h * 0.85f,
-                                        w = boltW,
-                                        strokeWidth = 7.dp.toPx(),
-                                        alpha = pulseOpacity
+                                    // 5-Point Star Helper
+                                    fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float) {
+                                        val innerR = outerR * 0.42f
+                                        val starPath = Path().apply {
+                                            for (i in 0 until 10) {
+                                                val r = if (i % 2 == 0) outerR else innerR
+                                                val angle = Math.toRadians((i * 36.0 - 90.0))
+                                                val x = (cx + r * kotlin.math.cos(angle)).toFloat()
+                                                val y = (cy + r * kotlin.math.sin(angle)).toFloat()
+                                                if (i == 0) moveTo(x, y) else lineTo(x, y)
+                                            }
+                                            close()
+                                        }
+                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
+                                            drawPath(
+                                                path = starPath,
+                                                color = Color(0xFFB388FF).copy(alpha = alpha)
+                                            )
+                                        }
+                                    }
+
+                                    // 4-Point Sparkle Star Helper
+                                    fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float) {
+                                        val innerR = outerR * 0.22f
+                                        val sparklePath = Path().apply {
+                                            for (i in 0 until 8) {
+                                                val r = if (i % 2 == 0) outerR else innerR
+                                                val angle = Math.toRadians((i * 45.0 - 90.0))
+                                                val x = (cx + r * kotlin.math.cos(angle)).toFloat()
+                                                val y = (cy + r * kotlin.math.sin(angle)).toFloat()
+                                                if (i == 0) moveTo(x, y) else lineTo(x, y)
+                                            }
+                                            close()
+                                        }
+                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
+                                            drawPath(
+                                                path = sparklePath,
+                                                color = Color(0xFFB388FF).copy(alpha = alpha)
+                                            )
+                                        }
+                                    }
+
+                                    // 3 Crescent Moons (60dp, 35dp, 25dp)
+                                    drawCrescentMoon(
+                                        cx = pageBaseX + screenWidth * 0.80f,
+                                        cy = h * 0.13f,
+                                        radius = 30.dp.toPx(), // 60dp diameter
+                                        rotation = -20f,
+                                        alpha = 0.25f
+                                    )
+                                    drawCrescentMoon(
+                                        cx = pageBaseX + screenWidth * 0.16f,
+                                        cy = h * 0.52f,
+                                        radius = 17.5f.dp.toPx(), // 35dp diameter
+                                        rotation = 25f,
+                                        alpha = 0.20f
+                                    )
+                                    drawCrescentMoon(
+                                        cx = pageBaseX + screenWidth * 0.84f,
+                                        cy = h * 0.82f,
+                                        radius = 12.5f.dp.toPx(), // 25dp diameter
+                                        rotation = -35f,
+                                        alpha = 0.18f
                                     )
 
-                                    // 2 bolt lebih kecil di kiri-kanan dengan opacity lebih rendah
-                                    drawBolt(
-                                        cX = pageBaseX + screenWidth * 0.18f,
-                                        topY = h * 0.22f,
-                                        botY = h * 0.72f,
-                                        w = boltW * 0.7f,
-                                        strokeWidth = 3.5.dp.toPx(),
-                                        alpha = pulseOpacity * 0.45f
+                                    // 10 Celestial Stars (15-25dp, alpha 0.15f-0.25f)
+                                    draw5PointStar(
+                                        cx = pageBaseX + screenWidth * 0.12f,
+                                        cy = h * 0.10f,
+                                        outerR = 11.dp.toPx(), // 22dp
+                                        rotation = 12f,
+                                        alpha = 0.22f
                                     )
-                                    drawBolt(
-                                        cX = pageBaseX + screenWidth * 0.82f,
-                                        topY = h * 0.18f,
-                                        botY = h * 0.78f,
-                                        w = boltW * 0.75f,
-                                        strokeWidth = 4.dp.toPx(),
-                                        alpha = pulseOpacity * 0.55f
+                                    drawSparkleStar(
+                                        cx = pageBaseX + screenWidth * 0.48f,
+                                        cy = h * 0.08f,
+                                        outerR = 9.dp.toPx(), // 18dp
+                                        rotation = 0f,
+                                        alpha = 0.20f
+                                    )
+                                    drawSparkleStar(
+                                        cx = pageBaseX + screenWidth * 0.90f,
+                                        cy = h * 0.26f,
+                                        outerR = 12.dp.toPx(), // 24dp
+                                        rotation = 15f,
+                                        alpha = 0.25f
+                                    )
+                                    draw5PointStar(
+                                        cx = pageBaseX + screenWidth * 0.28f,
+                                        cy = h * 0.32f,
+                                        outerR = 8.dp.toPx(), // 16dp
+                                        rotation = -18f,
+                                        alpha = 0.16f
+                                    )
+                                    drawSparkleStar(
+                                        cx = pageBaseX + screenWidth * 0.65f,
+                                        cy = h * 0.40f,
+                                        outerR = 10.dp.toPx(), // 20dp
+                                        rotation = 45f,
+                                        alpha = 0.18f
+                                    )
+                                    drawSparkleStar(
+                                        cx = pageBaseX + screenWidth * 0.08f,
+                                        cy = h * 0.68f,
+                                        outerR = 11.dp.toPx(), // 22dp
+                                        rotation = 0f,
+                                        alpha = 0.20f
+                                    )
+                                    draw5PointStar(
+                                        cx = pageBaseX + screenWidth * 0.42f,
+                                        cy = h * 0.62f,
+                                        outerR = 7.5f.dp.toPx(), // 15dp
+                                        rotation = 30f,
+                                        alpha = 0.15f
+                                    )
+                                    draw5PointStar(
+                                        cx = pageBaseX + screenWidth * 0.72f,
+                                        cy = h * 0.70f,
+                                        outerR = 12.dp.toPx(), // 24dp
+                                        rotation = -10f,
+                                        alpha = 0.22f
+                                    )
+                                    drawSparkleStar(
+                                        cx = pageBaseX + screenWidth * 0.22f,
+                                        cy = h * 0.88f,
+                                        outerR = 9.dp.toPx(), // 18dp
+                                        rotation = 10f,
+                                        alpha = 0.17f
+                                    )
+                                    draw5PointStar(
+                                        cx = pageBaseX + screenWidth * 0.58f,
+                                        cy = h * 0.92f,
+                                        outerR = 10.dp.toPx(), // 20dp
+                                        rotation = 20f,
+                                        alpha = 0.24f
                                     )
                                 }
                             }
@@ -1148,7 +1251,7 @@ fun MainScreen(
                                     fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                                     fontSize = 26.sp,
-                                    color = Color(0xFFCAFF33).copy(alpha = 0.6f),
+                                    color = Color(0xFFB388FF).copy(alpha = 0.5f),
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos

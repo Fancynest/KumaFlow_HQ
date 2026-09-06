@@ -1360,6 +1360,7 @@ fun SettingsScreen(
                         val hasPride = currentProfile.userName.contains("#pride", ignoreCase = true)
                         val hasBear = currentProfile.userName.contains("#bear", ignoreCase = true)
                         val hasBrutal = currentProfile.userName.contains("#brutal", ignoreCase = true)
+                        val hasOR = currentProfile.userName.contains("#OR", ignoreCase = true)
 
                         val themeOptions = mutableListOf(
                             0 to AppStr.themeSys,
@@ -1379,6 +1380,11 @@ fun SettingsScreen(
                         if (hasBrutal) {
                             themeOptions.add(7 to "Brutal Light")
                             themeOptions.add(8 to "Brutal Dark")
+                        }
+
+                        if (hasOR) {
+                            themeOptions.add(9 to "you seem pretty sad for a girl so in love \uD83C\uDF80")
+                            themeOptions.add(10 to "GUTS \uD83E\uDE78")
                         }
 
                         themeOptions.forEach { (value, label) ->
@@ -1774,6 +1780,8 @@ fun SettingsScreen(
         val easterEggEmoji = when (currentProfile.themeMode) {
             3, 4 -> " \uD83C\uDFF3\uFE0F\u200D\uD83C\uDF08"
             5, 6 -> " \uD83D\uDC3B"
+            9 -> " \uD83C\uDF80"
+            10 -> " \uD83E\uDE78"
             else -> ""
         }
 
