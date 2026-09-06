@@ -179,10 +179,7 @@ fun ManageWalletContent(
     val templateImages = remember(isAppPride, isAppBear) {
         val list = mutableListOf("minangkabau_card", "java_card", "papua_card", "bali_card", "bugis_card", "westkalimantan_card")
         if (isAppPride) list.add("pride")
-        if (isAppBear) {
-            list.add("bear")
-            list.add("bear2")
-        }
+        if (isAppBear) list.add("bear")
         list
     }
     
