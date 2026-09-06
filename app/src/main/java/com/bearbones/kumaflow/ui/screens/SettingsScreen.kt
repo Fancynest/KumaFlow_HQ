@@ -1383,8 +1383,8 @@ fun SettingsScreen(
                         }
 
                         if (hasOR) {
-                            themeOptions.add(9 to "you seem pretty sad for a girl so in love \uD83C\uDF80")
-                            themeOptions.add(10 to "GUTS \uD83E\uDE78")
+                            themeOptions.add(9 to "you seem pretty sad for a girl so in love")
+                            themeOptions.add(10 to "GUTS")
                         }
 
                         themeOptions.forEach { (value, label) ->
@@ -1780,8 +1780,6 @@ fun SettingsScreen(
         val easterEggEmoji = when (currentProfile.themeMode) {
             3, 4 -> " \uD83C\uDFF3\uFE0F\u200D\uD83C\uDF08"
             5, 6 -> " \uD83D\uDC3B"
-            9 -> " \uD83C\uDF80"
-            10 -> " \uD83E\uDE78"
             else -> ""
         }
 

@@ -881,7 +881,7 @@ fun MainScreen(
                     start = effectivePadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     end = effectivePadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
                 )) {
-            val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true)
+            val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true) && (userProfile.themeMode == 9 || userProfile.themeMode == 10)
             if (isOREasterEgg) {
                 val isDark = LocalIsDark.current
                 val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
@@ -916,7 +916,7 @@ fun MainScreen(
                     Pair(3.65f, 0.60f), Pair(3.10f, 0.75f), Pair(3.50f, 0.90f)
                 )
 
-                if (!isDark) {
+                if (userProfile.themeMode == 9) {
                     // LOVE ERA (Light Mode) - Heart Yarn
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width
@@ -1029,7 +1029,7 @@ fun MainScreen(
                             }
                         }
                     }
-                } else {
+                } else if (userProfile.themeMode == 10) {
                     // GUTS ERA (Dark Mode) - Crescent Moons & Stars
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width

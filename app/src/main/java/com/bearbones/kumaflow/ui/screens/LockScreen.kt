@@ -643,7 +643,7 @@ class MainActivity : FragmentActivity() {
             ) {
                 val colorScheme = when {
                     // OR Light Mode — "you seem pretty sad for a girl so in love" era
-                    isOREasterEgg && !isDark -> lightColorScheme(
+                    isOREasterEgg && activeThemeMode == 9 -> lightColorScheme(
                         background = Color(0xFFFDE8EE),   // pastel pink warm
                         surface = Color(0xFFFFF5F7),       // pink sangat pucat
                         primary = Color(0xFFD4607A),       // dusty rose/deep romantic pink
@@ -653,7 +653,7 @@ class MainActivity : FragmentActivity() {
                     )
 
                     // OR Dark Mode — GUTS era
-                    isOREasterEgg && isDark -> darkColorScheme(
+                    isOREasterEgg && activeThemeMode == 10 -> darkColorScheme(
                         background = Color(0xFF0D0010),   // hitam-ungu sangat gelap
                         surface = Color(0xFF1E0A3C),       // deep purple gelap
                         primary = Color(0xFFB388FF),       // lavender/violet terang — khas GUTS era
@@ -732,11 +732,13 @@ class MainActivity : FragmentActivity() {
                 }
 
                 val activeTypography = when {
-                    isOREasterEgg && isDark -> com.bearbones.kumaflow.ui.theme.GUTSTypography
-                    isOREasterEgg && !isDark -> com.bearbones.kumaflow.ui.theme.ORTypography
+                    isOREasterEgg && activeThemeMode == 10 -> com.bearbones.kumaflow.ui.theme.GUTSTypography
+                    isOREasterEgg && activeThemeMode == 9 -> com.bearbones.kumaflow.ui.theme.ORTypography
                     isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8) -> com.bearbones.kumaflow.ui.theme.BrutalTypography
                     else -> com.bearbones.kumaflow.ui.theme.Typography
                 }
+
+                val isORActive = isOREasterEgg && (activeThemeMode == 9 || activeThemeMode == 10)
 
                 MaterialTheme(colorScheme = colorScheme, typography = activeTypography, shapes = MaterialTheme.shapes) {
                     val homeListState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -749,7 +751,7 @@ class MainActivity : FragmentActivity() {
 
                     Box(modifier = Modifier.fillMaxSize().background(AppBg())) {
                         Box(modifier = Modifier.fillMaxSize().let { if (LocalIsLiquidGlass.current) it.haze(state = LocalHazeState.current) else it }) {
-                            if (LocalIsLiquidGlass.current && !isOREasterEgg) {
+                            if (LocalIsLiquidGlass.current && !isORActive) {
                                 com.bearbones.kumaflow.ui.components.BokehBackground(
                                     isPaused = isPaused,
                                     scrollOffsetProvider = scrollOffsetProvider
