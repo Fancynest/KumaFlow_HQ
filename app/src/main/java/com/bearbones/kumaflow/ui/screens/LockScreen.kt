@@ -655,8 +655,25 @@ class MainActivity : FragmentActivity() {
                     )
 
                     // 1. Easter Egg Pride & Bear
-                    isPrideTriggered && activeThemeMode == 3 -> lightColorScheme(background = Color(0xFFFCE4EC), surface = Color(0xFFF8BBD0), primary = Color(0xFFD81B60), onPrimary = Color.White, onBackground = Color(0xFF212121), onSurface = Color(0xFF212121))
-                    isPrideTriggered && activeThemeMode == 4 -> darkColorScheme(background = Color(0xFF121212), surface = Color(0xFF263238), primary = Color(0xFFAA00FF), onPrimary = Color.White, onBackground = Color.White, onSurface = Color.White)
+                    // Pride Light Mode — "Rainbow Dawn"
+                    isPrideTriggered && activeThemeMode == 3 -> lightColorScheme(
+                        background = Color(0xFFFDFAF6),   // putih warm, bukan putih sterile
+                        surface = Color(0xFFFFF0F3),       // blush sangat tipis
+                        primary = Color(0xFFC2185B),       // deep rose/magenta, mature
+                        onPrimary = Color.White,
+                        onBackground = Color(0xFF1A1A2E), // navy gelap, bukan hitam flat
+                        onSurface = Color(0xFF1A1A2E)
+                    )
+
+                    // Pride Dark Mode — "Midnight Pride"
+                    isPrideTriggered && activeThemeMode == 4 -> darkColorScheme(
+                        background = Color(0xFF0D0D1A),   // navy gelap hampir hitam
+                        surface = Color(0xFF1A1A2E),       // navy gelap medium (ganti dari Blue Grey #263238)
+                        primary = Color(0xFFE040FB),       // ungu pink cerah, kontras bagus di atas navy
+                        onPrimary = Color(0xFF0D0D1A),
+                        onBackground = Color(0xFFF8F0FF), // putih lavender (ada hint ungu tipis)
+                        onSurface = Color(0xFFF8F0FF)
+                    )
                     isBearTriggered && activeThemeMode == 5 -> lightColorScheme(
                         background = Color(0xFFF5EDE0),   // krem warm earthy
                         surface = Color(0xFFE8D5BC),       // warm tan / kulit beruang
