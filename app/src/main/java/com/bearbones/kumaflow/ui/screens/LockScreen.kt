@@ -623,7 +623,11 @@ class MainActivity : FragmentActivity() {
             val isOREasterEgg = userProfile?.userName?.contains("#OR", ignoreCase = true) == true
 
             val isDark = when {
-                isOREasterEgg -> false // Pure Light Mode
+                isOREasterEgg -> when(activeThemeMode) {
+                    1 -> false
+                    2 -> true
+                    else -> systemDark
+                }
                 else -> when(activeThemeMode) {
                     1, 3, 5, 7 -> false
                     2, 4, 6, 8 -> true
@@ -644,14 +648,24 @@ class MainActivity : FragmentActivity() {
                 com.bearbones.kumaflow.ui.tutorial.LocalTutorialState provides tutorialState
             ) {
                 val colorScheme = when {
-                    // NEW: #OR Easter Egg
-                    isOREasterEgg -> lightColorScheme(
-                        background = Color(0xFFFEE1F5), // Lavender blush
-                        surface = Color.White, // Clean white surface for better contrast
-                        primary = Color(0xFFEF71C3), // Hot pink
+                    // OR Light Mode — "you seem pretty sad for a girl so in love" era
+                    isOREasterEgg && !isDark -> lightColorScheme(
+                        background = Color(0xFFFDE8EE),   // pastel pink warm
+                        surface = Color(0xFFFFF5F7),       // pink sangat pucat
+                        primary = Color(0xFFD4607A),       // dusty rose/deep romantic pink
                         onPrimary = Color.White,
-                        onBackground = Color(0xFF5E3F6B), // Darkened Lilac for readable text
-                        onSurface = Color(0xFF5E3F6B)
+                        onBackground = Color(0xFF5C2D3E), // wine/rose gelap, kontras aman
+                        onSurface = Color(0xFF5C2D3E)
+                    )
+
+                    // OR Dark Mode — GUTS era
+                    isOREasterEgg && isDark -> darkColorScheme(
+                        background = Color(0xFF0D0A00),   // hitam kehijauan sangat gelap
+                        surface = Color(0xFF1A1A00),       // olive/hijau sangat gelap
+                        primary = Color(0xFFCAFF33),       // chartreuse/lime — warna utama GUTS
+                        onPrimary = Color(0xFF0D0A00),
+                        onBackground = Color(0xFFF0FFD0), // putih kekuningan/lime pucat
+                        onSurface = Color(0xFFF0FFD0)
                     )
 
                     // 1. Easter Egg Pride & Bear
@@ -724,7 +738,8 @@ class MainActivity : FragmentActivity() {
                 }
 
                 val activeTypography = when {
-                    isOREasterEgg -> com.bearbones.kumaflow.ui.theme.ORTypography
+                    isOREasterEgg && isDark -> com.bearbones.kumaflow.ui.theme.GUTSTypography
+                    isOREasterEgg && !isDark -> com.bearbones.kumaflow.ui.theme.ORTypography
                     isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8) -> com.bearbones.kumaflow.ui.theme.BrutalTypography
                     else -> com.bearbones.kumaflow.ui.theme.Typography
                 }

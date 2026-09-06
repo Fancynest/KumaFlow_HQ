@@ -880,6 +880,7 @@ fun MainScreen(
                 )) {
             val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true)
             if (isOREasterEgg) {
+                val isDark = LocalIsDark.current
                 val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
                 val lightProgressState = infiniteTransition.animateFloat(
                     initialValue = -0.5f,
@@ -889,141 +890,273 @@ fun MainScreen(
                         repeatMode = androidx.compose.animation.core.RepeatMode.Restart
                     )
                 )
-
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                    val pageOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
-                    val screenWidth = size.width
-
-                    translate(left = -pageOffset * screenWidth) {
-                        val path = androidx.compose.ui.graphics.Path().apply {
-                            val h = size.height
-                            val w = screenWidth
-                            val centerX = w * 2.0f
-                            // Menjaga proporsi benang hati agar tidak gepeng di layar lebar / tablet landscape:
-                            // Pada ponsel (portrait), w <= h * 0.48f sehingga unitW = w (100% identik dengan tampilan ponsel).
-                            // Pada tablet landscape (w >> h), unitW dibatasi proporsional terhadap tinggi layar agar rasio hati alami (~1:1).
-                            val unitW = minOf(w, h * 0.48f)
-
-                            // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
-                            moveTo(0f, h * 0.2f)
-                            cubicTo(
-                                centerX - unitW * 1.5f, h * 0.2f,
-                                centerX - unitW * 1.2f, h * 0.8f,
-                                centerX, h * 0.8f // Bottom tip of the heart
-                            )
-                            
-                            // Screen 2: Right lobe of heart
-                            cubicTo(
-                                centerX + unitW * 0.8f, h * 0.8f,
-                                centerX + unitW * 0.5f, h * 0.1f,
-                                centerX, h * 0.4f // Center dip of heart
-                            )
-                            
-                            // Screen 2 to 3: Left lobe of heart
-                            cubicTo(
-                                centerX - unitW * 0.5f, h * 0.1f,
-                                centerX - unitW * 0.8f, h * 0.8f,
-                                centerX, h * 0.8f // Crosses back at the bottom tip
-                            )
-                            
-                            // Screen 3 to 4: Exit to Settings
-                            cubicTo(
-                                centerX + unitW * 0.5f, h * 0.8f,
-                                centerX + unitW * 1.5f, h * 0.2f,
-                                w * 4.0f, h * 0.6f
-                            )
-                        }
-
-                        if (screenWidth > 0f && size.height > 0f) {
-                            // Base shadow for depth
-                            drawPath(path, color = Color.Black.copy(alpha=0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 16.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-                            
-                            val yarnBaseColor = Color(0xFFC2185B)
-                            val startX = screenWidth * 4f * lightProgressState.value
-                            val lightBrush = androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                colors = listOf(yarnBaseColor, Color(0xFFFF80AB), Color.White, Color(0xFFFF80AB), yarnBaseColor),
-                                startX = startX - screenWidth * 0.5f,
-                                endX = startX + screenWidth * 0.5f
-                            )
-                            
-                            drawPath(path, brush = lightBrush, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-                        }
-                    }
-                }
-                
-
-                // TRACKLIST BACKGROUND
-                val tracklist = listOf(
-                    "Drop dead", "Stupid song", "Honeybee", "Maggots for brains", "U + Me = <3",
-                    "My Way", "Purple", "The Cure", "Begged", "What's Wrong with Me (feat. Robert Smith)",
-                    "Less", "Expectations", "Cigarette Smoke"
+                val pulseOpacity by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 0.8f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(800, easing = androidx.compose.animation.core.LinearEasing),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                    )
                 )
+
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val conf = androidx.compose.ui.platform.LocalConfiguration.current
                 val screenWidthPx = remember(density, conf) { with(density) { conf.screenWidthDp.dp.toPx() } }
                 val screenHeightPx = remember(density, conf) { with(density) { conf.screenHeightDp.dp.toPx() } }
-                
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.6f)
-                ) {
-                    val pageOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
-                    val random = remember { kotlin.random.Random(42) }
-                    
-                    val customFontFamily = remember { 
-                        androidx.compose.ui.text.font.FontFamily(
-                            androidx.compose.ui.text.font.Font(com.bearbones.kumaflow.R.font.olivia_regular)
-                        )
+                val pageOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                val random = remember { kotlin.random.Random(42) }
+
+                val positions = listOf(
+                    // Page 0
+                    Pair(0.05f, 0.15f), Pair(0.55f, 0.25f), Pair(0.15f, 0.45f),
+                    Pair(0.65f, 0.60f), Pair(0.10f, 0.75f), Pair(0.50f, 0.90f),
+                    // Page 1
+                    Pair(1.05f, 0.15f), Pair(1.55f, 0.25f), Pair(1.15f, 0.45f),
+                    Pair(1.65f, 0.60f), Pair(1.10f, 0.75f), Pair(1.50f, 0.90f),
+                    // Page 2
+                    Pair(2.05f, 0.15f), Pair(2.55f, 0.25f), Pair(2.15f, 0.45f),
+                    Pair(2.65f, 0.60f), Pair(2.10f, 0.75f), Pair(2.50f, 0.90f),
+                    // Page 3
+                    Pair(3.05f, 0.15f), Pair(3.55f, 0.25f), Pair(3.15f, 0.45f),
+                    Pair(3.65f, 0.60f), Pair(3.10f, 0.75f), Pair(3.50f, 0.90f)
+                )
+
+                if (!isDark) {
+                    // LOVE ERA (Light Mode) - Heart Yarn
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        val screenWidth = size.width
+
+                        translate(left = -pageOffset * screenWidth) {
+                            val path = androidx.compose.ui.graphics.Path().apply {
+                                val h = size.height
+                                val w = screenWidth
+                                val centerX = w * 2.0f
+                                val unitW = minOf(w, h * 0.48f)
+
+                                // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
+                                moveTo(0f, h * 0.2f)
+                                cubicTo(
+                                    centerX - unitW * 1.5f, h * 0.2f,
+                                    centerX - unitW * 1.2f, h * 0.8f,
+                                    centerX, h * 0.8f // Bottom tip of the heart
+                                )
+                                
+                                // Screen 2: Right lobe of heart
+                                cubicTo(
+                                    centerX + unitW * 0.8f, h * 0.8f,
+                                    centerX + unitW * 0.5f, h * 0.1f,
+                                    centerX, h * 0.4f // Center dip of heart
+                                )
+                                
+                                // Screen 2 to 3: Left lobe of heart
+                                cubicTo(
+                                    centerX - unitW * 0.5f, h * 0.1f,
+                                    centerX - unitW * 0.8f, h * 0.8f,
+                                    centerX, h * 0.8f // Crosses back at the bottom tip
+                                )
+                                
+                                // Screen 3 to 4: Exit to Settings
+                                cubicTo(
+                                    centerX + unitW * 0.5f, h * 0.8f,
+                                    centerX + unitW * 1.5f, h * 0.2f,
+                                    w * 4.0f, h * 0.6f
+                                )
+                            }
+
+                            if (screenWidth > 0f && size.height > 0f) {
+                                // Base shadow for depth
+                                drawPath(path, color = Color.Black.copy(alpha=0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 16.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                                
+                                val yarnBaseColor = Color(0xFFD4607A)
+                                val startX = screenWidth * 4f * lightProgressState.value
+                                val lightBrush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    colors = listOf(yarnBaseColor, Color(0xFFFAC8D5), Color.White, Color(0xFFFAC8D5), yarnBaseColor),
+                                    startX = startX - screenWidth * 0.5f,
+                                    endX = startX + screenWidth * 0.5f
+                                )
+                                
+                                drawPath(path, brush = lightBrush, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                            }
+                        }
                     }
+
+                    // LOVE TRACKLIST BACKGROUND
+                    val tracklist = listOf(
+                        "Drop dead", "Stupid song", "Honeybee", "Maggots for brains", "U + Me = <3",
+                        "My Way", "Purple", "The Cure", "Begged", "What's Wrong with Me (feat. Robert Smith)",
+                        "Less", "Expectations", "Cigarette Smoke"
+                    )
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { translationX = -pageOffset * screenWidthPx }
+                        .alpha(0.6f)
                     ) {
-                        val positions = listOf(
-                            // Page 0
-                            Pair(0.05f, 0.15f), Pair(0.55f, 0.25f), Pair(0.15f, 0.45f),
-                            Pair(0.65f, 0.60f), Pair(0.10f, 0.75f), Pair(0.50f, 0.90f),
-                            // Page 1
-                            Pair(1.05f, 0.15f), Pair(1.55f, 0.25f), Pair(1.15f, 0.45f),
-                            Pair(1.65f, 0.60f), Pair(1.10f, 0.75f), Pair(1.50f, 0.90f),
-                            // Page 2
-                            Pair(2.05f, 0.15f), Pair(2.55f, 0.25f), Pair(2.15f, 0.45f),
-                            Pair(2.65f, 0.60f), Pair(2.10f, 0.75f), Pair(2.50f, 0.90f),
-                            // Page 3
-                            Pair(3.05f, 0.15f), Pair(3.55f, 0.25f), Pair(3.15f, 0.45f),
-                            Pair(3.65f, 0.60f), Pair(3.10f, 0.75f), Pair(3.50f, 0.90f)
-                        )
-                        val displaySongs = remember {
-                            val list = mutableListOf<String>()
-                            var i = 0
-                            while (list.size < positions.size) {
-                                list.add(tracklist[i % tracklist.size])
-                                i++
-                            }
-                            list
-                        }
-                        
-                        displaySongs.forEachIndexed { index, song ->
-                            val xPos = positions[index].first * screenWidthPx
-                            val yPos = positions[index].second * screenHeightPx
-                            
-                            val rot = remember {
-                                random.nextFloat() * 30f - 15f
-                            }
-                            
-                            Text(
-                                text = song,
-                                fontFamily = customFontFamily,
-                                fontSize = 28.sp,
-                                color = Color(0xFFC2185B),
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        translationX = xPos
-                                        translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
-                                        rotationZ = rot
-                                    }
+                        val customFontFamily = remember { 
+                            androidx.compose.ui.text.font.FontFamily(
+                                androidx.compose.ui.text.font.Font(com.bearbones.kumaflow.R.font.olivia_regular)
                             )
+                        }
+
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { translationX = -pageOffset * screenWidthPx }
+                        ) {
+                            val displaySongs = remember {
+                                val list = mutableListOf<String>()
+                                var i = 0
+                                while (list.size < positions.size) {
+                                    list.add(tracklist[i % tracklist.size])
+                                    i++
+                                }
+                                list
+                            }
+                            
+                            displaySongs.forEachIndexed { index, song ->
+                                val xPos = positions[index].first * screenWidthPx
+                                val yPos = positions[index].second * screenHeightPx
+                                
+                                val rot = remember {
+                                    random.nextFloat() * 30f - 15f
+                                }
+                                
+                                Text(
+                                    text = song,
+                                    fontFamily = customFontFamily,
+                                    fontSize = 28.sp,
+                                    color = Color(0xFFD4607A),
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationX = xPos
+                                            translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
+                                            rotationZ = rot
+                                        }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // GUTS ERA (Dark Mode) - Lightning Bolts
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        val screenWidth = size.width
+                        val h = size.height
+
+                        if (screenWidth > 0f && h > 0f) {
+                            translate(left = -pageOffset * screenWidth) {
+                                for (p in 0..3) {
+                                    val pageBaseX = p * screenWidth
+                                    val boltW = minOf(screenWidth * 0.45f, h * 0.22f)
+
+                                    fun drawBolt(cX: Float, topY: Float, botY: Float, w: Float, strokeWidth: Float, alpha: Float) {
+                                        val midY1 = topY + (botY - topY) * 0.45f
+                                        val midY2 = topY + (botY - topY) * 0.52f
+                                        val bPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(cX, topY)
+                                            lineTo(cX + w * 0.3f, midY1)
+                                            lineTo(cX - w * 0.1f, midY2)
+                                            lineTo(cX + w * 0.2f, botY)
+                                        }
+                                        // Glow
+                                        drawPath(
+                                            path = bPath,
+                                            color = Color(0xFFCAFF33).copy(alpha = alpha * 0.3f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                width = strokeWidth + 8.dp.toPx(),
+                                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                            )
+                                        )
+                                        // Core
+                                        drawPath(
+                                            path = bPath,
+                                            color = Color(0xFFCAFF33).copy(alpha = alpha),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                width = strokeWidth,
+                                                cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                            )
+                                        )
+                                    }
+
+                                    // 1 bolt besar di tengah
+                                    drawBolt(
+                                        cX = pageBaseX + screenWidth * 0.5f,
+                                        topY = h * 0.12f,
+                                        botY = h * 0.85f,
+                                        w = boltW,
+                                        strokeWidth = 7.dp.toPx(),
+                                        alpha = pulseOpacity
+                                    )
+
+                                    // 2 bolt lebih kecil di kiri-kanan dengan opacity lebih rendah
+                                    drawBolt(
+                                        cX = pageBaseX + screenWidth * 0.18f,
+                                        topY = h * 0.22f,
+                                        botY = h * 0.72f,
+                                        w = boltW * 0.7f,
+                                        strokeWidth = 3.5.dp.toPx(),
+                                        alpha = pulseOpacity * 0.45f
+                                    )
+                                    drawBolt(
+                                        cX = pageBaseX + screenWidth * 0.82f,
+                                        topY = h * 0.18f,
+                                        botY = h * 0.78f,
+                                        w = boltW * 0.75f,
+                                        strokeWidth = 4.dp.toPx(),
+                                        alpha = pulseOpacity * 0.55f
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // GUTS TRACKLIST BACKGROUND
+                    val gutsTracklist = listOf(
+                        "all-american bitch", "bad idea right?", "vampire", "lacy",
+                        "ballad of a homeschooled girl", "making the bed", "logical",
+                        "get him back!", "love is embarrassing", "the grudge",
+                        "pretty isn't pretty", "teenage dream"
+                    )
+
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(0.6f)
+                    ) {
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { translationX = -pageOffset * screenWidthPx }
+                        ) {
+                            val displayGutsSongs = remember {
+                                val list = mutableListOf<String>()
+                                var i = 0
+                                while (list.size < positions.size) {
+                                    list.add(gutsTracklist[i % gutsTracklist.size])
+                                    i++
+                                }
+                                list
+                            }
+                            
+                            displayGutsSongs.forEachIndexed { index, song ->
+                                val xPos = positions[index].first * screenWidthPx
+                                val yPos = positions[index].second * screenHeightPx
+                                
+                                val rot = remember {
+                                    random.nextFloat() * 30f - 15f
+                                }
+                                
+                                Text(
+                                    text = song,
+                                    fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                                    fontSize = 26.sp,
+                                    color = Color(0xFFCAFF33).copy(alpha = 0.6f),
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationX = xPos
+                                            translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
+                                            rotationZ = rot
+                                        }
+                                )
+                            }
                         }
                     }
                 }

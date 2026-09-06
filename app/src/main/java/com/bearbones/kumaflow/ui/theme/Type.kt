@@ -112,6 +112,64 @@ val ORTypography = Typography(
     )
 )
 
+val gutsFont = GoogleFont("Barlow Condensed")
+val GUTSAppFontFamily = FontFamily(
+    Font(googleFont = gutsFont, fontProvider = provider, weight = FontWeight.ExtraBold),
+    Font(googleFont = plusJakartaSansFont, fontProvider = provider, weight = FontWeight.ExtraBold)
+)
+
+val GUTSTypography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = GUTSAppFontFamily,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 26.sp,
+        lineHeight = 30.sp,
+        letterSpacing = 0.sp
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = GUTSAppFontFamily,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = GUTSAppFontFamily,
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 22.sp,
+        lineHeight = 26.sp,
+        letterSpacing = 0.15.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+)
+
 val BrutalTypography = Typography(
     bodyLarge = TextStyle(
         fontFamily = AppFontFamily,
