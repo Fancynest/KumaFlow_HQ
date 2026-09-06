@@ -26,3 +26,5 @@ val BrutalCyan = Color(0xFF00E5FF)
 val BrutalGreen = Color(0xFF00FF66)
 val BrutalBlack = Color(0xFF000000)
 val BrutalWhite = Color(0xFFFFFFFF)
+val BrutalDarkBg = Color(0xFF1A1A1A)    // Dark mode background brutal
+val BrutalDarkSurface = Color(0xFF2B2B2B) // Dark mode surface brutal

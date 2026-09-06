@@ -164,25 +164,25 @@ val LocalHazeState = compositionLocalOf { HazeState() }
 @Composable
 fun AppBg(): Color {
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    return if (isBrutal && LocalIsDark.current) Color(0xFF1C1B20) else MaterialTheme.colorScheme.background
+    return if (isBrutal && LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalDarkBg else MaterialTheme.colorScheme.background
 }
 
 @Composable
 fun AppSurface(): Color {
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    return if (isBrutal && LocalIsDark.current) Color(0xFF1C1B20) else MaterialTheme.colorScheme.surface
+    return if (isBrutal && LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalDarkSurface else MaterialTheme.colorScheme.surface
 }
 
 @Composable
 fun AppText(): Color {
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    return if (isBrutal && LocalIsDark.current) Color(0xFFE8DEF8) else MaterialTheme.colorScheme.onSurface
+    return if (isBrutal && LocalIsDark.current) Color(0xFFFFFFFF) else MaterialTheme.colorScheme.onSurface
 }
 
 @Composable
 fun AppPrimary(): Color {
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
-    return if (isBrutal && LocalIsDark.current) Color(0xFFD0BCFF) else MaterialTheme.colorScheme.primary
+    return if (isBrutal && LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalYellow else MaterialTheme.colorScheme.primary
 }
 
 @Composable
@@ -260,7 +260,7 @@ fun Modifier.neobrutalism(
     cornerRadius: androidx.compose.ui.unit.Dp = 16.dp,
     borderWidth: androidx.compose.ui.unit.Dp = 3.dp,
     offset: androidx.compose.ui.unit.Dp = 4.dp,
-    shadowColor: Color = if (LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalGreen else Color.Black,
+    shadowColor: Color = if (LocalIsDark.current) com.bearbones.kumaflow.ui.theme.BrutalYellow else Color.Black,
     borderColor: Color = if (LocalIsDark.current) Color.White else Color.Black,
     backgroundColor: Color = Color.Unspecified
 ): Modifier {

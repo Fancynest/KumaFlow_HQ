@@ -693,7 +693,14 @@ class MainActivity : FragmentActivity() {
                     
                     // 2. Brutal
                     isBrutalTriggered && activeThemeMode == 7 -> lightColorScheme(background = com.bearbones.kumaflow.ui.theme.BrutalYellow, surface = com.bearbones.kumaflow.ui.theme.BrutalWhite, primary = com.bearbones.kumaflow.ui.theme.BrutalBlack, onPrimary = com.bearbones.kumaflow.ui.theme.BrutalWhite, onBackground = com.bearbones.kumaflow.ui.theme.BrutalBlack, onSurface = com.bearbones.kumaflow.ui.theme.BrutalBlack)
-                    isBrutalTriggered && activeThemeMode == 8 -> darkColorScheme(background = com.bearbones.kumaflow.ui.theme.BrutalBlack, surface = com.bearbones.kumaflow.ui.theme.BrutalBlack, primary = com.bearbones.kumaflow.ui.theme.BrutalGreen, onPrimary = com.bearbones.kumaflow.ui.theme.BrutalBlack, onBackground = com.bearbones.kumaflow.ui.theme.BrutalWhite, onSurface = com.bearbones.kumaflow.ui.theme.BrutalWhite)
+                    isBrutalTriggered && activeThemeMode == 8 -> darkColorScheme(
+                        background = com.bearbones.kumaflow.ui.theme.BrutalDarkBg,
+                        surface = com.bearbones.kumaflow.ui.theme.BrutalDarkSurface,
+                        primary = com.bearbones.kumaflow.ui.theme.BrutalYellow,
+                        onPrimary = com.bearbones.kumaflow.ui.theme.BrutalDarkBg,
+                        onBackground = com.bearbones.kumaflow.ui.theme.BrutalWhite,
+                        onSurface = com.bearbones.kumaflow.ui.theme.BrutalWhite
+                    )
 
                     // ðŸ”¥ NEW LOGIC: DYNAMIC COLOR + AMOLED FUSION! ðŸ”¥
                     activeThemeMode == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
