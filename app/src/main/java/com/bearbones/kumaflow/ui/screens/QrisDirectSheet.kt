@@ -54,13 +54,18 @@ fun QrisDirectSheet(
         containerColor = AppBg(),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -177,6 +182,7 @@ fun QrisDirectSheet(
             ) {
                 Text(if (AppStr.isId) "Buat tagihan QRIS" else "Create QRIS billing", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
+        }
         }
     }
 }

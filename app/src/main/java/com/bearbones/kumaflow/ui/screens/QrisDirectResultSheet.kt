@@ -119,13 +119,18 @@ fun QrisDirectResultSheet(
         containerColor = AppBg(),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -250,6 +255,7 @@ fun QrisDirectResultSheet(
                     Text(if (AppStr.isId) "Bagikan" else "Share", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
+        }
         }
     }
 }

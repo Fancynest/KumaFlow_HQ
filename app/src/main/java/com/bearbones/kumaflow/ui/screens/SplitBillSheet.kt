@@ -95,15 +95,20 @@ fun SplitBillSheet(
         dragHandle = null,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
-        Column(
-            modifier = Modifier
-                .bouncySheetContent()
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .verticalScroll(rememberScrollState())
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .bouncySheetContent()
+                    .fillMaxSize()
+                    .widthIn(max = 560.dp)
+                    .padding(horizontal = 16.dp)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .verticalScroll(rememberScrollState())
+            ) {
             // Header with Title & Close button
             Row(
                 modifier = Modifier
@@ -676,6 +681,7 @@ fun SplitBillSheet(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
         }
     }
 

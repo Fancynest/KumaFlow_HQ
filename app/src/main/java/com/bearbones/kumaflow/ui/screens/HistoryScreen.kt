@@ -417,42 +417,47 @@ fun HistoryScreen(
                 sheetState = dateSheetState,
                 containerColor = AppSurface()
             ) {
-                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if(isId) "Pilih tanggal transaksi" else "Choose transaction date", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
-                        KumaTextButton(onClick = { selectedDateFilter = "All time"; customStartDate = null; customEndDate = null; showDateSheet = false }) {
-                            Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    val dateOptions = listOf("Last 7 days", "Last 30 days", "Last 90 days", "Custom date", "All time")
-                    dateOptions.forEach { opt ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .kumaClickable { 
-                                    if (opt == "Custom date") {
-                                        showM3DatePicker = true
-                                        showDateSheet = false
-                                    } else {
-                                        selectedDateFilter = opt 
-                                        showDateSheet = false
-                                    }
-                                }
-                                .padding(vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(opt, fontWeight = FontWeight.Bold, color = AppText())
-                            if (selectedDateFilter == opt) {
-                                Icon(Icons.Default.CheckCircle, null, tint = AppPrimary())
-                            } else {
-                                Icon(Icons.Default.RadioButtonUnchecked, null, tint = AppText().copy(alpha = 0.5f))
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth().widthIn(max = 560.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text(if(isId) "Pilih tanggal transaksi" else "Choose transaction date", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
+                            KumaTextButton(onClick = { selectedDateFilter = "All time"; customStartDate = null; customEndDate = null; showDateSheet = false }) {
+                                Text(if(isId) "Hapus" else "Clear", color = AppPrimary())
                             }
                         }
-                        HorizontalDivider(color = AppText().copy(alpha = 0.1f))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val dateOptions = listOf("Last 7 days", "Last 30 days", "Last 90 days", "Custom date", "All time")
+                        dateOptions.forEach { opt ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .kumaClickable { 
+                                        if (opt == "Custom date") {
+                                            showM3DatePicker = true
+                                            showDateSheet = false
+                                        } else {
+                                            selectedDateFilter = opt 
+                                            showDateSheet = false
+                                        }
+                                    }
+                                    .padding(vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(opt, fontWeight = FontWeight.Bold, color = AppText())
+                                if (selectedDateFilter == opt) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = AppPrimary())
+                                } else {
+                                    Icon(Icons.Default.RadioButtonUnchecked, null, tint = AppText().copy(alpha = 0.5f))
+                                }
+                            }
+                            HorizontalDivider(color = AppText().copy(alpha = 0.1f))
+                        }
+                        Spacer(modifier = Modifier.height(32.dp))
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
@@ -467,7 +472,11 @@ fun HistoryScreen(
                 val allCats = (profile.expenseCats.split(",") + profile.incomeCats.split(",")).filter { it.isNotBlank() }.distinct()
                 val savedIcons = remember(profile.categoryIcons) { try { JSONObject(profile.categoryIcons) } catch (e: Exception) { JSONObject() } }
                 
-                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth().widthIn(max = 560.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(isId) "Filter kategori" else "Filter category", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
                         KumaTextButton(onClick = { selectedCategories = emptySet() }) {
@@ -530,6 +539,7 @@ fun HistoryScreen(
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
+                }
             }
         }
 
@@ -541,7 +551,11 @@ fun HistoryScreen(
                 containerColor = AppSurface()
             ) {
                 val allWallets = profile.wallets.split(",").filter { it.isNotBlank() }
-                Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(modifier = Modifier.bouncySheetContent().padding(24.dp).fillMaxWidth().widthIn(max = 560.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(if(isId) "Filter dompet" else "Filter by methods", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
                         KumaTextButton(onClick = { selectedWallets = emptySet() }) {
@@ -601,6 +615,7 @@ fun HistoryScreen(
                         Text(if(AppStr.isId) "Atur Filter" else "Set filter", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
                     }
                     Spacer(modifier = Modifier.height(32.dp))
+                }
                 }
             }
         }

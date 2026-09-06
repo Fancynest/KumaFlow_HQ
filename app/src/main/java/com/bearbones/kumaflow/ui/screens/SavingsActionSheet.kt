@@ -82,11 +82,16 @@ fun SavingsActionSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+            ) {
             // Title
             Text(
                 text = if (isAdding) {
@@ -326,6 +331,7 @@ fun SavingsActionSheet(
             }
 
             Spacer(modifier = Modifier.height(48.dp))
+        }
         }
     }
 }

@@ -111,14 +111,19 @@ fun RouletteBottomSheet(
         containerColor = AppSurface(),
         dragHandle = { BottomSheetDefaults.DragHandle(color = AppPrimary()) }
     ) {
-        Column(
-            modifier = Modifier
-                .bouncySheetContent()
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .bouncySheetContent()
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Text(
                 text = AppStr.rouletteHeader,
                 fontSize = 20.sp,
@@ -388,6 +393,7 @@ fun RouletteBottomSheet(
             } else {
                 Text(AppStr.rouletteSpinHint, color = AppPrimary(), fontWeight = FontWeight.Bold)
             }
+        }
         }
     }
 

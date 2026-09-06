@@ -63,11 +63,16 @@ fun SavingsMoreSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+            ) {
             Text(
                 text = if (AppStr.isId) "Lainnya" else "Others",
                 fontSize = 20.sp,
@@ -122,6 +127,7 @@ fun SavingsMoreSheet(
             
             Spacer(modifier = Modifier.height(32.dp))
         }
+        }
     }
 }
 
@@ -173,7 +179,11 @@ fun SavingsHistorySheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth().padding(horizontal = 24.dp)) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(modifier = Modifier.fillMaxHeight(0.9f).fillMaxWidth().widthIn(max = 560.dp).padding(horizontal = 24.dp)) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -297,6 +307,7 @@ fun SavingsHistorySheet(
                 }
             }
         }
+        }
     }
     
     if (showMonthPicker) {
@@ -390,13 +401,18 @@ fun SavingsSettingsSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
-                .imePadding()
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+            ) {
             Text(if (AppStr.isId) "Pengaturan Tabungan" else "Savings Settings", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -577,6 +593,7 @@ fun SavingsSettingsSheet(
             }
             Spacer(modifier = Modifier.height(48.dp))
         }
+        }
     }
     
     if (showFreqSheet) {
@@ -616,11 +633,16 @@ fun SavingsAutodebitFreqSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+            ) {
             Text(if (AppStr.isId) "Kapan waktu autodebit tabungan kamu?" else "When should the autodebit happen?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = AppText())
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -753,6 +775,7 @@ fun SavingsAutodebitFreqSheet(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
+        }
         }
     }
 }

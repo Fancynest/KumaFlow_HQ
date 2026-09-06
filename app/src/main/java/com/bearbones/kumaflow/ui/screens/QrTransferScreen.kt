@@ -85,13 +85,19 @@ fun QrTransferScreen(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 560.dp)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Button(
                     onClick = { isSender = true },
@@ -138,6 +144,7 @@ fun QrTransferScreen(
             } else {
                 ReceiverView(onBack)
             }
+        }
         }
     }
 }
@@ -242,6 +249,7 @@ fun ReceiverView(onBack: () -> Unit) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
+                .widthIn(max = 480.dp)
                 .padding(top = 16.dp)
                 .clip(RoundedCornerShape(24.dp))
         ) {

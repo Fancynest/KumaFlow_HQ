@@ -127,12 +127,17 @@ fun NfcReaderSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() },
         containerColor = MaterialTheme.colorScheme.surface
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Text(
                 "NFC Reader",
                 style = MaterialTheme.typography.headlineSmall,
@@ -269,6 +274,7 @@ fun NfcReaderSheet(
             }
             
             Spacer(modifier = Modifier.height(32.dp))
+        }
         }
     }
 }

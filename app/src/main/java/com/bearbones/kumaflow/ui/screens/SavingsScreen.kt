@@ -404,13 +404,18 @@ fun SavingsDetailSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             // Header with 3 dots
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -556,6 +561,7 @@ fun SavingsDetailSheet(
 
             Spacer(modifier = Modifier.height(48.dp))
         }
+        }
     }
 
     if (showActionSheet) {
@@ -634,11 +640,16 @@ fun AddSavingsGoalSheet(
         sheetState = sheetState,
         containerColor = AppSurface()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .padding(24.dp)
+            ) {
             Text(
                 text = if (isId) "Tabungan Baru" else "New Savings",
                 fontSize = 24.sp,
@@ -734,6 +745,7 @@ fun AddSavingsGoalSheet(
             }
 
             Spacer(modifier = Modifier.height(48.dp))
+        }
         }
     }
 }

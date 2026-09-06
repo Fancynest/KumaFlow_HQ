@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.bearbones.kumaflow.neobrutalism
 import androidx.compose.ui.zIndex
@@ -205,7 +206,8 @@ fun HomeScreen(
     var qrisDirectAmount by remember { mutableStateOf(0L) }
     var qrisDirectMessage by remember { mutableStateOf("") }
     val windowSize = com.bearbones.kumaflow.ui.components.rememberKumaWindowSize()
-    val isTwoPane = windowSize.isTablet && (windowSize.isExpanded || windowSize.isLandscape)
+    val isTabletPortrait = windowSize.isTablet && !windowSize.isLandscape
+    val isTwoPane = windowSize.isTablet && windowSize.isLandscape
 
     val renderOverview: @Composable () -> Unit = {
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -345,8 +347,13 @@ fun HomeScreen(
                             scrimColor = Color.Black.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                         ) {
-                            Box(modifier = Modifier.bouncySheetContent()) {
-                                StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(modifier = Modifier.bouncySheetContent().widthIn(max = 560.dp)) {
+                                    StreakDetailsSheet(profile = profile, activeDates = activeDates, onDismiss = { showStreakSheet = false })
+                                }
                             }
                         }
                     }
@@ -734,23 +741,30 @@ fun HomeScreen(
                 }
             }
         } else {
-            LazyColumn(
-                state = listState,
+            Box(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
-                    bottom = paddingValues.calculateBottomPadding() + 24.dp
-                )
+                contentAlignment = Alignment.TopCenter
             ) {
-                item {
-                    renderOverview()
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = if (isTabletPortrait) 600.dp else Dp.Infinity),
+                    contentPadding = PaddingValues(
+                        top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp,
+                        bottom = paddingValues.calculateBottomPadding() + 24.dp
+                    )
+                ) {
+                    item {
+                        renderOverview()
+                    }
+                    renderSearchAndHeader()
+                    renderTransactions()
                 }
-                renderSearchAndHeader()
-                renderTransactions()
             }
         }
 
-        // ðŸ”¥ BULK ACTION OVERLAY BAR ðŸ”¥
+        // 🔥 BULK ACTION OVERLAY BAR 🔥
         androidx.compose.animation.AnimatedVisibility(
             visible = isSelectionMode,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = paddingValues.calculateBottomPadding() + 8.dp),
@@ -760,6 +774,7 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = if (isTabletPortrait) 600.dp else Dp.Infinity)
                     .padding(horizontal = 24.dp, vertical = 16.dp)
                     .border(1.dp, AppText().copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                     .glassCard(24.dp, AppSurfaceVariant())
@@ -843,14 +858,19 @@ fun HomeScreen(
                 containerColor = AppSurface(),
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
             ) {
-                Column(
-                    modifier = Modifier
-                        .bouncySheetContent()
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
-                        .padding(bottom = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Column(
+                        modifier = Modifier
+                            .bouncySheetContent()
+                            .fillMaxWidth()
+                            .widthIn(max = 560.dp)
+                            .padding(horizontal = 24.dp, vertical = 16.dp)
+                            .padding(bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                     Text(
                         text = if(AppStr.isId) "Sesuaikan Saldo $reconcileWalletName" else "Adjust $reconcileWalletName Balance",
                         fontSize = 20.sp,
@@ -923,6 +943,7 @@ fun HomeScreen(
                             color = Color.White
                         )
                     }
+                }
                 }
             }
         }

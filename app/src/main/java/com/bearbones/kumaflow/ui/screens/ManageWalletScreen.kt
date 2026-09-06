@@ -479,8 +479,9 @@ fun ManageWalletContent(
 
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
-            val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
-            val pagerPageWidth = (availableWidth - 64.dp).coerceAtMost(360.dp)
+            val isTabletPortrait = windowSize.isTablet && !windowSize.isLandscape
+            val availableWidth = screenWidth - if (windowSize.isTablet && windowSize.isLandscape) 88.dp else 0.dp
+            val pagerPageWidth = (availableWidth - 64.dp).coerceAtMost(if (isTabletPortrait) 400.dp else 360.dp)
             val cardPreviewHeight = pagerPageWidth / 1.6f
             val pagerHeight = cardPreviewHeight + 30.dp
 
@@ -521,7 +522,9 @@ fun ManageWalletContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .widthIn(max = if (isTabletPortrait) 600.dp else Dp.Infinity)
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = if (isTabletPortrait) 48.dp else 24.dp)
             ) {
                 ManageWalletTextInputs(
                     name = name,
@@ -1068,8 +1071,9 @@ fun WalletSuccessContent(
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
             val windowSize = rememberKumaWindowSize()
-            val availableWidth = screenWidth - if (windowSize.isTablet) 88.dp else 0.dp
-            val cardPreviewWidth = (availableWidth - 48.dp).coerceAtMost(360.dp)
+            val isTabletPortrait = windowSize.isTablet && !windowSize.isLandscape
+            val availableWidth = screenWidth - if (windowSize.isTablet && windowSize.isLandscape) 88.dp else 0.dp
+            val cardPreviewWidth = (availableWidth - 48.dp).coerceAtMost(if (isTabletPortrait) 400.dp else 360.dp)
             val cardPreviewHeight = cardPreviewWidth / 1.6f
 
             val solidColor = if (wallet.backgroundType == "SOLID") {

@@ -63,13 +63,19 @@ fun DuoPairingScreen(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 560.dp)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             if (successfulPairing == null) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Button(
@@ -110,6 +116,7 @@ fun DuoPairingScreen(
                     onComplete = onBack
                 )
             }
+        }
         }
     }
 }
@@ -249,6 +256,7 @@ fun DuoReceiverView(profile: UserProfile, database: KumaDatabase, onPaired: (Duo
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
+                .widthIn(max = 480.dp)
                 .padding(top = 16.dp)
                 .clip(RoundedCornerShape(24.dp))
         ) {
