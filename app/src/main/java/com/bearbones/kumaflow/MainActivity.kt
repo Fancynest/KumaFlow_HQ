@@ -983,235 +983,420 @@ fun MainScreen(
                         }
                     }
 
-                    // LOVE COMPANION VISUAL ELEMENTS — one unique icon per song
+                    // LOVE COMPANION VISUAL ELEMENTS & AMBIENT DECORATIONS
                     val loveAnimT = gutsAnimTime.value
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val sw = size.width
                         val sh = size.height
                         if (sw <= 0f || sh <= 0f) return@Canvas
-                        val dpToPx = sw / conf.screenWidthDp
+                        val dp = density.density
+                        val isTab = conf.screenWidthDp >= 600
+                        val baseScale = if (isTab) 1.25f else 1.0f
 
                         translate(left = -pageOffset * sw) {
+                            // 1. AMBIENT BACKGROUND ELEMENTS PER PAGE (Fills empty tablet space)
+                            for (p in 0..3) {
+                                val pageBaseX = p * sw
+
+                                // A. Embroidered Cross-Stitches (8 per page) — reinforces the yarn/handmade motif
+                                val stitchOffsets = listOf(
+                                    Pair(0.12f, 0.28f), Pair(0.42f, 0.16f), Pair(0.85f, 0.35f),
+                                    Pair(0.28f, 0.62f), Pair(0.72f, 0.72f), Pair(0.48f, 0.82f),
+                                    Pair(0.90f, 0.12f), Pair(0.08f, 0.86f)
+                                )
+                                stitchOffsets.forEachIndexed { sIdx, coords ->
+                                    val sx = pageBaseX + coords.first * sw
+                                    val sy = coords.second * sh
+                                    val stitchPhase = loveAnimT * 0.8 + p * 1.5 + sIdx * 0.9
+                                    val stitchAlpha = (0.55f + 0.30f * kotlin.math.sin(stitchPhase).toFloat()).coerceIn(0.4f, 0.85f)
+                                    val stitchLen = (7f * dp * baseScale)
+                                    val stitchColor = if (sIdx % 2 == 0) Color(0xFFBE185D) else Color(0xFFE11D48)
+
+                                    drawLine(
+                                        color = stitchColor.copy(alpha = stitchAlpha),
+                                        start = androidx.compose.ui.geometry.Offset(sx - stitchLen, sy - stitchLen),
+                                        end = androidx.compose.ui.geometry.Offset(sx + stitchLen, sy + stitchLen),
+                                        strokeWidth = 2.2f * dp,
+                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
+                                    drawLine(
+                                        color = stitchColor.copy(alpha = stitchAlpha),
+                                        start = androidx.compose.ui.geometry.Offset(sx - stitchLen, sy + stitchLen),
+                                        end = androidx.compose.ui.geometry.Offset(sx + stitchLen, sy - stitchLen),
+                                        strokeWidth = 2.2f * dp,
+                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                    )
+                                }
+
+                                // B. Drifting Flower Petals (6 per page) — gentle falling motion
+                                for (petIdx in 0 until 6) {
+                                    val petSpeed = 18f * dp + (petIdx % 3) * 6f * dp
+                                    val petRawY = ((loveAnimT * petSpeed + petIdx * 120f * dp) % (sh + 60f * dp)).toFloat() - 30f * dp
+                                    val petSway = (kotlin.math.sin(loveAnimT * 1.2 + petIdx * 1.8).toFloat()) * 25f * dp
+                                    val petBaseX = sw * (0.15f + (petIdx * 0.15f))
+                                    val px = pageBaseX + petBaseX + petSway
+                                    val py = petRawY
+                                    val petRot = (loveAnimT * 20.0 + petIdx * 45.0).toFloat() % 360f
+                                    val petAlpha = (0.55f + 0.25f * kotlin.math.sin(loveAnimT * 0.6 + petIdx).toFloat()).coerceIn(0.4f, 0.85f)
+                                    val petSize = 14f * dp * baseScale
+
+                                    rotate(degrees = petRot, pivot = androidx.compose.ui.geometry.Offset(px, py)) {
+                                        val petalPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(px, py - petSize)
+                                            cubicTo(px + petSize * 0.7f, py - petSize * 0.3f, px + petSize * 0.7f, py + petSize * 0.5f, px, py + petSize)
+                                            cubicTo(px - petSize * 0.7f, py + petSize * 0.5f, px - petSize * 0.7f, py - petSize * 0.3f, px, py - petSize)
+                                            close()
+                                        }
+                                        drawPath(petalPath, color = Color(0xFFFFB2C9).copy(alpha = petAlpha))
+                                        drawPath(petalPath, color = Color(0xFFE11D48).copy(alpha = petAlpha * 0.8f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp))
+                                    }
+                                }
+                            }
+
+                            // C. Miniature Album Cover Swing (Page 0, Top Right)
+                            val swingX = sw * 0.86f
+                            val swingY = sh * 0.04f
+                            val swingLen = 65f * dp * baseScale
+                            val swingAngle = (kotlin.math.sin(loveAnimT * 1.2).toFloat()) * 14f
+                            rotate(degrees = swingAngle, pivot = androidx.compose.ui.geometry.Offset(swingX, swingY)) {
+                                // Two ropes/chains
+                                val ropeCol = Color(0xFFBE185D).copy(alpha = 0.75f)
+                                drawLine(color = ropeCol, start = androidx.compose.ui.geometry.Offset(swingX - 10f * dp, swingY), end = androidx.compose.ui.geometry.Offset(swingX - 8f * dp, swingY + swingLen), strokeWidth = 1.8f * dp)
+                                drawLine(color = ropeCol, start = androidx.compose.ui.geometry.Offset(swingX + 10f * dp, swingY), end = androidx.compose.ui.geometry.Offset(swingX + 8f * dp, swingY + swingLen), strokeWidth = 1.8f * dp)
+                                // Wooden seat
+                                drawRoundRect(
+                                    color = Color(0xFFE11D48).copy(alpha = 0.85f),
+                                    topLeft = androidx.compose.ui.geometry.Offset(swingX - 14f * dp, swingY + swingLen),
+                                    size = androidx.compose.ui.geometry.Size(28f * dp, 5f * dp),
+                                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f * dp, 2f * dp)
+                                )
+                            }
+
+                            // 2. SONG COMPANION ARTWORKS (13 Unique Handcrafted Motifs)
                             for (posIdx in positions.indices) {
                                 val songIdx = posIdx % 13
                                 val cx = positions[posIdx].first * sw
                                 val cy = positions[posIdx].second * sh
-                                val iconX = cx - 8f * dpToPx
-                                val iconY = cy - 12f * dpToPx
-                                val iconSize = 28f * dpToPx
-                                val phase = loveAnimT + posIdx * 0.7
+
+                                // Position clearly visible near the song text
+                                val iconX = cx + 25f * dp
+                                val iconY = if (cy < sh * 0.22f) cy + 40f * dp else cy - 36f * dp
+                                val iconSize = 38f * dp * baseScale
+                                val phase = loveAnimT + posIdx * 0.75
 
                                 when (songIdx) {
                                     0 -> {
-                                        // DROP DEAD — Bubblegum bubble
-                                        val bubbleAlpha = (0.25f + 0.2f * kotlin.math.sin(phase * 0.6).toFloat()).coerceIn(0f, 1f)
-                                        val bubbleR = iconSize * 0.45f * (1f + 0.08f * kotlin.math.sin(phase * 0.8).toFloat())
-                                        drawCircle(color = Color(0xFFE8A0B5).copy(alpha = bubbleAlpha), radius = bubbleR, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
-                                        drawCircle(color = Color.White.copy(alpha = bubbleAlpha * 0.6f), radius = bubbleR * 0.3f, center = androidx.compose.ui.geometry.Offset(iconX - bubbleR * 0.25f, iconY - bubbleR * 0.25f))
+                                        // DROP DEAD — Glassy Bubblegum Bubble
+                                        val bScale = 1f + 0.08f * kotlin.math.sin(phase * 1.3).toFloat()
+                                        val bR = (iconSize * 0.45f) * bScale
+                                        // Outer bubble glow
+                                        drawCircle(color = Color(0xFFFF4081).copy(alpha = 0.25f), radius = bR * 1.3f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                        // Bubble interior
+                                        drawCircle(color = Color(0xFFFF80AB).copy(alpha = 0.45f), radius = bR, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                        // Bubble border
+                                        drawCircle(color = Color(0xFFE11D48).copy(alpha = 0.85f), radius = bR, center = androidx.compose.ui.geometry.Offset(iconX, iconY),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.2f * dp))
+                                        // White shine highlight
+                                        drawCircle(color = Color.White.copy(alpha = 0.85f), radius = bR * 0.28f, center = androidx.compose.ui.geometry.Offset(iconX - bR * 0.35f, iconY - bR * 0.35f))
+                                        // Companion mini bubble
+                                        drawCircle(color = Color(0xFFFF80AB).copy(alpha = 0.5f), radius = bR * 0.35f, center = androidx.compose.ui.geometry.Offset(iconX + bR * 0.9f, iconY - bR * 0.6f))
+                                        drawCircle(color = Color(0xFFE11D48).copy(alpha = 0.8f), radius = bR * 0.35f, center = androidx.compose.ui.geometry.Offset(iconX + bR * 0.9f, iconY - bR * 0.6f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
                                     }
                                     1 -> {
-                                        // STUPID SONG — Wildflower (daisy)
-                                        val flowerAlpha = (0.3f + 0.15f * kotlin.math.sin(phase * 0.4).toFloat()).coerceIn(0f, 1f)
-                                        val petalLen = iconSize * 0.35f
-                                        val petalW = iconSize * 0.12f
-                                        val petalColor = Color(0xFFFFC0CB).copy(alpha = flowerAlpha)
-                                        for (p in 0 until 5) {
-                                            val angle = (p * 72.0 + loveAnimT * 5.0) * kotlin.math.PI / 180.0
-                                            val px = iconX + (kotlin.math.cos(angle) * petalLen).toFloat()
-                                            val py = iconY + (kotlin.math.sin(angle) * petalLen).toFloat()
-                                            drawCircle(color = petalColor, radius = petalW, center = androidx.compose.ui.geometry.Offset(px, py))
+                                        // STUPID SONG — Blooming Wildflower / Daisy
+                                        val fRot = (loveAnimT * 15.0 + posIdx * 30.0).toFloat()
+                                        val petalLen = iconSize * 0.38f
+                                        val petalR = iconSize * 0.16f
+                                        rotate(degrees = fRot, pivot = androidx.compose.ui.geometry.Offset(iconX, iconY)) {
+                                            for (p in 0 until 5) {
+                                                val angle = p * 72.0 * kotlin.math.PI / 180.0
+                                                val px = iconX + (kotlin.math.cos(angle) * petalLen).toFloat()
+                                                val py = iconY + (kotlin.math.sin(angle) * petalLen).toFloat()
+                                                drawCircle(color = Color(0xFFFF8DA1).copy(alpha = 0.88f), radius = petalR, center = androidx.compose.ui.geometry.Offset(px, py))
+                                                drawCircle(color = Color(0xFFBE185D).copy(alpha = 0.90f), radius = petalR, center = androidx.compose.ui.geometry.Offset(px, py),
+                                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
+                                            }
+                                            // Golden center disc
+                                            drawCircle(color = Color(0xFFFBBF24), radius = petalR * 1.1f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                            drawCircle(color = Color(0xFFD97706), radius = petalR * 1.1f, center = androidx.compose.ui.geometry.Offset(iconX, iconY),
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
                                         }
-                                        drawCircle(color = Color(0xFFFFE4B5).copy(alpha = flowerAlpha), radius = petalW * 0.8f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
                                     }
                                     2 -> {
-                                        // HONEYBEE — Small bee
-                                        val beePhase = phase * 0.5
-                                        val beeAlpha = (0.35f + 0.15f * kotlin.math.sin(beePhase * 1.2).toFloat()).coerceIn(0f, 1f)
-                                        val beeOffX = (kotlin.math.sin(beePhase * 0.7) * iconSize * 0.4).toFloat()
-                                        val beeOffY = (kotlin.math.cos(beePhase * 0.5) * iconSize * 0.2).toFloat()
-                                        val bx = iconX + beeOffX
-                                        val by = iconY + beeOffY
-                                        val bodyR = iconSize * 0.12f
-                                        drawCircle(color = Color(0xFFFFD700).copy(alpha = beeAlpha), radius = bodyR, center = androidx.compose.ui.geometry.Offset(bx, by))
-                                        drawCircle(color = Color(0xFF4A3728).copy(alpha = beeAlpha * 0.6f), radius = bodyR * 0.5f, center = androidx.compose.ui.geometry.Offset(bx, by))
-                                        val wingColor = Color.White.copy(alpha = beeAlpha * 0.5f)
-                                        drawCircle(color = wingColor, radius = bodyR * 0.6f, center = androidx.compose.ui.geometry.Offset(bx - bodyR * 0.6f, by - bodyR * 0.8f))
-                                        drawCircle(color = wingColor, radius = bodyR * 0.6f, center = androidx.compose.ui.geometry.Offset(bx + bodyR * 0.6f, by - bodyR * 0.8f))
+                                        // HONEYBEE — Striped Bumblebee with translucent wings
+                                        val beeWave = kotlin.math.sin(phase * 1.8).toFloat() * 6f * dp
+                                        val bx = iconX + beeWave
+                                        val by = iconY + (kotlin.math.cos(phase * 1.4).toFloat() * 4f * dp)
+                                        val bodyW = iconSize * 0.38f
+                                        val bodyH = iconSize * 0.26f
+
+                                        // Dashed flight path trail
+                                        val trailPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(bx - bodyW * 2f, by + bodyH * 0.5f)
+                                            cubicTo(bx - bodyW * 1.5f, by - bodyH, bx - bodyW, by + bodyH, bx - bodyW * 0.5f, by)
+                                        }
+                                        drawPath(trailPath, color = Color(0xFFBE185D).copy(alpha = 0.55f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp,
+                                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f * dp, 3f * dp), 0f)))
+
+                                        // Body (Warm amber gold)
+                                        drawOval(color = Color(0xFFF59E0B), topLeft = androidx.compose.ui.geometry.Offset(bx - bodyW * 0.5f, by - bodyH * 0.5f), size = androidx.compose.ui.geometry.Size(bodyW, bodyH))
+                                        drawOval(color = Color(0xFF78350F), topLeft = androidx.compose.ui.geometry.Offset(bx - bodyW * 0.5f, by - bodyH * 0.5f), size = androidx.compose.ui.geometry.Size(bodyW, bodyH),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
+
+                                        // Dark Stripes
+                                        drawLine(color = Color(0xFF291A10), start = androidx.compose.ui.geometry.Offset(bx - bodyW * 0.12f, by - bodyH * 0.45f), end = androidx.compose.ui.geometry.Offset(bx - bodyW * 0.12f, by + bodyH * 0.45f), strokeWidth = 2.8f * dp)
+                                        drawLine(color = Color(0xFF291A10), start = androidx.compose.ui.geometry.Offset(bx + bodyW * 0.16f, by - bodyH * 0.45f), end = androidx.compose.ui.geometry.Offset(bx + bodyW * 0.16f, by + bodyH * 0.45f), strokeWidth = 2.8f * dp)
+
+                                        // Translucent Wings
+                                        val wingW = bodyW * 0.55f
+                                        val wingH = bodyH * 0.75f
+                                        drawOval(color = Color.White.copy(alpha = 0.88f), topLeft = androidx.compose.ui.geometry.Offset(bx - wingW * 0.8f, by - bodyH * 0.9f), size = androidx.compose.ui.geometry.Size(wingW, wingH))
+                                        drawOval(color = Color(0xFF38BDF8).copy(alpha = 0.85f), topLeft = androidx.compose.ui.geometry.Offset(bx - wingW * 0.8f, by - bodyH * 0.9f), size = androidx.compose.ui.geometry.Size(wingW, wingH),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp))
+                                        drawOval(color = Color.White.copy(alpha = 0.88f), topLeft = androidx.compose.ui.geometry.Offset(bx + wingW * 0.1f, by - bodyH * 0.9f), size = androidx.compose.ui.geometry.Size(wingW, wingH))
+                                        drawOval(color = Color(0xFF38BDF8).copy(alpha = 0.85f), topLeft = androidx.compose.ui.geometry.Offset(bx + wingW * 0.1f, by - bodyH * 0.9f), size = androidx.compose.ui.geometry.Size(wingW, wingH),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp))
                                     }
                                     3 -> {
-                                        // MAGGOTS FOR BRAINS — Doodle brain (cloud of blobs)
-                                        val brainAlpha = (0.2f + 0.12f * kotlin.math.sin(phase * 0.35).toFloat()).coerceIn(0f, 1f)
-                                        val brainColor = Color(0xFFE8A0B5).copy(alpha = brainAlpha)
-                                        val blobR = iconSize * 0.15f
-                                        for (b in 0 until 5) {
-                                            val bAngle = b * 72.0 * kotlin.math.PI / 180.0
-                                            val bDist = blobR * 0.6f
-                                            drawCircle(color = brainColor, radius = blobR,
-                                                center = androidx.compose.ui.geometry.Offset(
-                                                    iconX + (kotlin.math.cos(bAngle) * bDist).toFloat(),
-                                                    iconY + (kotlin.math.sin(bAngle) * bDist).toFloat()
-                                                ))
+                                        // MAGGOTS FOR BRAINS — Pop-Art Doodle Brain
+                                        val brW = iconSize * 0.46f
+                                        val brH = iconSize * 0.35f
+                                        val brainCol = Color(0xFFF472B6)
+                                        val outlineCol = Color(0xFF9F1239)
+
+                                        // Left hemisphere
+                                        drawOval(color = brainCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.9f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH))
+                                        drawOval(color = outlineCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.9f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f * dp))
+                                        // Right hemisphere
+                                        drawOval(color = brainCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.1f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH))
+                                        drawOval(color = outlineCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.1f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f * dp))
+
+                                        // Squiggly wrinkle curves inside
+                                        val wrinklePath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX - brW * 0.6f, iconY - brH * 0.2f)
+                                            cubicTo(iconX - brW * 0.3f, iconY - brH * 0.4f, iconX - brW * 0.5f, iconY + brH * 0.2f, iconX - brW * 0.3f, iconY + brH * 0.1f)
+                                            moveTo(iconX + brW * 0.6f, iconY - brH * 0.2f)
+                                            cubicTo(iconX + brW * 0.3f, iconY - brH * 0.4f, iconX + brW * 0.5f, iconY + brH * 0.2f, iconX + brW * 0.3f, iconY + brH * 0.1f)
                                         }
-                                        drawCircle(color = brainColor, radius = blobR * 0.8f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                        drawPath(wrinklePath, color = outlineCol, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
                                     }
                                     4 -> {
-                                        // U + ME = <3 — Doodled hearts
-                                        val heartAlpha = (0.3f + 0.15f * kotlin.math.sin(phase * 0.5).toFloat()).coerceIn(0f, 1f)
-                                        val heartColor = Color(0xFFD4607A).copy(alpha = heartAlpha)
-                                        val hs = iconSize * 0.35f
-                                        val heartPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, iconY + hs * 0.3f)
-                                            cubicTo(iconX - hs * 0.5f, iconY - hs * 0.3f, iconX - hs * 0.5f, iconY - hs * 0.6f, iconX, iconY - hs * 0.2f)
-                                            cubicTo(iconX + hs * 0.5f, iconY - hs * 0.6f, iconX + hs * 0.5f, iconY - hs * 0.3f, iconX, iconY + hs * 0.3f)
+                                        // U + ME = <3 — Doodled Carved Hearts with <3
+                                        val hs = iconSize * 0.42f
+                                        val hPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, iconY + hs * 0.45f)
+                                            cubicTo(iconX - hs * 0.65f, iconY - hs * 0.15f, iconX - hs * 0.65f, iconY - hs * 0.75f, iconX, iconY - hs * 0.25f)
+                                            cubicTo(iconX + hs * 0.65f, iconY - hs * 0.75f, iconX + hs * 0.65f, iconY - hs * 0.15f, iconX, iconY + hs * 0.45f)
                                             close()
                                         }
-                                        drawPath(heartPath, color = heartColor)
-                                        // Second smaller heart
-                                        val s2 = hs * 0.5f
-                                        val ox2 = iconX + iconSize * 0.3f
-                                        val oy2 = iconY - iconSize * 0.15f
-                                        val heartPath2 = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(ox2, oy2 + s2 * 0.3f)
-                                            cubicTo(ox2 - s2 * 0.5f, oy2 - s2 * 0.3f, ox2 - s2 * 0.5f, oy2 - s2 * 0.6f, ox2, oy2 - s2 * 0.2f)
-                                            cubicTo(ox2 + s2 * 0.5f, oy2 - s2 * 0.6f, ox2 + s2 * 0.5f, oy2 - s2 * 0.3f, ox2, oy2 + s2 * 0.3f)
+                                        // Fill & bold sketch stroke
+                                        drawPath(hPath, color = Color(0xFFFF8DA1).copy(alpha = 0.55f))
+                                        drawPath(hPath, color = Color(0xFFE11D48), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.4f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        // Second little companion heart
+                                        val s2 = hs * 0.55f
+                                        val ox2 = iconX + iconSize * 0.35f
+                                        val oy2 = iconY - iconSize * 0.22f
+                                        val hPath2 = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(ox2, oy2 + s2 * 0.45f)
+                                            cubicTo(ox2 - s2 * 0.65f, oy2 - s2 * 0.15f, ox2 - s2 * 0.65f, oy2 - s2 * 0.75f, ox2, oy2 - s2 * 0.25f)
+                                            cubicTo(ox2 + s2 * 0.65f, oy2 - s2 * 0.75f, ox2 + s2 * 0.65f, oy2 - s2 * 0.15f, ox2, oy2 + s2 * 0.45f)
                                             close()
                                         }
-                                        drawPath(heartPath2, color = heartColor.copy(alpha = heartAlpha * 0.6f))
+                                        drawPath(hPath2, color = Color(0xFFBE185D), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
                                     }
                                     5 -> {
-                                        // MY WAY — Lightning bolt
-                                        val boltAlpha = (0.25f + 0.2f * kotlin.math.sin(phase * 0.7).toFloat()).coerceIn(0f, 1f)
-                                        val boltColor = Color(0xFFD4607A).copy(alpha = boltAlpha)
-                                        val bs = iconSize * 0.4f
+                                        // MY WAY — Pop-Punk Lightning Bolt
+                                        val bs = iconSize * 0.48f
                                         val boltPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX + bs * 0.1f, iconY - bs)
-                                            lineTo(iconX - bs * 0.15f, iconY - bs * 0.1f)
-                                            lineTo(iconX + bs * 0.15f, iconY - bs * 0.1f)
-                                            lineTo(iconX - bs * 0.1f, iconY + bs)
-                                            lineTo(iconX + bs * 0.15f, iconY + bs * 0.1f)
-                                            lineTo(iconX - bs * 0.15f, iconY + bs * 0.1f)
+                                            moveTo(iconX + bs * 0.12f, iconY - bs)
+                                            lineTo(iconX - bs * 0.35f, iconY)
+                                            lineTo(iconX + bs * 0.05f, iconY)
+                                            lineTo(iconX - bs * 0.2f, iconY + bs)
+                                            lineTo(iconX + bs * 0.45f, iconY - bs * 0.1f)
+                                            lineTo(iconX + bs * 0.08f, iconY - bs * 0.1f)
                                             close()
                                         }
-                                        drawPath(boltPath, color = boltColor)
+                                        // Outer glow
+                                        drawPath(boltPath, color = Color(0xFFFF4081).copy(alpha = 0.35f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 6f * dp))
+                                        // Solid fill
+                                        drawPath(boltPath, color = Color(0xFFD946EF))
+                                        // Golden highlight spine
+                                        drawPath(boltPath, color = Color(0xFFFDE047),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
                                     }
                                     6 -> {
-                                        // PURPLE — Purple-pink gradient smudge
-                                        val purpleAlpha = (0.15f + 0.12f * kotlin.math.sin(phase * 0.3).toFloat()).coerceIn(0f, 1f)
-                                        val purpleMix = (0.5f + 0.5f * kotlin.math.sin(phase * 0.25).toFloat()).coerceIn(0f, 1f)
-                                        val smudgeColor = Color(
-                                            red = 0.58f + (0.83f - 0.58f) * purpleMix,
-                                            green = 0.27f + (0.63f - 0.27f) * purpleMix,
-                                            blue = 0.92f + (0.48f - 0.92f) * purpleMix,
-                                            alpha = purpleAlpha
-                                        )
-                                        val smudgeR = iconSize * 0.5f
-                                        drawCircle(color = smudgeColor, radius = smudgeR, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
-                                        drawCircle(color = smudgeColor.copy(alpha = purpleAlpha * 0.5f), radius = smudgeR * 1.4f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
-                                    }
-                                    7 -> {
-                                        // THE CURE — Felt heart with dashed stitch outline
-                                        val feltAlpha = (0.3f + 0.15f * kotlin.math.sin(phase * 0.45).toFloat()).coerceIn(0f, 1f)
-                                        val feltScale = 1f + 0.06f * kotlin.math.sin(phase * 0.9).toFloat()
-                                        val hs = iconSize * 0.4f * feltScale
-                                        val feltPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, iconY + hs * 0.35f)
-                                            cubicTo(iconX - hs * 0.55f, iconY - hs * 0.25f, iconX - hs * 0.55f, iconY - hs * 0.65f, iconX, iconY - hs * 0.15f)
-                                            cubicTo(iconX + hs * 0.55f, iconY - hs * 0.65f, iconX + hs * 0.55f, iconY - hs * 0.25f, iconX, iconY + hs * 0.35f)
-                                            close()
-                                        }
-                                        drawPath(feltPath, color = Color(0xFFE8A0B5).copy(alpha = feltAlpha))
-                                        drawPath(feltPath, color = Color(0xFFD4607A).copy(alpha = feltAlpha * 0.8f),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                width = 1.5f * dpToPx,
-                                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f * dpToPx, 3f * dpToPx), 0f)
-                                            ))
-                                    }
-                                    8 -> {
-                                        // BEGGED — Teardrop falling
-                                        val tearAlpha = (0.25f + 0.15f * kotlin.math.sin(phase * 0.4).toFloat()).coerceIn(0f, 1f)
-                                        val tearDrop = (loveAnimT * 0.15 + posIdx * 0.3) % 1.0
-                                        val tearY = iconY + (tearDrop * iconSize * 0.8).toFloat()
-                                        val tearAlphaFade = tearAlpha * (1f - tearDrop.toFloat())
-                                        val ts = iconSize * 0.12f
-                                        val tearPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, tearY - ts * 2f)
-                                            cubicTo(iconX + ts, tearY - ts, iconX + ts, tearY + ts * 0.3f, iconX, tearY + ts * 0.5f)
-                                            cubicTo(iconX - ts, tearY + ts * 0.3f, iconX - ts, tearY - ts, iconX, tearY - ts * 2f)
-                                            close()
-                                        }
-                                        drawPath(tearPath, color = Color(0xFFA8D4E6).copy(alpha = tearAlphaFade))
-                                    }
-                                    9 -> {
-                                        // WHAT'S WRONG WITH ME — Gothic rose
-                                        val roseAlpha = (0.2f + 0.12f * kotlin.math.sin(phase * 0.35).toFloat()).coerceIn(0f, 1f)
-                                        val roseColor = Color(0xFF8B2252).copy(alpha = roseAlpha)
-                                        val rr = iconSize * 0.15f
-                                        for (layer in 0 until 3) {
-                                            val layerR = rr * (1.6f - layer * 0.3f)
-                                            for (p in 0 until 5) {
-                                                val pAngle = (p * 72.0 + layer * 20.0 + loveAnimT * 3.0) * kotlin.math.PI / 180.0
-                                                val px = iconX + (kotlin.math.cos(pAngle) * layerR).toFloat()
-                                                val py = iconY + (kotlin.math.sin(pAngle) * layerR).toFloat()
-                                                drawCircle(color = roseColor, radius = rr * 0.5f, center = androidx.compose.ui.geometry.Offset(px, py))
+                                        // PURPLE — Violet Watercolor Orchid Bloom
+                                        val pRot = (loveAnimT * 10.0 + posIdx * 25.0).toFloat()
+                                        val pRadius = iconSize * 0.42f
+                                        // Violet glow aura
+                                        drawCircle(color = Color(0xFF8B5CF6).copy(alpha = 0.3f), radius = pRadius * 1.4f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                        rotate(degrees = pRot, pivot = androidx.compose.ui.geometry.Offset(iconX, iconY)) {
+                                            for (i in 0 until 5) {
+                                                val pAng = i * 72.0 * kotlin.math.PI / 180.0
+                                                val px = iconX + (kotlin.math.cos(pAng) * pRadius * 0.65f).toFloat()
+                                                val py = iconY + (kotlin.math.sin(pAng) * pRadius * 0.65f).toFloat()
+                                                drawCircle(color = Color(0xFF7C3AED).copy(alpha = 0.85f), radius = pRadius * 0.45f, center = androidx.compose.ui.geometry.Offset(px, py))
+                                                drawCircle(color = Color(0xFFC026D3).copy(alpha = 0.90f), radius = pRadius * 0.45f, center = androidx.compose.ui.geometry.Offset(px, py),
+                                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
                                             }
                                         }
-                                        drawCircle(color = Color(0xFF5C1A33).copy(alpha = roseAlpha), radius = rr * 0.35f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                        // White stardust center
+                                        drawCircle(color = Color.White, radius = pRadius * 0.22f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
+                                    }
+                                    7 -> {
+                                        // THE CURE — Embroidered Felt Heart with Cross-Stitches
+                                        val beat = (kotlin.math.sin(phase * 2.5).toFloat() + 1f) * 0.5f
+                                        val fScale = 1f + 0.12f * beat
+                                        val hs = iconSize * 0.46f * fScale
+
+                                        val fPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, iconY + hs * 0.5f)
+                                            cubicTo(iconX - hs * 0.7f, iconY - hs * 0.15f, iconX - hs * 0.7f, iconY - hs * 0.8f, iconX, iconY - hs * 0.25f)
+                                            cubicTo(iconX + hs * 0.7f, iconY - hs * 0.8f, iconX + hs * 0.7f, iconY - hs * 0.15f, iconX, iconY + hs * 0.5f)
+                                            close()
+                                        }
+                                        // Rich felt pink fill
+                                        drawPath(fPath, color = Color(0xFFFB7185).copy(alpha = 0.88f))
+                                        // Prominent dashed embroidery stitches
+                                        drawPath(fPath, color = Color(0xFF881337),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                width = 2.6f * dp,
+                                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f * dp, 4f * dp), 0f)
+                                            ))
+                                        // Center cross-stitch detail
+                                        val cLen = 4f * dp
+                                        drawLine(color = Color.White.copy(alpha = 0.9f), start = androidx.compose.ui.geometry.Offset(iconX - cLen, iconY - cLen), end = androidx.compose.ui.geometry.Offset(iconX + cLen, iconY + cLen), strokeWidth = 2f * dp)
+                                        drawLine(color = Color.White.copy(alpha = 0.9f), start = androidx.compose.ui.geometry.Offset(iconX - cLen, iconY + cLen), end = androidx.compose.ui.geometry.Offset(iconX + cLen, iconY - cLen), strokeWidth = 2f * dp)
+                                    }
+                                    8 -> {
+                                        // BEGGED — Luminous Crystal Teardrop with Ripple Ring
+                                        val ts = iconSize * 0.38f
+                                        val dropFall = (loveAnimT * 0.25 + posIdx * 0.35) % 1.0
+                                        val dy = iconY + (dropFall * iconSize * 0.5).toFloat()
+                                        val dAlpha = (1f - dropFall.toFloat() * 0.6f).coerceIn(0.4f, 1f)
+
+                                        val tPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, dy - ts * 1.5f)
+                                            cubicTo(iconX + ts * 0.8f, dy - ts * 0.3f, iconX + ts * 0.8f, dy + ts * 0.7f, iconX, dy + ts * 0.9f)
+                                            cubicTo(iconX - ts * 0.8f, dy + ts * 0.7f, iconX - ts * 0.8f, dy - ts * 0.3f, iconX, dy - ts * 1.5f)
+                                            close()
+                                        }
+                                        // Vibrant sky blue tear
+                                        drawPath(tPath, color = Color(0xFF0284C7).copy(alpha = dAlpha))
+                                        drawPath(tPath, color = Color(0xFF0369A1).copy(alpha = dAlpha), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * dp))
+                                        // White glint
+                                        drawCircle(color = Color.White.copy(alpha = dAlpha), radius = ts * 0.22f, center = androidx.compose.ui.geometry.Offset(iconX - ts * 0.25f, dy - ts * 0.1f))
+
+                                        // Expanding ripple below
+                                        val rippleR = (dropFall * iconSize * 0.6f).toFloat()
+                                        val ripAlpha = ((1f - dropFall.toFloat()) * 0.7f).coerceIn(0f, 0.7f)
+                                        drawOval(color = Color(0xFF38BDF8).copy(alpha = ripAlpha),
+                                            topLeft = androidx.compose.ui.geometry.Offset(iconX - rippleR, iconY + ts + rippleR * 0.2f),
+                                            size = androidx.compose.ui.geometry.Size(rippleR * 2f, rippleR * 0.8f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
+                                    }
+                                    9 -> {
+                                        // WHAT'S WRONG WITH ME — Gothic Velvet Rose
+                                        val roseR = iconSize * 0.44f
+                                        // Deep wine/burgundy layered petals
+                                        for (layer in 0 until 3) {
+                                            val lR = roseR * (1.0f - layer * 0.25f)
+                                            val petals = 5
+                                            for (p in 0 until petals) {
+                                                val pAng = (p * 72.0 + layer * 36.0 + loveAnimT * 5.0) * kotlin.math.PI / 180.0
+                                                val px = iconX + (kotlin.math.cos(pAng) * lR * 0.5f).toFloat()
+                                                val py = iconY + (kotlin.math.sin(pAng) * lR * 0.5f).toFloat()
+                                                val pCol = if (layer == 0) Color(0xFF881337) else if (layer == 1) Color(0xFF9F1239) else Color(0xFFE11D48)
+                                                drawCircle(color = pCol.copy(alpha = 0.92f), radius = lR * 0.45f, center = androidx.compose.ui.geometry.Offset(px, py))
+                                                drawCircle(color = Color(0xFF4C0519), radius = lR * 0.45f, center = androidx.compose.ui.geometry.Offset(px, py),
+                                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dp))
+                                            }
+                                        }
+                                        // Rose core
+                                        drawCircle(color = Color(0xFF4C0519), radius = roseR * 0.22f, center = androidx.compose.ui.geometry.Offset(iconX, iconY))
                                     }
                                     10 -> {
-                                        // LESS — Dots fading away
-                                        for (d in 0 until 4) {
-                                            val dotPhase = (loveAnimT * 0.3 + d * 0.5 + posIdx * 0.2) % 2.0
-                                            val dotAlpha = if (dotPhase < 1.0) dotPhase.toFloat() * 0.3f else (2.0 - dotPhase).toFloat() * 0.3f
-                                            val dotX = iconX + (d - 1.5f) * iconSize * 0.18f
-                                            val dotR = iconSize * 0.05f * (1f - d * 0.15f)
-                                            drawCircle(color = Color(0xFFD4607A).copy(alpha = dotAlpha), radius = dotR,
-                                                center = androidx.compose.ui.geometry.Offset(dotX, iconY))
+                                        // LESS — Fading Starburst Trio
+                                        val starSizes = listOf(14f * dp, 10f * dp, 6f * dp)
+                                        starSizes.forEachIndexed { sIdx, sRad ->
+                                            val sPhase = (loveAnimT * 1.5 + sIdx * 0.8 + posIdx) % 2.0
+                                            val sAlpha = if (sPhase < 1.0) (0.35f + sPhase.toFloat() * 0.6f) else (0.95f - (sPhase.toFloat() - 1f) * 0.6f)
+                                            val sx = iconX + (sIdx - 1) * 16f * dp * baseScale
+                                            val sy = iconY + (sIdx % 2) * 4f * dp
+                                            val starPath = androidx.compose.ui.graphics.Path().apply {
+                                                for (i in 0 until 8) {
+                                                    val r = if (i % 2 == 0) sRad else sRad * 0.35f
+                                                    val ang = Math.toRadians((i * 45.0 - 90.0))
+                                                    val px = (sx + r * kotlin.math.cos(ang)).toFloat()
+                                                    val py = (sy + r * kotlin.math.sin(ang)).toFloat()
+                                                    if (i == 0) moveTo(px, py) else lineTo(px, py)
+                                                }
+                                                close()
+                                            }
+                                            drawPath(starPath, color = Color(0xFFE11D48).copy(alpha = sAlpha))
                                         }
                                     }
                                     11 -> {
-                                        // EXPECTATIONS — Handwritten "?"
-                                        val qAlpha = (0.2f + 0.15f * kotlin.math.sin(phase * 0.4).toFloat()).coerceIn(0f, 1f)
-                                        val qColor = Color(0xFFD4607A).copy(alpha = qAlpha)
-                                        val qs = iconSize * 0.3f
+                                        // EXPECTATIONS — Cursive '?' with Sparkle Star Dot
+                                        val qs = iconSize * 0.42f
                                         val qPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX - qs * 0.3f, iconY - qs * 0.6f)
-                                            cubicTo(iconX - qs * 0.3f, iconY - qs, iconX + qs * 0.4f, iconY - qs, iconX + qs * 0.2f, iconY - qs * 0.3f)
-                                            cubicTo(iconX + qs * 0.1f, iconY, iconX, iconY, iconX, iconY + qs * 0.1f)
+                                            moveTo(iconX - qs * 0.4f, iconY - qs * 0.7f)
+                                            cubicTo(iconX - qs * 0.4f, iconY - qs * 1.15f, iconX + qs * 0.55f, iconY - qs * 1.15f, iconX + qs * 0.35f, iconY - qs * 0.4f)
+                                            cubicTo(iconX + qs * 0.15f, iconY, iconX, iconY, iconX, iconY + qs * 0.2f)
                                         }
-                                        drawPath(qPath, color = qColor,
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dpToPx, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                                        drawCircle(color = qColor, radius = 1.5f * dpToPx, center = androidx.compose.ui.geometry.Offset(iconX, iconY + qs * 0.4f))
+                                        drawPath(qPath, color = Color(0xFFBE185D),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                        // Sparkle star bottom dot
+                                        val dotY = iconY + qs * 0.55f
+                                        val dR = 5f * dp
+                                        val dotStar = androidx.compose.ui.graphics.Path().apply {
+                                            for (i in 0 until 8) {
+                                                val r = if (i % 2 == 0) dR else dR * 0.35f
+                                                val ang = Math.toRadians((i * 45.0 - 90.0))
+                                                val px = (iconX + r * kotlin.math.cos(ang)).toFloat()
+                                                val py = (dotY + r * kotlin.math.sin(ang)).toFloat()
+                                                if (i == 0) moveTo(px, py) else lineTo(px, py)
+                                            }
+                                            close()
+                                        }
+                                        drawPath(dotStar, color = Color(0xFFF59E0B))
                                     }
                                     12 -> {
-                                        // CIGARETTE SMOKE — Wispy smoke rising
-                                        val smokeAlpha = (0.1f + 0.08f * kotlin.math.sin(phase * 0.3).toFloat()).coerceIn(0f, 1f)
-                                        val smokeDrift = (loveAnimT * 0.08 + posIdx * 0.4) % 1.5
-                                        val smokeY = iconY - (smokeDrift * iconSize * 0.6).toFloat()
-                                        val smokeAlphaFade = smokeAlpha * (1f - (smokeDrift / 1.5).toFloat())
-                                        val smokeColor = Color(0xFFC0A0A8).copy(alpha = smokeAlphaFade)
-                                        val smokePath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, iconY)
+                                        // CIGARETTE SMOKE — Swirling Smoke Ribbon
+                                        val smokeH = iconSize * 0.85f
+                                        val drift = (loveAnimT * 0.12 + posIdx * 0.3) % 1.0
+                                        val smY = iconY - (drift * smokeH * 0.5f).toFloat()
+                                        val smAlpha = ((1f - drift.toFloat()) * 0.85f).coerceIn(0.4f, 0.85f)
+                                        val smokeColor = Color(0xFF9333EA).copy(alpha = smAlpha)
+
+                                        val sPath1 = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, iconY + smokeH * 0.3f)
                                             cubicTo(
-                                                iconX + iconSize * 0.1f, smokeY + (iconY - smokeY) * 0.6f,
-                                                iconX - iconSize * 0.1f, smokeY + (iconY - smokeY) * 0.3f,
-                                                iconX + iconSize * 0.05f, smokeY
+                                                iconX + 12f * dp, smY + smokeH * 0.1f,
+                                                iconX - 14f * dp, smY - smokeH * 0.2f,
+                                                iconX + 8f * dp, smY - smokeH * 0.6f
                                             )
                                         }
-                                        drawPath(smokePath, color = smokeColor,
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f * dpToPx, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                                        val smokeDrift2 = (loveAnimT * 0.06 + posIdx * 0.4 + 0.7) % 1.5
-                                        val smokeY2 = iconY - (smokeDrift2 * iconSize * 0.5).toFloat()
-                                        val smokeAlphaFade2 = smokeAlpha * 0.7f * (1f - (smokeDrift2 / 1.5).toFloat())
-                                        val smokePath2 = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX + iconSize * 0.08f, iconY)
+                                        drawPath(sPath1, color = smokeColor,
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.6f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        val sPath2 = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX + 6f * dp, iconY + smokeH * 0.2f)
                                             cubicTo(
-                                                iconX - iconSize * 0.05f, smokeY2 + (iconY - smokeY2) * 0.5f,
-                                                iconX + iconSize * 0.12f, smokeY2 + (iconY - smokeY2) * 0.25f,
-                                                iconX - iconSize * 0.03f, smokeY2
+                                                iconX - 10f * dp, smY + smokeH * 0.05f,
+                                                iconX + 12f * dp, smY - smokeH * 0.25f,
+                                                iconX - 6f * dp, smY - smokeH * 0.55f
                                             )
                                         }
-                                        drawPath(smokePath2, color = smokeColor.copy(alpha = smokeAlphaFade2),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f * dpToPx, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                                        drawPath(sPath2, color = Color(0xFFE11D48).copy(alpha = smAlpha * 0.7f),
+                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.0f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
                                     }
                                 }
                             }
@@ -1227,7 +1412,7 @@ fun MainScreen(
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.6f)
+                        .alpha(0.92f)
                     ) {
                         val customFontFamily = remember { 
                             androidx.compose.ui.text.font.FontFamily(
@@ -1260,8 +1445,14 @@ fun MainScreen(
                                 Text(
                                     text = song,
                                     fontFamily = customFontFamily,
-                                    fontSize = 28.sp,
-                                    color = Color(0xFFD4607A),
+                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 28.sp,
+                                    color = Color(0xFFBE185D),
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        shadow = androidx.compose.ui.graphics.Shadow(
+                                            color = Color(0x60F43F5E),
+                                            blurRadius = 14f
+                                        )
+                                    ),
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
