@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -485,18 +486,20 @@ fun ManageWalletContent(
             val cardPreviewHeight = pagerPageWidth / 1.6f
             val pagerHeight = cardPreviewHeight + 30.dp
 
+            val horizontalPadding = ((screenWidth - pagerPageWidth) / 2).coerceAtLeast(24.dp)
+
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 HorizontalPager(
                     state = pagerState,
+                    pageSize = PageSize.Fixed(pagerPageWidth),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .widthIn(max = pagerPageWidth + 64.dp)
                         .height(pagerHeight),
-                    contentPadding = PaddingValues(horizontal = 32.dp),
-                    pageSpacing = 8.dp
+                    contentPadding = PaddingValues(horizontal = horizontalPadding),
+                    pageSpacing = 16.dp
                 ) { page ->
                     val isActive = page == editPageIndex
                     val previewType = if (isActive) bgType else if (page == wallets.size) "SOLID" else wallets[page].backgroundType
