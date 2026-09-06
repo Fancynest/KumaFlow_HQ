@@ -998,37 +998,7 @@ fun MainScreen(
                             for (p in 0..3) {
                                 val pageBaseX = p * sw
 
-                                // A. Embroidered Cross-Stitches (8 per page) — reinforces the yarn/handmade motif
-                                val stitchOffsets = listOf(
-                                    Pair(0.12f, 0.28f), Pair(0.42f, 0.16f), Pair(0.85f, 0.35f),
-                                    Pair(0.28f, 0.62f), Pair(0.72f, 0.72f), Pair(0.48f, 0.82f),
-                                    Pair(0.90f, 0.12f), Pair(0.08f, 0.86f)
-                                )
-                                stitchOffsets.forEachIndexed { sIdx, coords ->
-                                    val sx = pageBaseX + coords.first * sw
-                                    val sy = coords.second * sh
-                                    val stitchPhase = loveAnimT * 0.8 + p * 1.5 + sIdx * 0.9
-                                    val stitchAlpha = (0.55f + 0.30f * kotlin.math.sin(stitchPhase).toFloat()).coerceIn(0.4f, 0.85f)
-                                    val stitchLen = (7f * dp * baseScale)
-                                    val stitchColor = if (sIdx % 2 == 0) Color(0xFFBE185D) else Color(0xFFE11D48)
-
-                                    drawLine(
-                                        color = stitchColor.copy(alpha = stitchAlpha),
-                                        start = androidx.compose.ui.geometry.Offset(sx - stitchLen, sy - stitchLen),
-                                        end = androidx.compose.ui.geometry.Offset(sx + stitchLen, sy + stitchLen),
-                                        strokeWidth = 2.2f * dp,
-                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                    )
-                                    drawLine(
-                                        color = stitchColor.copy(alpha = stitchAlpha),
-                                        start = androidx.compose.ui.geometry.Offset(sx - stitchLen, sy + stitchLen),
-                                        end = androidx.compose.ui.geometry.Offset(sx + stitchLen, sy - stitchLen),
-                                        strokeWidth = 2.2f * dp,
-                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                    )
-                                }
-
-                                // B. Drifting Flower Petals (6 per page) — gentle falling motion
+                                // Drifting Flower Petals (6 per page) — gentle falling motion
                                 for (petIdx in 0 until 6) {
                                     val petSpeed = 18f * dp + (petIdx % 3) * 6f * dp
                                     val petRawY = ((loveAnimT * petSpeed + petIdx * 120f * dp) % (sh + 60f * dp)).toFloat() - 30f * dp
@@ -1161,29 +1131,73 @@ fun MainScreen(
                                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp))
                                     }
                                     3 -> {
-                                        // MAGGOTS FOR BRAINS — Pop-Art Doodle Brain
-                                        val brW = iconSize * 0.46f
-                                        val brH = iconSize * 0.35f
-                                        val brainCol = Color(0xFFF472B6)
-                                        val outlineCol = Color(0xFF9F1239)
+                                        // MAGGOTS FOR BRAINS — Authentic Stylized Doodle Brain
+                                        val brW = iconSize * 0.48f
+                                        val brH = iconSize * 0.38f
+                                        val brainFill = Color(0xFFFF8DA1)
+                                        val brainBorder = Color(0xFF881337)
+                                        val wrinkleCol = Color(0xFF9F1239)
 
-                                        // Left hemisphere
-                                        drawOval(color = brainCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.9f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH))
-                                        drawOval(color = outlineCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.9f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f * dp))
-                                        // Right hemisphere
-                                        drawOval(color = brainCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.1f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH))
-                                        drawOval(color = outlineCol, topLeft = androidx.compose.ui.geometry.Offset(iconX - brW * 0.1f, iconY - brH * 0.5f), size = androidx.compose.ui.geometry.Size(brW, brH),
-                                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f * dp))
-
-                                        // Squiggly wrinkle curves inside
-                                        val wrinklePath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX - brW * 0.6f, iconY - brH * 0.2f)
-                                            cubicTo(iconX - brW * 0.3f, iconY - brH * 0.4f, iconX - brW * 0.5f, iconY + brH * 0.2f, iconX - brW * 0.3f, iconY + brH * 0.1f)
-                                            moveTo(iconX + brW * 0.6f, iconY - brH * 0.2f)
-                                            cubicTo(iconX + brW * 0.3f, iconY - brH * 0.4f, iconX + brW * 0.5f, iconY + brH * 0.2f, iconX + brW * 0.3f, iconY + brH * 0.1f)
+                                        // 1. Brain Contour with 2 cerebral hemispheres and distinct rounded lobes
+                                        val brainPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, iconY - brH * 0.35f)
+                                            // Right hemisphere: frontal lobe, parietal lobe, occipital/temporal lobe
+                                            cubicTo(iconX + brW * 0.25f, iconY - brH * 0.58f, iconX + brW * 0.55f, iconY - brH * 0.45f, iconX + brW * 0.58f, iconY - brH * 0.20f)
+                                            cubicTo(iconX + brW * 0.65f, iconY - brH * 0.05f, iconX + brW * 0.62f, iconY + brH * 0.22f, iconX + brW * 0.50f, iconY + brH * 0.38f)
+                                            cubicTo(iconX + brW * 0.40f, iconY + brH * 0.55f, iconX + brW * 0.18f, iconY + brH * 0.58f, iconX + brW * 0.05f, iconY + brH * 0.45f)
+                                            cubicTo(iconX + brW * 0.02f, iconY + brH * 0.40f, iconX + brW * 0.01f, iconY + brH * 0.34f, iconX, iconY + brH * 0.32f)
+                                            // Left hemisphere: occipital/temporal lobe, parietal lobe, frontal lobe
+                                            cubicTo(iconX - brW * 0.01f, iconY + brH * 0.34f, iconX - brW * 0.02f, iconY + brH * 0.40f, iconX - brW * 0.05f, iconY + brH * 0.45f)
+                                            cubicTo(iconX - brW * 0.18f, iconY + brH * 0.58f, iconX - brW * 0.40f, iconY + brH * 0.55f, iconX - brW * 0.50f, iconY + brH * 0.38f)
+                                            cubicTo(iconX - brW * 0.62f, iconY + brH * 0.22f, iconX - brW * 0.65f, iconY - brH * 0.05f, iconX - brW * 0.58f, iconY - brH * 0.20f)
+                                            cubicTo(iconX - brW * 0.55f, iconY - brH * 0.45f, iconX - brW * 0.25f, iconY - brH * 0.58f, iconX, iconY - brH * 0.35f)
+                                            close()
                                         }
-                                        drawPath(wrinklePath, color = outlineCol, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        // Solid fill
+                                        drawPath(brainPath, color = brainFill)
+                                        // Thick doodle outline
+                                        drawPath(brainPath, color = brainBorder, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.4f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        // 2. Central longitudinal fissure (dividing line between left and right hemispheres)
+                                        val fissurePath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX, iconY - brH * 0.35f)
+                                            cubicTo(iconX - 2.5f * dp, iconY - brH * 0.12f, iconX + 2.5f * dp, iconY + brH * 0.12f, iconX, iconY + brH * 0.32f)
+                                        }
+                                        drawPath(fissurePath, color = brainBorder, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.0f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        // 3. Realistic brain sulci / wrinkle fold lines
+                                        val foldPath = androidx.compose.ui.graphics.Path().apply {
+                                            // Left hemisphere wrinkles
+                                            moveTo(iconX - brW * 0.05f, iconY - brH * 0.18f)
+                                            cubicTo(iconX - brW * 0.25f, iconY - brH * 0.35f, iconX - brW * 0.45f, iconY - brH * 0.25f, iconX - brW * 0.32f, iconY - brH * 0.10f)
+
+                                            moveTo(iconX - brW * 0.52f, iconY - brH * 0.02f)
+                                            cubicTo(iconX - brW * 0.35f, iconY - brH * 0.06f, iconX - brW * 0.20f, iconY + brH * 0.08f, iconX - brW * 0.35f, iconY + brH * 0.18f)
+
+                                            moveTo(iconX - brW * 0.05f, iconY + brH * 0.16f)
+                                            cubicTo(iconX - brW * 0.15f, iconY + brH * 0.36f, iconX - brW * 0.35f, iconY + brH * 0.38f, iconX - brW * 0.40f, iconY + brH * 0.25f)
+
+                                            // Right hemisphere wrinkles
+                                            moveTo(iconX + brW * 0.05f, iconY - brH * 0.18f)
+                                            cubicTo(iconX + brW * 0.25f, iconY - brH * 0.35f, iconX + brW * 0.45f, iconY - brH * 0.25f, iconX + brW * 0.32f, iconY - brH * 0.10f)
+
+                                            moveTo(iconX + brW * 0.52f, iconY - brH * 0.02f)
+                                            cubicTo(iconX + brW * 0.35f, iconY - brH * 0.06f, iconX + brW * 0.20f, iconY + brH * 0.08f, iconX + brW * 0.35f, iconY + brH * 0.18f)
+
+                                            moveTo(iconX + brW * 0.05f, iconY + brH * 0.16f)
+                                            cubicTo(iconX + brW * 0.15f, iconY + brH * 0.36f, iconX + brW * 0.35f, iconY + brH * 0.38f, iconX + brW * 0.40f, iconY + brH * 0.25f)
+                                        }
+                                        drawPath(foldPath, color = wrinkleCol, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.9f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+
+                                        // 4. Soft highlights on top lobes for 3D depth
+                                        val hlPath = androidx.compose.ui.graphics.Path().apply {
+                                            moveTo(iconX - brW * 0.38f, iconY - brH * 0.38f)
+                                            cubicTo(iconX - brW * 0.22f, iconY - brH * 0.45f, iconX - brW * 0.10f, iconY - brH * 0.38f, iconX - brW * 0.05f, iconY - brH * 0.28f)
+                                            moveTo(iconX + brW * 0.38f, iconY - brH * 0.38f)
+                                            cubicTo(iconX + brW * 0.22f, iconY - brH * 0.45f, iconX + brW * 0.10f, iconY - brH * 0.38f, iconX + brW * 0.05f, iconY - brH * 0.28f)
+                                        }
+                                        drawPath(hlPath, color = Color.White.copy(alpha = 0.65f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
                                     }
                                     4 -> {
                                         // U + ME = <3 — Doodled Carved Hearts with <3
