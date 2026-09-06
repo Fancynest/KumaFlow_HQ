@@ -893,6 +893,14 @@ fun MainScreen(
                         repeatMode = androidx.compose.animation.core.RepeatMode.Restart
                     )
                 )
+                val gutsAnimTime = infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = (2 * Math.PI).toFloat(),
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(6000, easing = androidx.compose.animation.core.LinearEasing),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Restart
+                    )
+                )
 
                 val density = androidx.compose.ui.platform.LocalDensity.current
                 val conf = androidx.compose.ui.platform.LocalConfiguration.current
@@ -1030,7 +1038,8 @@ fun MainScreen(
                         }
                     }
                 } else if (userProfile.themeMode == 10) {
-                    // GUTS ERA (Dark Mode) - Crescent Moons & Stars
+                    // GUTS ERA (Dark Mode) - Crescent Moons & Stars with Strobe Animation
+                    val animT = gutsAnimTime.value
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width
                         val h = size.height
@@ -1040,15 +1049,17 @@ fun MainScreen(
                                 for (p in 0..3) {
                                     val pageBaseX = p * screenWidth
 
-                                    // Crescent Moon Helper (Difference of 2 circles)
-                                    fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, alpha: Float) {
-                                        val innerR = radius * 0.85f
-                                        val innerCx = cx + radius * 0.45f
-                                        val innerCy = cy - radius * 0.2f
+                                    // Crescent Moon Helper (Difference of 2 circles) with soft moonlight aura pulse
+                                    fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, baseAlpha: Float, moonIndex: Int) {
+                                        val pulse = (kotlin.math.sin(animT.toDouble() * 2.2 + moonIndex * 1.9).toFloat() + 1f) / 2f
+                                        val currentR = radius * (0.96f + 0.08f * pulse)
+                                        val innerR = currentR * 0.85f
+                                        val innerCx = cx + currentR * 0.45f
+                                        val innerCy = cy - currentR * 0.2f
                                         val moonPath = Path().apply {
                                             op(
                                                 Path().apply {
-                                                    addOval(Rect(cx - radius, cy - radius, cx + radius, cy + radius))
+                                                    addOval(Rect(cx - currentR, cy - currentR, cx + currentR, cy + currentR))
                                                 },
                                                 Path().apply {
                                                     addOval(Rect(innerCx - innerR, innerCy - innerR, innerCx + innerR, innerCy + innerR))
@@ -1056,27 +1067,39 @@ fun MainScreen(
                                                 PathOperation.Difference
                                             )
                                         }
+                                        val auraStroke = (2.5f + 4.5f * pulse).dp.toPx()
+                                        val moonAlpha = (baseAlpha * (0.75f + 0.65f * pulse)).coerceIn(0.12f, 0.65f)
+                                        val moonColor = if (pulse > 0.70f) Color(0xFFE8D7FF) else Color(0xFFB388FF)
+
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
-                                            // Subtle glow stroke
+                                            // Glowing moonlight halo
                                             drawPath(
                                                 path = moonPath,
-                                                color = Color(0xFFB388FF).copy(alpha = alpha * 0.35f),
-                                                style = Stroke(width = 3.dp.toPx())
+                                                color = Color(0xFFD1B3FF).copy(alpha = moonAlpha * 0.45f),
+                                                style = Stroke(width = auraStroke)
                                             )
                                             // Moon body
                                             drawPath(
                                                 path = moonPath,
-                                                color = Color(0xFFB388FF).copy(alpha = alpha)
+                                                color = moonColor.copy(alpha = moonAlpha)
                                             )
                                         }
                                     }
 
-                                    // 5-Point Star Helper
-                                    fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float) {
-                                        val innerR = outerR * 0.42f
+                                    // 5-Point Star Helper with Celestial Strobe Flash
+                                    fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
+                                        val fastFreq = 7.0 + (starIndex % 4) * 2.2
+                                        val slowFreq = 2.0 + (starIndex % 3) * 0.9
+                                        val wave = kotlin.math.sin(animT.toDouble() * fastFreq + starIndex * 1.7) *
+                                                   kotlin.math.cos(animT.toDouble() * slowFreq + starIndex * 0.8)
+                                        val strobeFactor = ((wave.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
+                                        val flashIntensity = Math.pow(strobeFactor.toDouble(), 2.8).toFloat()
+
+                                        val dynamicOuterR = outerR * (0.85f + 0.30f * flashIntensity)
+                                        val innerR = dynamicOuterR * 0.42f
                                         val starPath = Path().apply {
                                             for (i in 0 until 10) {
-                                                val r = if (i % 2 == 0) outerR else innerR
+                                                val r = if (i % 2 == 0) dynamicOuterR else innerR
                                                 val angle = Math.toRadians((i * 36.0 - 90.0))
                                                 val x = (cx + r * kotlin.math.cos(angle)).toFloat()
                                                 val y = (cy + r * kotlin.math.sin(angle)).toFloat()
@@ -1084,20 +1107,35 @@ fun MainScreen(
                                             }
                                             close()
                                         }
+                                        val starColor = when {
+                                            flashIntensity > 0.65f -> Color(0xFFFFFFFF) // diamond starlight white flash
+                                            flashIntensity > 0.30f -> Color(0xFFE8D7FF) // bright pastel lavender
+                                            else -> Color(0xFFB388FF)                   // electric violet
+                                        }
+                                        val starAlpha = (alpha * (0.6f + 2.5f * flashIntensity)).coerceIn(0.12f, 0.95f)
+
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
                                             drawPath(
                                                 path = starPath,
-                                                color = Color(0xFFB388FF).copy(alpha = alpha)
+                                                color = starColor.copy(alpha = starAlpha)
                                             )
                                         }
                                     }
 
-                                    // 4-Point Sparkle Star Helper
-                                    fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float) {
-                                        val innerR = outerR * 0.22f
+                                    // 4-Point Sparkle Star Helper with Diamond Strobe Flare
+                                    fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
+                                        val fastFreq = 8.5 + (starIndex % 3) * 2.8
+                                        val slowFreq = 1.6 + (starIndex % 2) * 1.1
+                                        val wave = kotlin.math.sin(animT.toDouble() * fastFreq + starIndex * 2.1) *
+                                                   kotlin.math.cos(animT.toDouble() * slowFreq + starIndex * 1.3)
+                                        val strobeFactor = ((wave.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
+                                        val flashIntensity = Math.pow(strobeFactor.toDouble(), 2.8).toFloat()
+
+                                        val dynamicOuterR = outerR * (0.82f + 0.38f * flashIntensity)
+                                        val innerR = dynamicOuterR * 0.22f
                                         val sparklePath = Path().apply {
                                             for (i in 0 until 8) {
-                                                val r = if (i % 2 == 0) outerR else innerR
+                                                val r = if (i % 2 == 0) dynamicOuterR else innerR
                                                 val angle = Math.toRadians((i * 45.0 - 90.0))
                                                 val x = (cx + r * kotlin.math.cos(angle)).toFloat()
                                                 val y = (cy + r * kotlin.math.sin(angle)).toFloat()
@@ -1105,10 +1143,24 @@ fun MainScreen(
                                             }
                                             close()
                                         }
+                                        val starColor = when {
+                                            flashIntensity > 0.60f -> Color(0xFFFFFFFF) // diamond starlight white
+                                            flashIntensity > 0.28f -> Color(0xFFEDE7F6) // pale lavender
+                                            else -> Color(0xFFB388FF)                   // electric violet
+                                        }
+                                        val starAlpha = (alpha * (0.55f + 2.8f * flashIntensity)).coerceIn(0.10f, 0.98f)
+
                                         rotate(degrees = rotation, pivot = Offset(cx, cy)) {
+                                            if (flashIntensity > 0.50f) {
+                                                drawPath(
+                                                    path = sparklePath,
+                                                    color = Color(0xFFF8F0FF).copy(alpha = (flashIntensity - 0.50f) * 1.5f * alpha),
+                                                    style = Stroke(width = 2.dp.toPx())
+                                                )
+                                            }
                                             drawPath(
                                                 path = sparklePath,
-                                                color = Color(0xFFB388FF).copy(alpha = alpha)
+                                                color = starColor.copy(alpha = starAlpha)
                                             )
                                         }
                                     }
@@ -1117,102 +1169,115 @@ fun MainScreen(
                                     drawCrescentMoon(
                                         cx = pageBaseX + screenWidth * 0.80f,
                                         cy = h * 0.13f,
-                                        radius = 30.dp.toPx(), // 60dp diameter
+                                        radius = 30.dp.toPx(),
                                         rotation = -20f,
-                                        alpha = 0.25f
+                                        baseAlpha = 0.25f,
+                                        moonIndex = p * 3 + 0
                                     )
                                     drawCrescentMoon(
                                         cx = pageBaseX + screenWidth * 0.16f,
                                         cy = h * 0.52f,
-                                        radius = 17.5f.dp.toPx(), // 35dp diameter
+                                        radius = 17.5f.dp.toPx(),
                                         rotation = 25f,
-                                        alpha = 0.20f
+                                        baseAlpha = 0.20f,
+                                        moonIndex = p * 3 + 1
                                     )
                                     drawCrescentMoon(
                                         cx = pageBaseX + screenWidth * 0.84f,
                                         cy = h * 0.82f,
-                                        radius = 12.5f.dp.toPx(), // 25dp diameter
+                                        radius = 12.5f.dp.toPx(),
                                         rotation = -35f,
-                                        alpha = 0.18f
+                                        baseAlpha = 0.18f,
+                                        moonIndex = p * 3 + 2
                                     )
 
-                                    // 10 Celestial Stars (15-25dp, alpha 0.15f-0.25f)
+                                    // 10 Celestial Stars (15-25dp, with individual strobe seeds)
                                     draw5PointStar(
                                         cx = pageBaseX + screenWidth * 0.12f,
                                         cy = h * 0.10f,
-                                        outerR = 11.dp.toPx(), // 22dp
+                                        outerR = 11.dp.toPx(),
                                         rotation = 12f,
-                                        alpha = 0.22f
+                                        alpha = 0.22f,
+                                        starIndex = p * 10 + 0
                                     )
                                     drawSparkleStar(
                                         cx = pageBaseX + screenWidth * 0.48f,
                                         cy = h * 0.08f,
-                                        outerR = 9.dp.toPx(), // 18dp
+                                        outerR = 9.dp.toPx(),
                                         rotation = 0f,
-                                        alpha = 0.20f
+                                        alpha = 0.20f,
+                                        starIndex = p * 10 + 1
                                     )
                                     drawSparkleStar(
                                         cx = pageBaseX + screenWidth * 0.90f,
                                         cy = h * 0.26f,
-                                        outerR = 12.dp.toPx(), // 24dp
+                                        outerR = 12.dp.toPx(),
                                         rotation = 15f,
-                                        alpha = 0.25f
+                                        alpha = 0.25f,
+                                        starIndex = p * 10 + 2
                                     )
                                     draw5PointStar(
                                         cx = pageBaseX + screenWidth * 0.28f,
                                         cy = h * 0.32f,
-                                        outerR = 8.dp.toPx(), // 16dp
+                                        outerR = 8.dp.toPx(),
                                         rotation = -18f,
-                                        alpha = 0.16f
+                                        alpha = 0.16f,
+                                        starIndex = p * 10 + 3
                                     )
                                     drawSparkleStar(
                                         cx = pageBaseX + screenWidth * 0.65f,
                                         cy = h * 0.40f,
-                                        outerR = 10.dp.toPx(), // 20dp
+                                        outerR = 10.dp.toPx(),
                                         rotation = 45f,
-                                        alpha = 0.18f
+                                        alpha = 0.18f,
+                                        starIndex = p * 10 + 4
                                     )
                                     drawSparkleStar(
                                         cx = pageBaseX + screenWidth * 0.08f,
                                         cy = h * 0.68f,
-                                        outerR = 11.dp.toPx(), // 22dp
+                                        outerR = 11.dp.toPx(),
                                         rotation = 0f,
-                                        alpha = 0.20f
+                                        alpha = 0.20f,
+                                        starIndex = p * 10 + 5
                                     )
                                     draw5PointStar(
                                         cx = pageBaseX + screenWidth * 0.42f,
                                         cy = h * 0.62f,
-                                        outerR = 7.5f.dp.toPx(), // 15dp
+                                        outerR = 7.5f.dp.toPx(),
                                         rotation = 30f,
-                                        alpha = 0.15f
+                                        alpha = 0.15f,
+                                        starIndex = p * 10 + 6
                                     )
                                     draw5PointStar(
                                         cx = pageBaseX + screenWidth * 0.72f,
                                         cy = h * 0.70f,
-                                        outerR = 12.dp.toPx(), // 24dp
+                                        outerR = 12.dp.toPx(),
                                         rotation = -10f,
-                                        alpha = 0.22f
+                                        alpha = 0.22f,
+                                        starIndex = p * 10 + 7
                                     )
                                     drawSparkleStar(
                                         cx = pageBaseX + screenWidth * 0.22f,
                                         cy = h * 0.88f,
-                                        outerR = 9.dp.toPx(), // 18dp
+                                        outerR = 9.dp.toPx(),
                                         rotation = 10f,
-                                        alpha = 0.17f
+                                        alpha = 0.17f,
+                                        starIndex = p * 10 + 8
                                     )
                                     draw5PointStar(
                                         cx = pageBaseX + screenWidth * 0.58f,
                                         cy = h * 0.92f,
-                                        outerR = 10.dp.toPx(), // 20dp
+                                        outerR = 10.dp.toPx(),
                                         rotation = 20f,
-                                        alpha = 0.24f
+                                        alpha = 0.24f,
+                                        starIndex = p * 10 + 9
                                     )
                                 }
                             }
                         }
                     }
 
-                    // GUTS TRACKLIST BACKGROUND
+                    // GUTS TRACKLIST BACKGROUND with Wave Breathing Neon Glow
                     val gutsTracklist = listOf(
                         "all-american bitch", "bad idea right?", "vampire", "lacy",
                         "ballad of a homeschooled girl", "making the bed", "logical",
@@ -1220,10 +1285,7 @@ fun MainScreen(
                         "pretty isn't pretty", "teenage dream"
                     )
 
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.6f)
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Box(modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer { translationX = -pageOffset * screenWidthPx }
@@ -1246,16 +1308,40 @@ fun MainScreen(
                                     random.nextFloat() * 30f - 15f
                                 }
                                 
+                                // Wave breathing calculation with phase shift per song
+                                val breathPhase = kotlin.math.sin(gutsAnimTime.value.toDouble() * 1.5 + index * 0.7)
+                                val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
+                                
+                                // Smooth alpha breathing from 0.22f (subtle background) to 0.78f (glowing neon)
+                                val songAlpha = (0.22f + 0.56f * breathNorm).coerceIn(0.18f, 0.85f)
+                                
+                                // Color shift from electric violet to luminous pastel lavender
+                                val songColor = if (breathNorm > 0.65f) {
+                                    Color(0xFFF3E5FF)
+                                } else if (breathNorm > 0.35f) {
+                                    Color(0xFFD1B3FF)
+                                } else {
+                                    Color(0xFF9E68F5)
+                                }
+                                
+                                val glowBlur = 4f + 16f * breathNorm
+
                                 Text(
                                     text = song,
                                     fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                                     fontSize = 26.sp,
-                                    color = Color(0xFFB388FF).copy(alpha = 0.5f),
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        shadow = androidx.compose.ui.graphics.Shadow(
+                                            color = Color(0xFFB388FF).copy(alpha = songAlpha * 0.75f),
+                                            blurRadius = glowBlur
+                                        )
+                                    ),
+                                    color = songColor.copy(alpha = songAlpha),
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
+                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value.toDouble() * 1.2 + index.toDouble()).toFloat() * 14f)
                                             rotationZ = rot
                                         }
                                 )
