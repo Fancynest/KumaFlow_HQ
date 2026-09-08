@@ -911,22 +911,37 @@ fun MainScreen(
                 val random = remember { kotlin.random.Random(42) }
 
                 val positions = listOf(
-                    // Page 0
-                    Pair(0.04f, 0.08f), Pair(0.58f, 0.08f),
-                    Pair(0.03f, 0.36f), Pair(0.60f, 0.36f),
-                    Pair(0.03f, 0.69f), Pair(0.58f, 0.69f),
-                    // Page 1
-                    Pair(1.04f, 0.08f), Pair(1.58f, 0.08f),
-                    Pair(1.03f, 0.36f), Pair(1.60f, 0.36f),
-                    Pair(1.03f, 0.69f), Pair(1.58f, 0.69f),
-                    // Page 2
-                    Pair(2.04f, 0.08f), Pair(2.58f, 0.08f),
-                    Pair(2.03f, 0.36f), Pair(2.60f, 0.36f),
-                    Pair(2.03f, 0.69f), Pair(2.58f, 0.69f),
-                    // Page 3
-                    Pair(3.04f, 0.08f), Pair(3.58f, 0.08f),
-                    Pair(3.03f, 0.36f), Pair(3.60f, 0.36f),
-                    Pair(3.03f, 0.69f), Pair(3.58f, 0.69f)
+                    // Page 0 (Home)
+                    Pair(0.04f, 0.06f), Pair(0.50f, 0.11f),
+                    Pair(0.04f, 0.17f), Pair(0.48f, 0.23f),
+                    Pair(0.03f, 0.32f), Pair(0.50f, 0.38f),
+                    Pair(0.04f, 0.49f), Pair(0.48f, 0.56f),
+                    Pair(0.03f, 0.65f), Pair(0.50f, 0.72f),
+                    Pair(0.04f, 0.83f), Pair(0.50f, 0.90f),
+
+                    // Page 1 (History)
+                    Pair(1.04f, 0.06f), Pair(1.50f, 0.11f),
+                    Pair(1.04f, 0.17f), Pair(1.48f, 0.23f),
+                    Pair(1.03f, 0.32f), Pair(1.50f, 0.38f),
+                    Pair(1.04f, 0.49f), Pair(1.48f, 0.56f),
+                    Pair(1.03f, 0.65f), Pair(1.50f, 0.72f),
+                    Pair(1.04f, 0.83f), Pair(1.50f, 0.90f),
+
+                    // Page 2 (Savings)
+                    Pair(2.04f, 0.06f), Pair(2.50f, 0.11f),
+                    Pair(2.04f, 0.17f), Pair(2.48f, 0.23f),
+                    Pair(2.03f, 0.32f), Pair(2.50f, 0.38f),
+                    Pair(2.04f, 0.49f), Pair(2.48f, 0.56f),
+                    Pair(2.03f, 0.65f), Pair(2.50f, 0.72f),
+                    Pair(2.04f, 0.83f), Pair(2.50f, 0.90f),
+
+                    // Page 3 (Reports)
+                    Pair(3.04f, 0.06f), Pair(3.50f, 0.11f),
+                    Pair(3.04f, 0.17f), Pair(3.48f, 0.23f),
+                    Pair(3.03f, 0.32f), Pair(3.50f, 0.38f),
+                    Pair(3.04f, 0.49f), Pair(3.48f, 0.56f),
+                    Pair(3.03f, 0.65f), Pair(3.50f, 0.72f),
+                    Pair(3.04f, 0.83f), Pair(3.50f, 0.90f)
                 )
 
                 if (userProfile.themeMode == 9) {
@@ -1386,7 +1401,7 @@ fun MainScreen(
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.55f)
+                        .alpha(0.72f)
                     ) {
                         val customFontFamily = remember { 
                             androidx.compose.ui.text.font.FontFamily(
@@ -1413,18 +1428,20 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
                                 
                                 val rot = remember {
-                                    random.nextFloat() * 18f - 9f
+                                    random.nextFloat() * 12f - 6f
                                 }
                                 
                                 Text(
                                     text = song,
                                     fontFamily = customFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 23.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 27.sp,
                                     color = Color(0xFFBE185D),
+                                    maxLines = 1,
+                                    softWrap = false,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0x60F43F5E),
-                                            blurRadius = 10f
+                                            blurRadius = 12f
                                         )
                                     ),
                                     modifier = Modifier
@@ -1771,7 +1788,9 @@ fun MainScreen(
                         "all-american bitch", "bad idea right?", "vampire", "lacy",
                         "ballad of a homeschooled girl", "making the bed", "logical",
                         "get him back!", "love is embarrassing", "the grudge",
-                        "pretty isn't pretty", "teenage dream"
+                        "pretty isn't pretty", "teenage dream",
+                        "obsessed", "girl i've always been", "scared of my guitar",
+                        "stranger", "so american"
                     )
 
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -1794,25 +1813,27 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
                                 
                                 val rot = remember {
-                                    random.nextFloat() * 18f - 9f
+                                    random.nextFloat() * 12f - 6f
                                 }
                                 
                                 // Wave breathing calculation with phase shift per song - continuous smooth breathing without pauses
                                 val breathPhase = kotlin.math.sin(gutsAnimTime.value * 0.55 + index * 0.55)
                                 val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
                                 
-                                // Continuous alpha breathing - gentle neon watermark (0.20f up to 0.54f) that doesn't obscure foreground cards
-                                val songAlpha = (0.22f + 0.32f * breathNorm).coerceIn(0.20f, 0.54f)
+                                // Continuous alpha breathing - prominent neon watermark (0.32f up to 0.76f)
+                                val songAlpha = (0.35f + 0.38f * breathNorm).coerceIn(0.32f, 0.76f)
                                 
                                 // Continuous color transition from electric lavender to brilliant starlight white
                                 val songColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), breathNorm)
                                 
-                                val glowBlur = 4f + 14f * breathNorm
+                                val glowBlur = 6f + 16f * breathNorm
 
                                 Text(
                                     text = song,
                                     fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 23.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 27.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0xFFD8B4FE).copy(alpha = songAlpha * 0.85f),
@@ -1983,7 +2004,7 @@ fun MainScreen(
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.55f)
+                        .alpha(0.72f)
                     ) {
                         val sourFontFamily = com.bearbones.kumaflow.ui.theme.SOURAppFontFamily
 
@@ -2006,18 +2027,20 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
 
                                 val rot = remember {
-                                    random.nextFloat() * 18f - 9f
+                                    random.nextFloat() * 12f - 6f
                                 }
 
                                 Text(
                                     text = song,
                                     fontFamily = sourFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 26.sp else 22.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 30.sp else 26.sp,
                                     color = Color(0xFF581C87),
+                                    maxLines = 1,
+                                    softWrap = false,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0x60A855F7),
-                                            blurRadius = 10f
+                                            blurRadius = 12f
                                         )
                                     ),
                                     modifier = Modifier
