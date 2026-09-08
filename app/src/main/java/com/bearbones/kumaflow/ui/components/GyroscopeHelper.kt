@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
+@androidx.compose.runtime.Immutable
 data class TiltState(
     val x: Float = 0f, // -1f (left) to 1f (right)
     val y: Float = 0f  // -1f (forward) to 1f (backward)

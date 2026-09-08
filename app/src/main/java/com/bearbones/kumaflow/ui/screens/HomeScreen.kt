@@ -554,13 +554,15 @@ fun HomeScreen(
                                 dao.observeAllVirtualWallets().collect { vws ->
                                     virtualWallets = vws
                                     // Auto-sync missing wallets to profile
-                                    val p = dao.getProfileSync()
-                                    if (p != null) {
-                                        val existing = p.wallets.split(",").map { it.trim() }.filter { it.isNotBlank() }
-                                        val missing = vws.map { it.name }.filter { !existing.contains(it) }
-                                        if (missing.isNotEmpty()) {
-                                            val newList = (existing + missing).joinToString(",")
-                                            dao.saveProfile(p.copy(wallets = newList))
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        val p = dao.getProfileSync()
+                                        if (p != null) {
+                                            val existing = p.wallets.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                            val missing = vws.map { it.name }.filter { !existing.contains(it) }
+                                            if (missing.isNotEmpty()) {
+                                                val newList = (existing + missing).joinToString(",")
+                                                dao.saveProfile(p.copy(wallets = newList))
+                                            }
                                         }
                                     }
                                 }

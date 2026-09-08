@@ -110,6 +110,7 @@ data class UserProfile(
     val isParallaxEnabled: Boolean = true
 )
 
+@androidx.compose.runtime.Immutable
 @Entity(tableName = "virtual_wallets")
 data class VirtualWallet(
     @PrimaryKey val name: String,

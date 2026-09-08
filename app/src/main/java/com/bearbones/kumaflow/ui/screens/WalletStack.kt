@@ -255,6 +255,8 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                 .fillMaxWidth()
         ) {
         val stitchColor = AppText().copy(alpha = 0.25f)
+        val stitchDashEffect = remember { androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f) }
+        val stitchStroke = remember { androidx.compose.ui.graphics.drawscope.Stroke(width = 3f, pathEffect = stitchDashEffect) }
         // === WALLET BODY (the beige/gray outer container) ===
         val walletBodyModifier = Modifier
             .fillMaxWidth()
@@ -304,12 +306,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
                             size = androidx.compose.ui.geometry.Size(size.width - inset * 2, size.height - inset * 2),
                             cornerRadius = androidx.compose.ui.geometry.CornerRadius(cr - inset, cr - inset),
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                width = 3f,
-                                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                    floatArrayOf(12f, 8f), 0f
-                                )
-                            )
+                            style = stitchStroke
                         )
                     }
                 }
@@ -434,25 +431,23 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .fillMaxWidth()
                                 .height(cardHeight)
                                 .zIndex(zIdx)
-                                .offset(y = with(density) { finalOffset.toDp() })
+                                .offset { androidx.compose.ui.unit.IntOffset(0, finalOffset.roundToInt()) }
                                 .shadow(animatedElevation.dp, RoundedCornerShape(24.dp))
                                 .graphicsLayer {
                                     scaleX = animatedScale
                                     scaleY = animatedScale
                                     shape = RoundedCornerShape(24.dp)
                                     clip = true
-                                    val tiltMultiplier = if (isPopped && popState == 2) 1f else 0f
-                                    
-                                    val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    
-                                    rotationY = tx * 15f * tiltMultiplier
-                                    rotationX = -ty * 15f * tiltMultiplier
                                     cameraDistance = 16f * density.density
-                                    // Slight shadow offset, keeping card mostly centered
-                                    translationX = -tx * 8f * tiltMultiplier
-                                    translationY = -ty * 8f * tiltMultiplier
+                                    if (isPopped && popState == 2) {
+                                        val tilt = tiltState.value
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                        rotationY = tx * 15f
+                                        rotationX = -ty * 15f
+                                        translationX = -tx * 8f
+                                        translationY = -ty * 8f
+                                    }
                                 }
                                 .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(24.dp))
                                 .background(
@@ -464,14 +459,16 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                         }
                                     } else Color(0xFF2A2A2A)
                                 )
-                                .pointerInput(wallet.name, popState, poppedCard) {
+                                .pointerInput(wallet.name) {
                                     detectDragGesturesAfterLongPress(
                                         onDragStart = {
-                                            if (poppedCard == wallet.name && popState == 2) {
+                                            val currentPopState = popState
+                                            val currentPoppedCard = poppedCard
+                                            if (currentPoppedCard == wallet.name && currentPopState == 2) {
                                                 isReconcileHold = true
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 onWalletClick(wallet.name)
-                                            } else if (poppedCard == wallet.name && popState == 1) {
+                                            } else if (currentPoppedCard == wallet.name && currentPopState == 1) {
                                                 isReconcileHold = true
                                                 popState = 2
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -591,12 +588,13 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .graphicsLayer {
                                     scaleX = 1.05f
                                     scaleY = 1.05f
-                                    val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
-                                    val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    translationX = tx * 4f * density.density * bgParallaxMult
-                                    translationY = ty * 4f * density.density * bgParallaxMult
+                                    if (isPopped && popState == 2) {
+                                        val tilt = tiltState.value
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                        translationX = tx * 4f * density.density
+                                        translationY = ty * 4f * density.density
+                                    }
                                 }
                             if (shouldRender) {
                                 val resId = remember(wallet.backgroundValue) {
@@ -639,49 +637,54 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .graphicsLayer {
                                     scaleX = 1.05f
                                     scaleY = 1.05f
-                                    val bgParallaxMult = if (isPopped && popState == 2) 1f else 0f
-                                    val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    translationX = tx * 4f * density.density * bgParallaxMult
-                                    translationY = ty * 4f * density.density * bgParallaxMult
+                                    if (isPopped && popState == 2) {
+                                        val tilt = tiltState.value
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                        translationX = tx * 4f * density.density
+                                        translationY = ty * 4f * density.density
+                                    }
                                 }
                             val file = remember(wallet.backgroundValue) {
                                 java.io.File(java.io.File(context.filesDir, "custom_cards"), wallet.backgroundValue)
                             }
-                            val bitmap = remember(wallet.backgroundValue, file.lastModified()) {
-                                if (!file.exists()) null
-                                else {
-                                    try {
-                                        val boundsOptions = android.graphics.BitmapFactory.Options().apply {
-                                            inJustDecodeBounds = true
-                                        }
-                                        android.graphics.BitmapFactory.decodeFile(file.absolutePath, boundsOptions)
-
-                                        val targetW = (360f * density.density).toInt().coerceAtLeast(720)
-                                        val targetH = (220f * density.density).toInt().coerceAtLeast(440)
-
-                                        var sampleSize = 1
-                                        if (boundsOptions.outHeight > targetH || boundsOptions.outWidth > targetW) {
-                                            val halfHeight = boundsOptions.outHeight / 2
-                                            val halfWidth = boundsOptions.outWidth / 2
-                                            while ((halfHeight / sampleSize) >= targetH && (halfWidth / sampleSize) >= targetW) {
-                                                sampleSize *= 2
+                            var bitmap by remember(wallet.backgroundValue) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+                            val densityValue = density.density
+                            LaunchedEffect(wallet.backgroundValue) {
+                                bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    if (!file.exists()) null
+                                    else {
+                                        try {
+                                            val boundsOptions = android.graphics.BitmapFactory.Options().apply {
+                                                inJustDecodeBounds = true
                                             }
-                                        }
+                                            android.graphics.BitmapFactory.decodeFile(file.absolutePath, boundsOptions)
 
-                                        val decodeOptions = android.graphics.BitmapFactory.Options().apply {
-                                            inSampleSize = sampleSize
-                                            inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                                            val targetW = (360f * densityValue).toInt().coerceAtLeast(720)
+                                            val targetH = (220f * densityValue).toInt().coerceAtLeast(440)
+
+                                            var sampleSize = 1
+                                            if (boundsOptions.outHeight > targetH || boundsOptions.outWidth > targetW) {
+                                                val halfHeight = boundsOptions.outHeight / 2
+                                                val halfWidth = boundsOptions.outWidth / 2
+                                                while ((halfHeight / sampleSize) >= targetH && (halfWidth / sampleSize) >= targetW) {
+                                                    sampleSize *= 2
+                                                }
+                                            }
+
+                                            val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                                                inSampleSize = sampleSize
+                                                inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                                            }
+                                            android.graphics.BitmapFactory.decodeFile(file.absolutePath, decodeOptions)?.asImageBitmap()
+                                        } catch (e: Exception) {
+                                            null
                                         }
-                                        android.graphics.BitmapFactory.decodeFile(file.absolutePath, decodeOptions)?.asImageBitmap()
-                                    } catch (e: Exception) {
-                                        null
                                     }
                                 }
                             }
                             if (bitmap != null) {
-                                Image(bitmap = bitmap, contentDescription = null, contentScale = ContentScale.Crop, modifier = bgParallax)
+                                Image(bitmap = bitmap!!, contentDescription = null, contentScale = ContentScale.Crop, modifier = bgParallax)
                             }
                         }
 
@@ -690,15 +693,15 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             modifier = Modifier
                                 .fillMaxSize()
                                 .drawBehind {
+                                    if (!isPopped || popState != 2) return@drawBehind
                                     val w = size.width
                                     val h = size.height
                                     if (w <= 0f || h <= 0f || w.isNaN() || h.isNaN() || w.isInfinite() || h.isInfinite()) return@drawBehind
                                     
                                     try {
-                                        val glossMult = if (isPopped && popState == 2) 1f else 0f
                                         val tilt = tiltState.value
-                                        val tx = (if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)) * glossMult
-                                        val ty = (if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)) * glossMult
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
                                         // Gloss position shifts opposite to tilt to simulate specular reflection
                                         val glossCenterX = (0.5f - tx * 0.8f) * w
                                         val glossCenterY = (0.5f - ty * 0.8f) * h
@@ -747,13 +750,13 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                 .fillMaxSize()
                                 .graphicsLayer {
                                     // Text layer sits "closer" to the viewer - shifts more
-                                    
-                                    val tilt = tiltState.value
-                                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-                                    val parallaxMult = if (isPopped && popState == 2) 1.5f else 0f
-                                    translationX = tx * 25f * parallaxMult
-                                    translationY = ty * 18f * parallaxMult
+                                    if (isPopped && popState == 2) {
+                                        val tilt = tiltState.value
+                                        val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
+                                        val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
+                                        translationX = tx * 25f * 1.5f
+                                        translationY = ty * 18f * 1.5f
+                                    }
                                 }
                                 .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalArrangement = Arrangement.SpaceBetween
@@ -887,12 +890,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                             drawPath(
                                 path = stitchPath,
                                 color = stitchColor,
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = 3f,
-                                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                                        floatArrayOf(12f, 8f), 0f
-                                    )
-                                )
+                                style = stitchStroke
                             )
                         }
                     }
