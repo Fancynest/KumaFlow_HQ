@@ -112,10 +112,8 @@ val ORTypography = Typography(
     )
 )
 
-val gutsFont = GoogleFont("Barlow Condensed")
 val GUTSAppFontFamily = FontFamily(
-    Font(googleFont = gutsFont, fontProvider = provider, weight = FontWeight.ExtraBold),
-    Font(googleFont = plusJakartaSansFont, fontProvider = provider, weight = FontWeight.ExtraBold)
+    androidx.compose.ui.text.font.Font(R.font.guts_font)
 )
 
 val GUTSTypography = Typography(
@@ -128,14 +126,14 @@ val GUTSTypography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = GUTSAppFontFamily,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.Normal,
         fontSize = 26.sp,
         lineHeight = 30.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(
         fontFamily = GUTSAppFontFamily,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.Normal,
         fontSize = 36.sp,
         lineHeight = 42.sp,
         letterSpacing = 0.sp
@@ -156,7 +154,63 @@ val GUTSTypography = Typography(
     ),
     titleMedium = TextStyle(
         fontFamily = GUTSAppFontFamily,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.Normal,
+        fontSize = 22.sp,
+        lineHeight = 26.sp,
+        letterSpacing = 0.15.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    )
+)
+
+val SOURAppFontFamily = FontFamily(
+    androidx.compose.ui.text.font.Font(R.font.sour_font)
+)
+
+val SOURTypography = Typography(
+    bodyLarge = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = SOURAppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 26.sp,
+        lineHeight = 30.sp,
+        letterSpacing = 0.sp
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = SOURAppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        letterSpacing = 0.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = AppFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = SOURAppFontFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 22.sp,
         lineHeight = 26.sp,
         letterSpacing = 0.15.sp

@@ -18,6 +18,7 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.zIndex
 import android.net.Uri
 import android.os.Build
@@ -1745,8 +1746,7 @@ fun MainScreen(
                                 Text(
                                     text = song,
                                     fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                                    fontSize = 26.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 30.sp else 26.sp,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0xFFD8B4FE).copy(alpha = songAlpha * 0.85f),
@@ -1765,142 +1765,145 @@ fun MainScreen(
                         }
                     }
                 } else if (userProfile.themeMode == 11) {
-                    // SOUR ERA (Light Mode) - Y2K Butterflies & Scrapbook Stickers
+                    // SOUR ERA (Light Mode) - Authentic Scrapbook Stickers & Y2K Aesthetics
                     val sourAnimT = gutsAnimTime.value
                     val isTab = conf.screenWidthDp >= 600
                     val baseScale = if (isTab) 1.25f else 1.0f
                     val dp = density.density
+                    val sourContext = androidx.compose.ui.platform.LocalContext.current
 
+                    // Pre-decode authentic extracted SOUR stickers once
+                    val sourStickerBitmaps = remember(sourContext) {
+                        val resList = listOf(
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_1,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_2,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_3,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_4,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_5,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_6,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_7,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_8,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_9,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_10,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_11,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_12,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_13,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_14,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_15,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_16,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_17,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_18,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_19,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_20,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_21,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_22,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_23,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_24,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_25,
+                            com.bearbones.kumaflow.R.drawable.sour_sticker_26
+                        )
+                        val map = HashMap<Int, androidx.compose.ui.graphics.ImageBitmap>(resList.size)
+                        for (id in resList) {
+                            try {
+                                val bmp = android.graphics.BitmapFactory.decodeResource(sourContext.resources, id)
+                                if (bmp != null) {
+                                    map[id] = bmp.asImageBitmap()
+                                }
+                            } catch (_: Exception) {}
+                        }
+                        map
+                    }
+
+                    // Spread stickers across all 4 pages of the app
+                    val sourStickers = remember {
+                        listOf(
+                            // Page 0 (Home)
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_1, 0, 0.84f, 0.08f, 50f, 12f, 1.2, 6f, 0.0),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_14, 0, 0.06f, 0.06f, 46f, -14f, 1.5, 7f, 1.0),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_18, 0, 0.90f, 0.22f, 40f, 8f, 1.1, 5f, 2.0),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_13, 0, 0.04f, 0.32f, 36f, -10f, 0.9, 4f, 3.0),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_4, 0, 0.88f, 0.44f, 44f, -6f, 1.3, 6f, 4.0),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_10, 0, 0.05f, 0.60f, 46f, 15f, 1.6, 8f, 1.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_15, 0, 0.90f, 0.72f, 44f, -12f, 1.0, 5f, 2.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_2, 0, 0.08f, 0.88f, 42f, -18f, 1.2, 6f, 3.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_16, 0, 0.75f, 0.88f, 40f, 5f, 1.4, 5f, 0.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_11, 0, 0.42f, 0.07f, 32f, 10f, 0.8, 4f, 1.2),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_24, 0, 0.94f, 0.58f, 32f, -8f, 1.1, 4f, 2.2),
+
+                            // Page 1 (History)
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_6, 1, 0.08f, 0.07f, 46f, -8f, 1.4, 7f, 0.3),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_7, 1, 0.86f, 0.08f, 40f, 12f, 1.1, 5f, 1.3),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_19, 1, 0.05f, 0.25f, 36f, 16f, 0.9, 4f, 2.3),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_5, 1, 0.90f, 0.26f, 44f, -15f, 1.3, 6f, 3.3),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_17, 1, 0.04f, 0.46f, 48f, 10f, 1.7, 8f, 0.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_21, 1, 0.89f, 0.44f, 42f, -20f, 1.0, 5f, 1.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_8, 1, 0.06f, 0.66f, 42f, -12f, 1.2, 6f, 2.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_20, 1, 0.88f, 0.68f, 40f, 14f, 1.1, 5f, 3.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_25, 1, 0.10f, 0.86f, 38f, 6f, 1.3, 5f, 0.4),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_12, 1, 0.82f, 0.88f, 40f, -8f, 1.2, 6f, 1.4),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_1, 1, 0.50f, 0.06f, 44f, 4f, 1.0, 5f, 2.4),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_26, 1, 0.03f, 0.80f, 32f, 15f, 0.8, 4f, 3.4),
+
+                            // Page 2 (Savings)
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_1, 2, 0.07f, 0.08f, 48f, -10f, 1.2, 6f, 0.6),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_9, 2, 0.86f, 0.08f, 50f, 12f, 1.5, 8f, 1.6),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_22, 2, 0.05f, 0.24f, 44f, -14f, 1.1, 5f, 2.6),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_4, 2, 0.90f, 0.25f, 42f, 8f, 1.3, 6f, 3.6),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_15, 2, 0.04f, 0.48f, 46f, 15f, 1.0, 5f, 0.7),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_16, 2, 0.91f, 0.46f, 40f, -6f, 1.4, 5f, 1.7),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_10, 2, 0.07f, 0.68f, 44f, -16f, 1.6, 7f, 2.7),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_12, 2, 0.87f, 0.65f, 40f, 12f, 1.2, 6f, 3.7),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_26, 2, 0.12f, 0.87f, 34f, -5f, 0.8, 4f, 0.9),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_18, 2, 0.84f, 0.87f, 42f, 18f, 1.1, 5f, 1.9),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_6, 2, 0.48f, 0.07f, 42f, 6f, 1.3, 6f, 2.9),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_13, 2, 0.94f, 0.80f, 34f, -14f, 0.9, 4f, 3.9),
+
+                            // Page 3 (Reports)
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_17, 3, 0.06f, 0.07f, 48f, 14f, 1.5, 8f, 0.2),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_1, 3, 0.85f, 0.08f, 46f, -8f, 1.2, 6f, 1.2),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_7, 3, 0.05f, 0.26f, 40f, -12f, 1.1, 5f, 2.2),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_6, 3, 0.89f, 0.24f, 46f, 10f, 1.4, 7f, 3.2),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_3, 3, 0.04f, 0.47f, 44f, 16f, 1.2, 6f, 0.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_14, 3, 0.88f, 0.45f, 46f, -14f, 1.6, 8f, 1.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_21, 3, 0.07f, 0.67f, 40f, 22f, 1.0, 5f, 2.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_23, 3, 0.90f, 0.66f, 38f, -10f, 1.7, 7f, 3.5),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_13, 3, 0.10f, 0.86f, 36f, 15f, 0.9, 4f, 0.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_20, 3, 0.82f, 0.87f, 40f, -12f, 1.1, 5f, 1.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_4, 3, 0.52f, 0.06f, 42f, -5f, 1.3, 6f, 2.8),
+                            SourStickerDef(com.bearbones.kumaflow.R.drawable.sour_sticker_24, 3, 0.04f, 0.80f, 32f, 8f, 0.9, 4f, 3.8)
+                        )
+                    }
+
+                    // Render stickers on Canvas
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val sw = size.width
                         val sh = size.height
                         if (sw <= 0f || sh <= 0f) return@Canvas
 
                         translate(left = -pageOffset * sw) {
-                            for (p in 0..3) {
-                                val pageBaseX = p * sw
+                            sourStickers.forEach { s ->
+                                val bmp = sourStickerBitmaps[s.resId] ?: return@forEach
+                                val pageBaseX = s.page * sw
+                                val cx = pageBaseX + s.xNorm * sw
+                                val floatOffset = kotlin.math.sin(sourAnimT * s.floatSpeed + s.phase).toFloat() * s.floatAmp * dp
+                                val cy = s.yNorm * sh + floatOffset
+                                val rot = s.baseRot + (kotlin.math.sin(sourAnimT * 0.7 + s.phase).toFloat() * 4f)
+                                val sizePx = s.sizeDp * dp * baseScale
 
-                                // 1. Fluttering Y2K Butterflies (4 per page)
-                                val bflyOffsets = listOf(
-                                    Pair(0.18f, 0.18f), Pair(0.82f, 0.28f),
-                                    Pair(0.22f, 0.72f), Pair(0.85f, 0.82f)
-                                )
-                                bflyOffsets.forEachIndexed { bIdx, coords ->
-                                    val bSway = kotlin.math.sin(sourAnimT * 1.5 + bIdx * 2.0).toFloat() * 16f * dp
-                                    val bBob = kotlin.math.cos(sourAnimT * 1.8 + bIdx * 1.5).toFloat() * 10f * dp
-                                    val bx = pageBaseX + coords.first * sw + bSway
-                                    val by = coords.second * sh + bBob
-
-                                    val wingFlap = kotlin.math.abs(kotlin.math.sin(sourAnimT * 3.5 + bIdx * 1.2).toFloat())
-                                    val wingScaleX = 0.35f + 0.65f * wingFlap
-                                    val bSize = 22f * dp * baseScale
-
-                                    val wingCol = if (bIdx % 2 == 0) Color(0xFF38BDF8) else Color(0xFFF472B6)
-                                    val wingInnerCol = Color(0xFFA855F7)
-                                    val borderCol = Color(0xFF2E1065)
-
-                                    // Left wing
-                                    val leftWing = androidx.compose.ui.graphics.Path().apply {
-                                        moveTo(bx, by)
-                                        cubicTo(bx - bSize * 1.4f * wingScaleX, by - bSize * 1.2f, bx - bSize * 1.6f * wingScaleX, by - bSize * 0.2f, bx, by)
-                                        cubicTo(bx - bSize * 1.2f * wingScaleX, by + bSize * 0.2f, bx - bSize * 1.0f * wingScaleX, by + bSize * 1.1f, bx, by)
-                                    }
-                                    drawPath(leftWing, color = wingCol.copy(alpha = 0.85f))
-                                    drawPath(leftWing, color = wingInnerCol.copy(alpha = 0.45f))
-                                    drawPath(leftWing, color = borderCol.copy(alpha = 0.85f),
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * dp))
-
-                                    // Right wing
-                                    val rightWing = androidx.compose.ui.graphics.Path().apply {
-                                        moveTo(bx, by)
-                                        cubicTo(bx + bSize * 1.4f * wingScaleX, by - bSize * 1.2f, bx + bSize * 1.6f * wingScaleX, by - bSize * 0.2f, bx, by)
-                                        cubicTo(bx + bSize * 1.2f * wingScaleX, by + bSize * 0.2f, bx + bSize * 1.0f * wingScaleX, by + bSize * 1.1f, bx, by)
-                                    }
-                                    drawPath(rightWing, color = wingCol.copy(alpha = 0.85f))
-                                    drawPath(rightWing, color = wingInnerCol.copy(alpha = 0.45f))
-                                    drawPath(rightWing, color = borderCol.copy(alpha = 0.85f),
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * dp))
-
-                                    // Butterfly body & antennae
-                                    drawOval(
-                                        color = borderCol,
-                                        topLeft = androidx.compose.ui.geometry.Offset(bx - 2f * dp, by - bSize * 0.5f),
-                                        size = androidx.compose.ui.geometry.Size(4f * dp, bSize * 1.0f)
-                                    )
-                                    drawLine(
-                                        color = borderCol,
-                                        start = androidx.compose.ui.geometry.Offset(bx - 1f * dp, by - bSize * 0.45f),
-                                        end = androidx.compose.ui.geometry.Offset(bx - 6f * dp, by - bSize * 0.85f),
-                                        strokeWidth = 1.2f * dp
-                                    )
-                                    drawLine(
-                                        color = borderCol,
-                                        start = androidx.compose.ui.geometry.Offset(bx + 1f * dp, by - bSize * 0.45f),
-                                        end = androidx.compose.ui.geometry.Offset(bx + 6f * dp, by - bSize * 0.85f),
-                                        strokeWidth = 1.2f * dp
+                                rotate(degrees = rot, pivot = androidx.compose.ui.geometry.Offset(cx, cy)) {
+                                    drawImage(
+                                        image = bmp,
+                                        dstOffset = androidx.compose.ui.unit.IntOffset(
+                                            (cx - sizePx / 2f).toInt(),
+                                            (cy - sizePx / 2f).toInt()
+                                        ),
+                                        dstSize = androidx.compose.ui.unit.IntSize(
+                                            sizePx.toInt(),
+                                            sizePx.toInt()
+                                        ),
+                                        alpha = s.alpha
                                     )
                                 }
-
-                                // 2. Y2K Diary Stickers (3 per page: Daisy, Sparkle Star, Pastel Heart)
-                                // Sticker A: Smiley Daisy (around pageBaseX + sw * 0.52f, sh * 0.20f)
-                                val daisyX = pageBaseX + sw * 0.52f
-                                val daisyY = sh * 0.20f
-                                val daisyR = 14f * dp * baseScale
-                                for (pPetal in 0 until 6) {
-                                    val ang = (pPetal * 60.0 + sourAnimT * 10.0) * kotlin.math.PI / 180.0
-                                    val px = daisyX + (kotlin.math.cos(ang) * daisyR * 0.9f).toFloat()
-                                    val py = daisyY + (kotlin.math.sin(ang) * daisyR * 0.9f).toFloat()
-                                    drawCircle(color = Color(0xFFFFB2C9), radius = daisyR * 0.42f, center = androidx.compose.ui.geometry.Offset(px, py))
-                                    drawCircle(color = Color(0xFFBE185D), radius = daisyR * 0.42f, center = androidx.compose.ui.geometry.Offset(px, py),
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
-                                }
-                                drawCircle(color = Color(0xFFFBBF24), radius = daisyR * 0.55f, center = androidx.compose.ui.geometry.Offset(daisyX, daisyY))
-                                drawCircle(color = Color(0xFFD97706), radius = daisyR * 0.55f, center = androidx.compose.ui.geometry.Offset(daisyX, daisyY),
-                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
-                                // Tiny smile on daisy
-                                drawCircle(color = Color(0xFF78350F), radius = 1.2f * dp, center = androidx.compose.ui.geometry.Offset(daisyX - 3.5f * dp, daisyY - 2f * dp))
-                                drawCircle(color = Color(0xFF78350F), radius = 1.2f * dp, center = androidx.compose.ui.geometry.Offset(daisyX + 3.5f * dp, daisyY - 2f * dp))
-                                drawArc(
-                                    color = Color(0xFF78350F),
-                                    startAngle = 10f,
-                                    sweepAngle = 160f,
-                                    useCenter = false,
-                                    topLeft = androidx.compose.ui.geometry.Offset(daisyX - 4f * dp, daisyY - 2f * dp),
-                                    size = androidx.compose.ui.geometry.Size(8f * dp, 6f * dp),
-                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp)
-                                )
-
-                                // Sticker B: Sparkle Star (around pageBaseX + sw * 0.12f, sh * 0.52f)
-                                val starX = pageBaseX + sw * 0.12f
-                                val starY = sh * 0.52f
-                                val starR = 12f * dp * baseScale
-                                val starPath = androidx.compose.ui.graphics.Path().apply {
-                                    for (i in 0 until 8) {
-                                        val r = if (i % 2 == 0) starR else starR * 0.28f
-                                        val ang = Math.toRadians((i * 45.0 - 90.0))
-                                        val px = (starX + r * kotlin.math.cos(ang)).toFloat()
-                                        val py = (starY + r * kotlin.math.sin(ang)).toFloat()
-                                        if (i == 0) moveTo(px, py) else lineTo(px, py)
-                                    }
-                                    close()
-                                }
-                                drawPath(starPath, color = Color(0xFF7C3AED).copy(alpha = 0.85f))
-                                drawPath(starPath, color = Color(0xFF2E1065), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
-                                drawCircle(color = Color(0xFFFDE047), radius = starR * 0.25f, center = androidx.compose.ui.geometry.Offset(starX, starY))
-
-                                // Sticker C: Heart Tape (around pageBaseX + sw * 0.70f, sh * 0.60f)
-                                val heartX = pageBaseX + sw * 0.70f
-                                val heartY = sh * 0.60f
-                                val hr = 12f * dp * baseScale
-                                val hPath = androidx.compose.ui.graphics.Path().apply {
-                                    moveTo(heartX, heartY + hr * 0.45f)
-                                    cubicTo(heartX - hr * 0.65f, heartY - hr * 0.15f, heartX - hr * 0.65f, heartY - hr * 0.75f, heartX, heartY - hr * 0.25f)
-                                    cubicTo(heartX + hr * 0.65f, heartY - hr * 0.75f, heartX + hr * 0.65f, heartY - hr * 0.15f, heartX, heartY + hr * 0.45f)
-                                    close()
-                                }
-                                drawPath(hPath, color = Color(0xFFF472B6).copy(alpha = 0.85f))
-                                drawPath(hPath, color = Color(0xFF9F1239), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
-                                drawCircle(color = Color.White.copy(alpha = 0.75f), radius = hr * 0.20f, center = androidx.compose.ui.geometry.Offset(heartX - hr * 0.25f, heartY - hr * 0.35f))
                             }
                         }
                     }
@@ -1916,11 +1919,7 @@ fun MainScreen(
                         .fillMaxSize()
                         .alpha(0.92f)
                     ) {
-                        val customFontFamily = remember {
-                            androidx.compose.ui.text.font.FontFamily(
-                                androidx.compose.ui.text.font.Font(com.bearbones.kumaflow.R.font.olivia_regular)
-                            )
-                        }
+                        val sourFontFamily = com.bearbones.kumaflow.ui.theme.SOURAppFontFamily
 
                         Box(modifier = Modifier
                             .fillMaxSize()
@@ -1946,9 +1945,9 @@ fun MainScreen(
 
                                 Text(
                                     text = song,
-                                    fontFamily = customFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 28.sp,
-                                    color = Color(0xFF6D28D9),
+                                    fontFamily = sourFontFamily,
+                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 24.sp,
+                                    color = Color(0xFF581C87),
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0x60A855F7),
@@ -4795,6 +4794,19 @@ fun evaluateMathExpression(input: String): Long? {
         null
     }
 }
+
+private data class SourStickerDef(
+    val resId: Int,
+    val page: Int,
+    val xNorm: Float,
+    val yNorm: Float,
+    val sizeDp: Float,
+    val baseRot: Float,
+    val floatSpeed: Double,
+    val floatAmp: Float,
+    val phase: Double,
+    val alpha: Float = 0.88f
+)
 
 
 

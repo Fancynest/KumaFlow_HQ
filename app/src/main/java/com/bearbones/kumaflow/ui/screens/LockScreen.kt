@@ -743,7 +743,8 @@ class MainActivity : FragmentActivity() {
 
                 val activeTypography = when {
                     isOREasterEgg && activeThemeMode == 10 -> com.bearbones.kumaflow.ui.theme.GUTSTypography
-                    isOREasterEgg && (activeThemeMode == 9 || activeThemeMode == 11) -> com.bearbones.kumaflow.ui.theme.ORTypography
+                    isOREasterEgg && activeThemeMode == 11 -> com.bearbones.kumaflow.ui.theme.SOURTypography
+                    isOREasterEgg && activeThemeMode == 9 -> com.bearbones.kumaflow.ui.theme.ORTypography
                     isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8) -> com.bearbones.kumaflow.ui.theme.BrutalTypography
                     else -> com.bearbones.kumaflow.ui.theme.Typography
                 }
