@@ -912,17 +912,21 @@ fun MainScreen(
 
                 val positions = listOf(
                     // Page 0
-                    Pair(0.05f, 0.15f), Pair(0.55f, 0.25f), Pair(0.15f, 0.45f),
-                    Pair(0.65f, 0.60f), Pair(0.10f, 0.75f), Pair(0.50f, 0.90f),
+                    Pair(0.04f, 0.08f), Pair(0.58f, 0.08f),
+                    Pair(0.03f, 0.36f), Pair(0.60f, 0.36f),
+                    Pair(0.03f, 0.69f), Pair(0.58f, 0.69f),
                     // Page 1
-                    Pair(1.05f, 0.15f), Pair(1.55f, 0.25f), Pair(1.15f, 0.45f),
-                    Pair(1.65f, 0.60f), Pair(1.10f, 0.75f), Pair(1.50f, 0.90f),
+                    Pair(1.04f, 0.08f), Pair(1.58f, 0.08f),
+                    Pair(1.03f, 0.36f), Pair(1.60f, 0.36f),
+                    Pair(1.03f, 0.69f), Pair(1.58f, 0.69f),
                     // Page 2
-                    Pair(2.05f, 0.15f), Pair(2.55f, 0.25f), Pair(2.15f, 0.45f),
-                    Pair(2.65f, 0.60f), Pair(2.10f, 0.75f), Pair(2.50f, 0.90f),
+                    Pair(2.04f, 0.08f), Pair(2.58f, 0.08f),
+                    Pair(2.03f, 0.36f), Pair(2.60f, 0.36f),
+                    Pair(2.03f, 0.69f), Pair(2.58f, 0.69f),
                     // Page 3
-                    Pair(3.05f, 0.15f), Pair(3.55f, 0.25f), Pair(3.15f, 0.45f),
-                    Pair(3.65f, 0.60f), Pair(3.10f, 0.75f), Pair(3.50f, 0.90f)
+                    Pair(3.04f, 0.08f), Pair(3.58f, 0.08f),
+                    Pair(3.03f, 0.36f), Pair(3.60f, 0.36f),
+                    Pair(3.03f, 0.69f), Pair(3.58f, 0.69f)
                 )
 
                 if (userProfile.themeMode == 9) {
@@ -986,6 +990,14 @@ fun MainScreen(
 
                     // LOVE COMPANION VISUAL ELEMENTS & AMBIENT DECORATIONS
                     val loveAnimT = gutsAnimTime.value
+                    val loveContext = androidx.compose.ui.platform.LocalContext.current
+                    val loveBrainBmp = remember(loveContext) {
+                        try {
+                            android.graphics.BitmapFactory.decodeResource(loveContext.resources, com.bearbones.kumaflow.R.drawable.love_brain)?.asImageBitmap()
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val sw = size.width
                         val sh = size.height
@@ -1132,74 +1144,21 @@ fun MainScreen(
                                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp))
                                     }
                                     3 -> {
-                                        // MAGGOTS FOR BRAINS — Authentic Stylized Doodle Brain
-                                        val brW = iconSize * 0.48f
-                                        val brH = iconSize * 0.38f
-                                        val brainFill = Color(0xFFFF8DA1)
-                                        val brainBorder = Color(0xFF881337)
-                                        val wrinkleCol = Color(0xFF9F1239)
-
-                                        // 1. Brain Contour with 2 cerebral hemispheres and distinct rounded lobes
-                                        val brainPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, iconY - brH * 0.35f)
-                                            // Right hemisphere: frontal lobe, parietal lobe, occipital/temporal lobe
-                                            cubicTo(iconX + brW * 0.25f, iconY - brH * 0.58f, iconX + brW * 0.55f, iconY - brH * 0.45f, iconX + brW * 0.58f, iconY - brH * 0.20f)
-                                            cubicTo(iconX + brW * 0.65f, iconY - brH * 0.05f, iconX + brW * 0.62f, iconY + brH * 0.22f, iconX + brW * 0.50f, iconY + brH * 0.38f)
-                                            cubicTo(iconX + brW * 0.40f, iconY + brH * 0.55f, iconX + brW * 0.18f, iconY + brH * 0.58f, iconX + brW * 0.05f, iconY + brH * 0.45f)
-                                            cubicTo(iconX + brW * 0.02f, iconY + brH * 0.40f, iconX + brW * 0.01f, iconY + brH * 0.34f, iconX, iconY + brH * 0.32f)
-                                            // Left hemisphere: occipital/temporal lobe, parietal lobe, frontal lobe
-                                            cubicTo(iconX - brW * 0.01f, iconY + brH * 0.34f, iconX - brW * 0.02f, iconY + brH * 0.40f, iconX - brW * 0.05f, iconY + brH * 0.45f)
-                                            cubicTo(iconX - brW * 0.18f, iconY + brH * 0.58f, iconX - brW * 0.40f, iconY + brH * 0.55f, iconX - brW * 0.50f, iconY + brH * 0.38f)
-                                            cubicTo(iconX - brW * 0.62f, iconY + brH * 0.22f, iconX - brW * 0.65f, iconY - brH * 0.05f, iconX - brW * 0.58f, iconY - brH * 0.20f)
-                                            cubicTo(iconX - brW * 0.55f, iconY - brH * 0.45f, iconX - brW * 0.25f, iconY - brH * 0.58f, iconX, iconY - brH * 0.35f)
-                                            close()
-                                        }
-
-                                        // Solid fill
-                                        drawPath(brainPath, color = brainFill)
-                                        // Thick doodle outline
-                                        drawPath(brainPath, color = brainBorder, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.4f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-
-                                        // 2. Central longitudinal fissure (dividing line between left and right hemispheres)
-                                        val fissurePath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX, iconY - brH * 0.35f)
-                                            cubicTo(iconX - 2.5f * dp, iconY - brH * 0.12f, iconX + 2.5f * dp, iconY + brH * 0.12f, iconX, iconY + brH * 0.32f)
-                                        }
-                                        drawPath(fissurePath, color = brainBorder, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.0f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-
-                                        // 3. Realistic brain sulci / wrinkle fold lines
-                                        val foldPath = androidx.compose.ui.graphics.Path().apply {
-                                            // Left hemisphere wrinkles
-                                            moveTo(iconX - brW * 0.05f, iconY - brH * 0.18f)
-                                            cubicTo(iconX - brW * 0.25f, iconY - brH * 0.35f, iconX - brW * 0.45f, iconY - brH * 0.25f, iconX - brW * 0.32f, iconY - brH * 0.10f)
-
-                                            moveTo(iconX - brW * 0.52f, iconY - brH * 0.02f)
-                                            cubicTo(iconX - brW * 0.35f, iconY - brH * 0.06f, iconX - brW * 0.20f, iconY + brH * 0.08f, iconX - brW * 0.35f, iconY + brH * 0.18f)
-
-                                            moveTo(iconX - brW * 0.05f, iconY + brH * 0.16f)
-                                            cubicTo(iconX - brW * 0.15f, iconY + brH * 0.36f, iconX - brW * 0.35f, iconY + brH * 0.38f, iconX - brW * 0.40f, iconY + brH * 0.25f)
-
-                                            // Right hemisphere wrinkles
-                                            moveTo(iconX + brW * 0.05f, iconY - brH * 0.18f)
-                                            cubicTo(iconX + brW * 0.25f, iconY - brH * 0.35f, iconX + brW * 0.45f, iconY - brH * 0.25f, iconX + brW * 0.32f, iconY - brH * 0.10f)
-
-                                            moveTo(iconX + brW * 0.52f, iconY - brH * 0.02f)
-                                            cubicTo(iconX + brW * 0.35f, iconY - brH * 0.06f, iconX + brW * 0.20f, iconY + brH * 0.08f, iconX + brW * 0.35f, iconY + brH * 0.18f)
-
-                                            moveTo(iconX + brW * 0.05f, iconY + brH * 0.16f)
-                                            cubicTo(iconX + brW * 0.15f, iconY + brH * 0.36f, iconX + brW * 0.35f, iconY + brH * 0.38f, iconX + brW * 0.40f, iconY + brH * 0.25f)
-                                        }
-                                        drawPath(foldPath, color = wrinkleCol, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.9f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-
-                                        // 4. Soft highlights on top lobes for 3D depth
-                                        val hlPath = androidx.compose.ui.graphics.Path().apply {
-                                            moveTo(iconX - brW * 0.38f, iconY - brH * 0.38f)
-                                            cubicTo(iconX - brW * 0.22f, iconY - brH * 0.45f, iconX - brW * 0.10f, iconY - brH * 0.38f, iconX - brW * 0.05f, iconY - brH * 0.28f)
-                                            moveTo(iconX + brW * 0.38f, iconY - brH * 0.38f)
-                                            cubicTo(iconX + brW * 0.22f, iconY - brH * 0.45f, iconX + brW * 0.10f, iconY - brH * 0.38f, iconX + brW * 0.05f, iconY - brH * 0.28f)
-                                        }
-                                        drawPath(hlPath, color = Color.White.copy(alpha = 0.65f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f * dp, cap = androidx.compose.ui.graphics.StrokeCap.Round))
-                                    }
+                                         // MAGGOTS FOR BRAINS — Authentic Stylized Doodle Brain from brain.png
+                                         if (loveBrainBmp != null) {
+                                             val brSize = (iconSize * 0.58f).toInt()
+                                             val floatOffset = kotlin.math.sin(phase * 1.5).toFloat() * 3f * dp
+                                             drawImage(
+                                                 image = loveBrainBmp,
+                                                 dstOffset = androidx.compose.ui.unit.IntOffset(
+                                                     (iconX - brSize / 2f).toInt(),
+                                                     (iconY - brSize / 2f + floatOffset).toInt()
+                                                 ),
+                                                 dstSize = androidx.compose.ui.unit.IntSize(brSize, brSize),
+                                                 alpha = 0.92f
+                                             )
+                                         }
+                                     }
                                     4 -> {
                                         // U + ME = <3 — Doodled Carved Hearts with <3
                                         val hs = iconSize * 0.42f
@@ -1427,7 +1386,7 @@ fun MainScreen(
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.92f)
+                        .alpha(0.55f)
                     ) {
                         val customFontFamily = remember { 
                             androidx.compose.ui.text.font.FontFamily(
@@ -1454,24 +1413,24 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
                                 
                                 val rot = remember {
-                                    random.nextFloat() * 30f - 15f
+                                    random.nextFloat() * 18f - 9f
                                 }
                                 
                                 Text(
                                     text = song,
                                     fontFamily = customFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 28.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 23.sp,
                                     color = Color(0xFFBE185D),
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0x60F43F5E),
-                                            blurRadius = 14f
+                                            blurRadius = 10f
                                         )
                                     ),
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 15f)
+                                            translationY = yPos + (kotlin.math.sin(lightProgressState.value.toDouble() * kotlin.math.PI + index.toDouble()).toFloat() * 10f)
                                             rotationZ = rot
                                         }
                                 )
@@ -1479,14 +1438,121 @@ fun MainScreen(
                         }
                     }
                 } else if (userProfile.themeMode == 10) {
-                    // GUTS ERA (Dark Mode) - Crescent Moons & Stars with Strobe Animation
+                    // GUTS ERA (Dark Mode) - Crescent Moons, Stars & Authentic GUTS Grunge Stickers
                     val animT = gutsAnimTime.value
+                    val gutsContext = androidx.compose.ui.platform.LocalContext.current
+                    val isTab = conf.screenWidthDp >= 600
+                    val baseScale = if (isTab) 1.25f else 1.0f
+                    val dp = density.density
+
+                    // Pre-decode authentic extracted GUTS stickers once
+                    val gutsStickerBitmaps = remember(gutsContext) {
+                        val resList = listOf(
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_butterfly,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_mouth,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_eye,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_bandage,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_or,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_lipstick,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_lollipop,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_olivia,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_star_black,
+                            com.bearbones.kumaflow.R.drawable.guts_sticker_star_purple
+                        )
+                        val map = HashMap<Int, androidx.compose.ui.graphics.ImageBitmap>(resList.size)
+                        for (id in resList) {
+                            try {
+                                val bmp = android.graphics.BitmapFactory.decodeResource(gutsContext.resources, id)
+                                if (bmp != null) {
+                                    map[id] = bmp.asImageBitmap()
+                                }
+                            } catch (_: Exception) {}
+                        }
+                        map
+                    }
+
+                    // Spread authentic GUTS stickers across all 4 pages
+                    val gutsStickers = remember {
+                        listOf(
+                            // Page 0 (Home)
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_olivia, 0, 0.50f, 0.06f, 65f, -4f, 1.1, 5f, 0.0),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_butterfly, 0, 0.07f, 0.18f, 48f, 12f, 1.3, 6f, 1.0),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_mouth, 0, 0.91f, 0.24f, 44f, -10f, 1.4, 7f, 2.0),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_bandage, 0, 0.06f, 0.52f, 46f, 15f, 1.0, 5f, 3.0),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_or, 0, 0.90f, 0.50f, 48f, -8f, 1.2, 6f, 4.0),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lipstick, 0, 0.92f, 0.74f, 44f, 18f, 1.5, 7f, 1.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_eye, 0, 0.08f, 0.78f, 46f, -12f, 1.1, 5f, 2.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lollipop, 0, 0.78f, 0.89f, 44f, 14f, 1.3, 6f, 3.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_star_purple, 0, 0.10f, 0.38f, 30f, 5f, 0.9, 4f, 0.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_star_black, 0, 0.92f, 0.40f, 28f, -15f, 1.0, 4f, 2.2),
+
+                            // Page 1 (History)
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_olivia, 1, 0.48f, 0.07f, 60f, 3f, 1.0, 5f, 0.3),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_butterfly, 1, 0.88f, 0.10f, 50f, -14f, 1.3, 6f, 1.3),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_mouth, 1, 0.08f, 0.22f, 42f, 12f, 1.4, 7f, 2.3),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_or, 1, 0.06f, 0.48f, 46f, 8f, 1.1, 5f, 3.3),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_eye, 1, 0.90f, 0.46f, 46f, -10f, 1.2, 6f, 0.8),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_bandage, 1, 0.89f, 0.68f, 44f, -16f, 1.5, 7f, 1.8),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lipstick, 1, 0.09f, 0.70f, 42f, 15f, 1.0, 5f, 2.8),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lollipop, 1, 0.12f, 0.88f, 42f, -12f, 1.2, 6f, 3.8),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_star_purple, 1, 0.88f, 0.28f, 30f, 10f, 0.8, 4f, 0.4),
+
+                            // Page 2 (Savings)
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_olivia, 2, 0.50f, 0.06f, 62f, -2f, 1.1, 5f, 0.6),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_or, 2, 0.07f, 0.10f, 48f, -10f, 1.2, 6f, 1.6),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_butterfly, 2, 0.89f, 0.18f, 48f, 16f, 1.4, 7f, 2.6),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_eye, 2, 0.06f, 0.32f, 44f, 10f, 1.0, 5f, 3.6),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_mouth, 2, 0.91f, 0.42f, 44f, -14f, 1.3, 6f, 0.7),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_bandage, 2, 0.07f, 0.55f, 46f, -8f, 1.1, 5f, 1.7),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lipstick, 2, 0.90f, 0.65f, 42f, 12f, 1.5, 7f, 2.7),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lollipop, 2, 0.85f, 0.87f, 44f, 18f, 1.2, 6f, 3.7),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_star_black, 2, 0.08f, 0.75f, 30f, -12f, 0.9, 4f, 0.9),
+
+                            // Page 3 (Reports)
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_olivia, 3, 0.52f, 0.06f, 62f, 4f, 1.0, 5f, 0.2),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_butterfly, 3, 0.08f, 0.09f, 50f, 14f, 1.3, 6f, 1.2),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_mouth, 3, 0.90f, 0.12f, 44f, -12f, 1.4, 7f, 2.2),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lipstick, 3, 0.07f, 0.30f, 42f, -15f, 1.1, 5f, 3.2),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_bandage, 3, 0.90f, 0.35f, 46f, 14f, 1.2, 6f, 0.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_or, 3, 0.88f, 0.58f, 48f, -10f, 1.5, 7f, 1.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_eye, 3, 0.06f, 0.60f, 46f, 8f, 1.0, 5f, 2.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_lollipop, 3, 0.10f, 0.85f, 42f, -8f, 1.2, 6f, 3.5),
+                            GutsStickerDef(com.bearbones.kumaflow.R.drawable.guts_sticker_star_purple, 3, 0.92f, 0.80f, 32f, 20f, 0.9, 4f, 1.8)
+                        )
+                    }
+
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width
                         val h = size.height
 
                         if (screenWidth > 0f && h > 0f) {
                             translate(left = -pageOffset * screenWidth) {
+                                // Draw GUTS stickers
+                                gutsStickers.forEach { s ->
+                                    val bmp = gutsStickerBitmaps[s.resId] ?: return@forEach
+                                    val pageBaseX = s.page * screenWidth
+                                    val cx = pageBaseX + s.xNorm * screenWidth
+                                    val floatOffset = kotlin.math.sin(animT * s.floatSpeed + s.phase).toFloat() * s.floatAmp * dp
+                                    val cy = s.yNorm * h + floatOffset
+                                    val rot = s.baseRot + (kotlin.math.sin(animT * 0.7 + s.phase).toFloat() * 4f)
+                                    val sizePx = s.sizeDp * dp * baseScale
+
+                                    rotate(degrees = rot, pivot = androidx.compose.ui.geometry.Offset(cx, cy)) {
+                                        drawImage(
+                                            image = bmp,
+                                            dstOffset = androidx.compose.ui.unit.IntOffset(
+                                                (cx - sizePx / 2f).toInt(),
+                                                (cy - sizePx / 2f).toInt()
+                                            ),
+                                            dstSize = androidx.compose.ui.unit.IntSize(
+                                                sizePx.toInt(),
+                                                sizePx.toInt()
+                                            ),
+                                            alpha = s.alpha
+                                        )
+                                    }
+                                }
+
                                 for (p in 0..3) {
                                     val pageBaseX = p * screenWidth
 
@@ -1728,25 +1794,25 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
                                 
                                 val rot = remember {
-                                    random.nextFloat() * 30f - 15f
+                                    random.nextFloat() * 18f - 9f
                                 }
                                 
                                 // Wave breathing calculation with phase shift per song - continuous smooth breathing without pauses
                                 val breathPhase = kotlin.math.sin(gutsAnimTime.value * 0.55 + index * 0.55)
                                 val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
                                 
-                                // Continuous alpha breathing - always clearly visible (min 0.38f) up to glowing neon (0.88f)
-                                val songAlpha = (0.38f + 0.50f * breathNorm).coerceIn(0.32f, 0.90f)
+                                // Continuous alpha breathing - gentle neon watermark (0.20f up to 0.54f) that doesn't obscure foreground cards
+                                val songAlpha = (0.22f + 0.32f * breathNorm).coerceIn(0.20f, 0.54f)
                                 
                                 // Continuous color transition from electric lavender to brilliant starlight white
                                 val songColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), breathNorm)
                                 
-                                val glowBlur = 6f + 20f * breathNorm
+                                val glowBlur = 4f + 14f * breathNorm
 
                                 Text(
                                     text = song,
                                     fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 30.sp else 26.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 23.sp,
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0xFFD8B4FE).copy(alpha = songAlpha * 0.85f),
@@ -1757,7 +1823,7 @@ fun MainScreen(
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.35 + index.toDouble()).toFloat() * 12f)
+                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.35 + index.toDouble()).toFloat() * 10f)
                                             rotationZ = rot
                                         }
                                 )
@@ -1917,7 +1983,7 @@ fun MainScreen(
 
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .alpha(0.92f)
+                        .alpha(0.55f)
                     ) {
                         val sourFontFamily = com.bearbones.kumaflow.ui.theme.SOURAppFontFamily
 
@@ -1940,24 +2006,24 @@ fun MainScreen(
                                 val yPos = positions[index].second * screenHeightPx
 
                                 val rot = remember {
-                                    random.nextFloat() * 26f - 13f
+                                    random.nextFloat() * 18f - 9f
                                 }
 
                                 Text(
                                     text = song,
                                     fontFamily = sourFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 28.sp else 24.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 26.sp else 22.sp,
                                     color = Color(0xFF581C87),
                                     style = androidx.compose.ui.text.TextStyle(
                                         shadow = androidx.compose.ui.graphics.Shadow(
                                             color = Color(0x60A855F7),
-                                            blurRadius = 14f
+                                            blurRadius = 10f
                                         )
                                     ),
                                     modifier = Modifier
                                         .graphicsLayer {
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.45 + index.toDouble()).toFloat() * 12f)
+                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.45 + index.toDouble()).toFloat() * 10f)
                                             rotationZ = rot
                                         }
                                 )
@@ -4807,6 +4873,20 @@ private data class SourStickerDef(
     val phase: Double,
     val alpha: Float = 0.88f
 )
+
+private data class GutsStickerDef(
+    val resId: Int,
+    val page: Int,
+    val xNorm: Float,
+    val yNorm: Float,
+    val sizeDp: Float,
+    val baseRot: Float,
+    val floatSpeed: Double,
+    val floatAmp: Float,
+    val phase: Double,
+    val alpha: Float = 0.88f
+)
+
 
 
 
