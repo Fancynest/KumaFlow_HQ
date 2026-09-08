@@ -618,13 +618,13 @@ class MainActivity : FragmentActivity() {
                 rawThemeMode in 3..4 && isPrideTriggered -> rawThemeMode
                 rawThemeMode in 5..6 && isBearTriggered -> rawThemeMode
                 rawThemeMode in 7..8 && isBrutalTriggered -> rawThemeMode
-                rawThemeMode in 9..10 && isOREasterEgg -> rawThemeMode
+                rawThemeMode in 9..11 && isOREasterEgg -> rawThemeMode
                 rawThemeMode > 2 -> 0
                 else -> rawThemeMode
             }
 
             val isDark = when(activeThemeMode) {
-                1, 3, 5, 7, 9 -> false
+                1, 3, 5, 7, 9, 11 -> false
                 2, 4, 6, 8, 10 -> true
                 else -> systemDark
             }
@@ -660,6 +660,16 @@ class MainActivity : FragmentActivity() {
                         onPrimary = Color(0xFF0D0010),
                         onBackground = Color(0xFFF3E5FF), // putih lavender pucat
                         onSurface = Color(0xFFF3E5FF)
+                    )
+
+                    // OR Light Mode — SOUR era
+                    isOREasterEgg && activeThemeMode == 11 -> lightColorScheme(
+                        background = Color(0xFFEDE4F7),   // pastel lavender
+                        surface = Color(0xFFFAF5FF),       // pale lilac white
+                        primary = Color(0xFF7C3AED),       // vibrant SOUR purple
+                        onPrimary = Color.White,
+                        onBackground = Color(0xFF2E1065), // deep plum
+                        onSurface = Color(0xFF2E1065)
                     )
 
                     // 1. Easter Egg Pride & Bear
@@ -733,12 +743,12 @@ class MainActivity : FragmentActivity() {
 
                 val activeTypography = when {
                     isOREasterEgg && activeThemeMode == 10 -> com.bearbones.kumaflow.ui.theme.GUTSTypography
-                    isOREasterEgg && activeThemeMode == 9 -> com.bearbones.kumaflow.ui.theme.ORTypography
+                    isOREasterEgg && (activeThemeMode == 9 || activeThemeMode == 11) -> com.bearbones.kumaflow.ui.theme.ORTypography
                     isBrutalTriggered && (activeThemeMode == 7 || activeThemeMode == 8) -> com.bearbones.kumaflow.ui.theme.BrutalTypography
                     else -> com.bearbones.kumaflow.ui.theme.Typography
                 }
 
-                val isORActive = isOREasterEgg && (activeThemeMode == 9 || activeThemeMode == 10)
+                val isORActive = isOREasterEgg && (activeThemeMode in 9..11)
 
                 MaterialTheme(colorScheme = colorScheme, typography = activeTypography, shapes = MaterialTheme.shapes) {
                     val homeListState = androidx.compose.foundation.lazy.rememberLazyListState()

@@ -1390,6 +1390,7 @@ fun SettingsScreen(
                         if (hasOR) {
                             themeOptions.add(9 to "you seem pretty sad for a girl so in love")
                             themeOptions.add(10 to "GUTS")
+                            themeOptions.add(11 to "SOUR")
                         }
 
                         themeOptions.forEach { (value, label) ->

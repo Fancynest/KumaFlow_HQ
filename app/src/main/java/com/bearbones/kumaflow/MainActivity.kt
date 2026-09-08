@@ -881,7 +881,7 @@ fun MainScreen(
                     start = effectivePadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                     end = effectivePadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current)
                 )) {
-            val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true) && (userProfile.themeMode == 9 || userProfile.themeMode == 10)
+            val isOREasterEgg = userProfile.userName.contains("#OR", ignoreCase = true) && (userProfile.themeMode in 9..11)
             if (isOREasterEgg) {
                 val isDark = LocalIsDark.current
                 val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
@@ -1758,6 +1758,207 @@ fun MainScreen(
                                         .graphicsLayer {
                                             translationX = xPos
                                             translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.35 + index.toDouble()).toFloat() * 12f)
+                                            rotationZ = rot
+                                        }
+                                )
+                            }
+                        }
+                    }
+                } else if (userProfile.themeMode == 11) {
+                    // SOUR ERA (Light Mode) - Y2K Butterflies & Scrapbook Stickers
+                    val sourAnimT = gutsAnimTime.value
+                    val isTab = conf.screenWidthDp >= 600
+                    val baseScale = if (isTab) 1.25f else 1.0f
+                    val dp = density.density
+
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        val sw = size.width
+                        val sh = size.height
+                        if (sw <= 0f || sh <= 0f) return@Canvas
+
+                        translate(left = -pageOffset * sw) {
+                            for (p in 0..3) {
+                                val pageBaseX = p * sw
+
+                                // 1. Fluttering Y2K Butterflies (4 per page)
+                                val bflyOffsets = listOf(
+                                    Pair(0.18f, 0.18f), Pair(0.82f, 0.28f),
+                                    Pair(0.22f, 0.72f), Pair(0.85f, 0.82f)
+                                )
+                                bflyOffsets.forEachIndexed { bIdx, coords ->
+                                    val bSway = kotlin.math.sin(sourAnimT * 1.5 + bIdx * 2.0).toFloat() * 16f * dp
+                                    val bBob = kotlin.math.cos(sourAnimT * 1.8 + bIdx * 1.5).toFloat() * 10f * dp
+                                    val bx = pageBaseX + coords.first * sw + bSway
+                                    val by = coords.second * sh + bBob
+
+                                    val wingFlap = kotlin.math.abs(kotlin.math.sin(sourAnimT * 3.5 + bIdx * 1.2).toFloat())
+                                    val wingScaleX = 0.35f + 0.65f * wingFlap
+                                    val bSize = 22f * dp * baseScale
+
+                                    val wingCol = if (bIdx % 2 == 0) Color(0xFF38BDF8) else Color(0xFFF472B6)
+                                    val wingInnerCol = Color(0xFFA855F7)
+                                    val borderCol = Color(0xFF2E1065)
+
+                                    // Left wing
+                                    val leftWing = androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(bx, by)
+                                        cubicTo(bx - bSize * 1.4f * wingScaleX, by - bSize * 1.2f, bx - bSize * 1.6f * wingScaleX, by - bSize * 0.2f, bx, by)
+                                        cubicTo(bx - bSize * 1.2f * wingScaleX, by + bSize * 0.2f, bx - bSize * 1.0f * wingScaleX, by + bSize * 1.1f, bx, by)
+                                    }
+                                    drawPath(leftWing, color = wingCol.copy(alpha = 0.85f))
+                                    drawPath(leftWing, color = wingInnerCol.copy(alpha = 0.45f))
+                                    drawPath(leftWing, color = borderCol.copy(alpha = 0.85f),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * dp))
+
+                                    // Right wing
+                                    val rightWing = androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(bx, by)
+                                        cubicTo(bx + bSize * 1.4f * wingScaleX, by - bSize * 1.2f, bx + bSize * 1.6f * wingScaleX, by - bSize * 0.2f, bx, by)
+                                        cubicTo(bx + bSize * 1.2f * wingScaleX, by + bSize * 0.2f, bx + bSize * 1.0f * wingScaleX, by + bSize * 1.1f, bx, by)
+                                    }
+                                    drawPath(rightWing, color = wingCol.copy(alpha = 0.85f))
+                                    drawPath(rightWing, color = wingInnerCol.copy(alpha = 0.45f))
+                                    drawPath(rightWing, color = borderCol.copy(alpha = 0.85f),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.6f * dp))
+
+                                    // Butterfly body & antennae
+                                    drawOval(
+                                        color = borderCol,
+                                        topLeft = androidx.compose.ui.geometry.Offset(bx - 2f * dp, by - bSize * 0.5f),
+                                        size = androidx.compose.ui.geometry.Size(4f * dp, bSize * 1.0f)
+                                    )
+                                    drawLine(
+                                        color = borderCol,
+                                        start = androidx.compose.ui.geometry.Offset(bx - 1f * dp, by - bSize * 0.45f),
+                                        end = androidx.compose.ui.geometry.Offset(bx - 6f * dp, by - bSize * 0.85f),
+                                        strokeWidth = 1.2f * dp
+                                    )
+                                    drawLine(
+                                        color = borderCol,
+                                        start = androidx.compose.ui.geometry.Offset(bx + 1f * dp, by - bSize * 0.45f),
+                                        end = androidx.compose.ui.geometry.Offset(bx + 6f * dp, by - bSize * 0.85f),
+                                        strokeWidth = 1.2f * dp
+                                    )
+                                }
+
+                                // 2. Y2K Diary Stickers (3 per page: Daisy, Sparkle Star, Pastel Heart)
+                                // Sticker A: Smiley Daisy (around pageBaseX + sw * 0.52f, sh * 0.20f)
+                                val daisyX = pageBaseX + sw * 0.52f
+                                val daisyY = sh * 0.20f
+                                val daisyR = 14f * dp * baseScale
+                                for (pPetal in 0 until 6) {
+                                    val ang = (pPetal * 60.0 + sourAnimT * 10.0) * kotlin.math.PI / 180.0
+                                    val px = daisyX + (kotlin.math.cos(ang) * daisyR * 0.9f).toFloat()
+                                    val py = daisyY + (kotlin.math.sin(ang) * daisyR * 0.9f).toFloat()
+                                    drawCircle(color = Color(0xFFFFB2C9), radius = daisyR * 0.42f, center = androidx.compose.ui.geometry.Offset(px, py))
+                                    drawCircle(color = Color(0xFFBE185D), radius = daisyR * 0.42f, center = androidx.compose.ui.geometry.Offset(px, py),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
+                                }
+                                drawCircle(color = Color(0xFFFBBF24), radius = daisyR * 0.55f, center = androidx.compose.ui.geometry.Offset(daisyX, daisyY))
+                                drawCircle(color = Color(0xFFD97706), radius = daisyR * 0.55f, center = androidx.compose.ui.geometry.Offset(daisyX, daisyY),
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
+                                // Tiny smile on daisy
+                                drawCircle(color = Color(0xFF78350F), radius = 1.2f * dp, center = androidx.compose.ui.geometry.Offset(daisyX - 3.5f * dp, daisyY - 2f * dp))
+                                drawCircle(color = Color(0xFF78350F), radius = 1.2f * dp, center = androidx.compose.ui.geometry.Offset(daisyX + 3.5f * dp, daisyY - 2f * dp))
+                                drawArc(
+                                    color = Color(0xFF78350F),
+                                    startAngle = 10f,
+                                    sweepAngle = 160f,
+                                    useCenter = false,
+                                    topLeft = androidx.compose.ui.geometry.Offset(daisyX - 4f * dp, daisyY - 2f * dp),
+                                    size = androidx.compose.ui.geometry.Size(8f * dp, 6f * dp),
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2f * dp)
+                                )
+
+                                // Sticker B: Sparkle Star (around pageBaseX + sw * 0.12f, sh * 0.52f)
+                                val starX = pageBaseX + sw * 0.12f
+                                val starY = sh * 0.52f
+                                val starR = 12f * dp * baseScale
+                                val starPath = androidx.compose.ui.graphics.Path().apply {
+                                    for (i in 0 until 8) {
+                                        val r = if (i % 2 == 0) starR else starR * 0.28f
+                                        val ang = Math.toRadians((i * 45.0 - 90.0))
+                                        val px = (starX + r * kotlin.math.cos(ang)).toFloat()
+                                        val py = (starY + r * kotlin.math.sin(ang)).toFloat()
+                                        if (i == 0) moveTo(px, py) else lineTo(px, py)
+                                    }
+                                    close()
+                                }
+                                drawPath(starPath, color = Color(0xFF7C3AED).copy(alpha = 0.85f))
+                                drawPath(starPath, color = Color(0xFF2E1065), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
+                                drawCircle(color = Color(0xFFFDE047), radius = starR * 0.25f, center = androidx.compose.ui.geometry.Offset(starX, starY))
+
+                                // Sticker C: Heart Tape (around pageBaseX + sw * 0.70f, sh * 0.60f)
+                                val heartX = pageBaseX + sw * 0.70f
+                                val heartY = sh * 0.60f
+                                val hr = 12f * dp * baseScale
+                                val hPath = androidx.compose.ui.graphics.Path().apply {
+                                    moveTo(heartX, heartY + hr * 0.45f)
+                                    cubicTo(heartX - hr * 0.65f, heartY - hr * 0.15f, heartX - hr * 0.65f, heartY - hr * 0.75f, heartX, heartY - hr * 0.25f)
+                                    cubicTo(heartX + hr * 0.65f, heartY - hr * 0.75f, heartX + hr * 0.65f, heartY - hr * 0.15f, heartX, heartY + hr * 0.45f)
+                                    close()
+                                }
+                                drawPath(hPath, color = Color(0xFFF472B6).copy(alpha = 0.85f))
+                                drawPath(hPath, color = Color(0xFF9F1239), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.4f * dp))
+                                drawCircle(color = Color.White.copy(alpha = 0.75f), radius = hr * 0.20f, center = androidx.compose.ui.geometry.Offset(heartX - hr * 0.25f, heartY - hr * 0.35f))
+                            }
+                        }
+                    }
+
+                    // SOUR TRACKLIST BACKGROUND
+                    val sourTracklist = listOf(
+                        "brutal", "traitor", "drivers license", "1 step forward, 3 steps back",
+                        "deja vu", "good 4 u", "enough for you", "happier",
+                        "jealousy, jealousy", "favorite crime", "hope ur ok"
+                    )
+
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(0.92f)
+                    ) {
+                        val customFontFamily = remember {
+                            androidx.compose.ui.text.font.FontFamily(
+                                androidx.compose.ui.text.font.Font(com.bearbones.kumaflow.R.font.olivia_regular)
+                            )
+                        }
+
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { translationX = -pageOffset * screenWidthPx }
+                        ) {
+                            val displaySourSongs = remember {
+                                val list = mutableListOf<String>()
+                                var i = 0
+                                while (list.size < positions.size) {
+                                    list.add(sourTracklist[i % sourTracklist.size])
+                                    i++
+                                }
+                                list
+                            }
+
+                            displaySourSongs.forEachIndexed { index, song ->
+                                val xPos = positions[index].first * screenWidthPx
+                                val yPos = positions[index].second * screenHeightPx
+
+                                val rot = remember {
+                                    random.nextFloat() * 26f - 13f
+                                }
+
+                                Text(
+                                    text = song,
+                                    fontFamily = customFontFamily,
+                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 28.sp,
+                                    color = Color(0xFF6D28D9),
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        shadow = androidx.compose.ui.graphics.Shadow(
+                                            color = Color(0x60A855F7),
+                                            blurRadius = 14f
+                                        )
+                                    ),
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationX = xPos
+                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.45 + index.toDouble()).toFloat() * 12f)
                                             rotationZ = rot
                                         }
                                 )
