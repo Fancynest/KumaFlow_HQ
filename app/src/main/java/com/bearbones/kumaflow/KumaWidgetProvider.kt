@@ -96,7 +96,9 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
                 val isPrivacyMode = sharedPref.getBoolean("privacy_mode", false)
 
-                val locale = Locale.forLanguageTag("id-ID")
+                val defaultLang = Locale.getDefault().language
+                val isId = defaultLang == "in" || defaultLang == "id"
+                val locale = if (isId) Locale("id", "ID") else Locale.getDefault()
                 val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
                 val currentMonth = LocalDateTime.now().monthValue
@@ -147,7 +149,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 fun formatSmartAbbr(value: Long, useAbs: Boolean = false): String {
                     val v = if (useAbs) abs(value) else value
                     val sign = if (!useAbs && value < 0) "- " else ""
-                    val isId = curSym == "Rp"
                     val absV = abs(v)
 
                     val (numStr, unit) = when {
@@ -186,6 +187,7 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 }
 
                 // Update widget UI components with the newly calculated data
+                views.setTextViewText(R.id.tv_widget_total_balance_title, if (isId) "Total Saldo" else "Total Balance")
                 val balPref = if (totalBal < 0) "- " else ""
                 val totalBalFormatted = "$balPref$curSym ${formatWidget(totalBal, true)}"
                 views.setTextViewText(R.id.tv_widget_balance, totalBalFormatted)
@@ -220,12 +222,14 @@ class KumaWidgetProvider : AppWidgetProvider() {
                 // Render recent transactions when widget is expanded vertically
                 if (isExpanded) {
                     views.setViewVisibility(R.id.layout_recent_transactions, View.VISIBLE)
+                    views.setTextViewText(R.id.tv_widget_recent_title, if (isId) "Transaksi Terakhir" else "Recent Transactions")
                     val recentTransactions = transactionsWithSplits
                         .filter { !it.transaction.isDeleted }
                         .sortedByDescending { it.transaction.timestamp }
                         .take(4)
 
                     if (recentTransactions.isEmpty()) {
+                        views.setTextViewText(R.id.tv_widget_no_tx, if (isId) "Belum ada transaksi" else "No recent transactions")
                         views.setViewVisibility(R.id.tv_widget_no_tx, View.VISIBLE)
                         views.setViewVisibility(R.id.widget_tx_item_1, View.GONE)
                         views.setViewVisibility(R.id.widget_tx_item_2, View.GONE)

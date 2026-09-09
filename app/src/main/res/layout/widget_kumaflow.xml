@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
         <TextView
+            android:id="@+id/tv_widget_total_balance_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Total Balance"
@@ -147,6 +148,7 @@
             android:layout_marginBottom="10dp" />
 
         <TextView
+            android:id="@+id/tv_widget_recent_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Recent Transactions"
