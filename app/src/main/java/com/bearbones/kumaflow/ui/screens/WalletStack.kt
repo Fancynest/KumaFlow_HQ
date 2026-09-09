@@ -558,7 +558,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                                  if (poppedCard == wallet.name) {
                                                      when (popState) {
                                                          1 -> {
-                                                             popState = 2
+                                                             onWalletClick(wallet.name)
                                                              haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                          }
                                                          2 -> {
