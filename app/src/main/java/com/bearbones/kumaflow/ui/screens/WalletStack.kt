@@ -12,8 +12,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import kotlinx.coroutines.withTimeoutOrNull
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -181,8 +184,6 @@ fun WalletCardStackImpl(
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
-
-    var lastLongPressTime by remember { mutableStateOf(0L) }
 
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -460,96 +461,115 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     } else Color(0xFF2A2A2A)
                                 )
                                 .pointerInput(wallet.name) {
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = {
-                                            val currentPopState = popState
-                                            val currentPoppedCard = poppedCard
-                                            if (currentPoppedCard == wallet.name && currentPopState == 2) {
-                                                isReconcileHold = true
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                onWalletClick(wallet.name)
-                                            } else {
-                                                // Long pressing any card immediately pops it to FULL state (2)
-                                                isReconcileHold = false
-                                                val startIndex = orderedWallets.indexOf(wallet)
-                                                if (startIndex != -1) {
-                                                    draggedIndex = startIndex
-                                                }
-                                                dragOffsetY = 0f
-                                                poppedCard = wallet.name
-                                                popState = 2
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            }
-                                        },
-                                        onDrag = { change, dragAmount ->
-                                            if (isReconcileHold) return@detectDragGesturesAfterLongPress
-                                            
-                                            change.consume()
-                                            dragOffsetY += dragAmount.y
+                                     awaitEachGesture {
+                                         val down = awaitFirstDown(requireUnconsumed = false)
+                                         val downTime = System.currentTimeMillis()
+                                         var isDragging = false
+                                         val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                                         val touchSlop = viewConfiguration.touchSlop
+                                         var hasMovedBeyondSlop = false
 
-                                            val currentIndex = orderedWallets.indexOf(wallet)
-                                            if (currentIndex == -1) return@detectDragGesturesAfterLongPress
-                                            
-                                            val freshBaseOffset = currentIndex * peekPx
+                                         // Wait for either long press threshold OR finger up / scroll
+                                         val longPressResult = withTimeoutOrNull(longPressTimeout) {
+                                             while (true) {
+                                                 val event = awaitPointerEvent()
+                                                 val change = event.changes.firstOrNull()
+                                                 if (change == null || !change.pressed) {
+                                                     // Finger lifted before timeout
+                                                     return@withTimeoutOrNull false
+                                                 }
+                                                 val dist = kotlin.math.hypot(change.position.x - down.position.x, change.position.y - down.position.y)
+                                                 if (dist > touchSlop) {
+                                                     hasMovedBeyondSlop = true
+                                                     return@withTimeoutOrNull false
+                                                 }
+                                             }
+                                         }
 
-                                            val rawCurrent = (freshBaseOffset + dragOffsetY) / peekPx
-                                            val diff = rawCurrent - currentIndex
-                                            val targetIndex = if (diff > 0) {
-                                                (rawCurrent - 0.1f).roundToInt()
-                                            } else {
-                                                (rawCurrent + 0.1f).roundToInt()
-                                            }.coerceIn(0, orderedWallets.size - 1)
+                                         if (longPressResult == null) {
+                                             // Timeout reached = long press confirmed
+                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                             if (poppedCard == wallet.name && popState == 2) {
+                                                 // Already full state = reconcile hold
+                                                 isReconcileHold = true
+                                                 onWalletClick(wallet.name)
+                                             } else {
+                                                 isReconcileHold = false
+                                                 val startIndex = orderedWallets.indexOf(wallet)
+                                                 if (startIndex != -1) {
+                                                     draggedIndex = startIndex
+                                                 }
+                                                 dragOffsetY = 0f
+                                                 poppedCard = wallet.name
+                                                 popState = 2 // langsung full, skip peek
+                                             }
 
-                                            if (targetIndex != currentIndex) {
-                                                val newList = orderedWallets.toMutableList()
-                                                val dragItem = newList.removeAt(currentIndex)
-                                                newList.add(targetIndex, dragItem)
-                                                orderedWallets = newList
-                                                
-                                                dragOffsetY -= (targetIndex - currentIndex) * peekPx
-                                                draggedIndex = targetIndex
-                                                
-                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            }
-                                        },
-                                        onDragEnd = {
-                                            lastLongPressTime = System.currentTimeMillis()
-                                            draggedIndex = -1
-                                            dragOffsetY = 0f
-                                            // Card stays in FULL state (2) on release
-                                            if (!isReconcileHold) onOrderChange(orderedWallets)
-                                            isReconcileHold = false
-                                        },
-                                        onDragCancel = {
-                                            lastLongPressTime = System.currentTimeMillis()
-                                            draggedIndex = -1
-                                            dragOffsetY = 0f
-                                            isReconcileHold = false
-                                        }
-                                    )
-                                }
-                                .clickable {
-                                    // Prevent tap if a long press drag/hold just finished (within 450ms)
-                                    if (System.currentTimeMillis() - lastLongPressTime < 450) return@clickable
-                                    
-                                    if (poppedCard == wallet.name) {
-                                        if (popState == 1) {
-                                            // Progressive tap: peek -> FULL STATE
-                                            popState = 2
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        } else {
-                                            // Full state -> close
-                                            poppedCard = null
-                                            popState = 0
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        }
-                                    } else {
-                                        // Tapping unpopped card pops it to peek (1)
-                                        poppedCard = wallet.name
-                                        popState = 1
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    }
-                                }
+                                             // Continue tracking pointer for drag or release
+                                             while (true) {
+                                                 val event = awaitPointerEvent()
+                                                 val change = event.changes.firstOrNull() ?: break
+
+                                                 if (!change.pressed) {
+                                                     // Finger lifted after long press
+                                                     draggedIndex = -1
+                                                     dragOffsetY = 0f
+                                                     if (!isReconcileHold && isDragging) onOrderChange(orderedWallets)
+                                                     isReconcileHold = false
+                                                     break
+                                                 }
+
+                                                 if (!isReconcileHold) {
+                                                     val dragDelta = change.position.y - change.previousPosition.y
+                                                     if (kotlin.math.abs(dragDelta) > 0.5f) {
+                                                         change.consume()
+                                                         dragOffsetY += dragDelta
+                                                         isDragging = true
+
+                                                         val currentIndex = orderedWallets.indexOf(wallet)
+                                                         if (currentIndex != -1) {
+                                                             val freshBaseOffset = currentIndex * peekPx
+                                                             val rawCurrent = (freshBaseOffset + dragOffsetY) / peekPx
+                                                             val diff = rawCurrent - currentIndex
+                                                             val targetIndex = if (diff > 0) {
+                                                                 (rawCurrent - 0.1f).roundToInt()
+                                                             } else {
+                                                                 (rawCurrent + 0.1f).roundToInt()
+                                                             }.coerceIn(0, orderedWallets.size - 1)
+
+                                                             if (targetIndex != currentIndex) {
+                                                                 val newList = orderedWallets.toMutableList()
+                                                                 val dragItem = newList.removeAt(currentIndex)
+                                                                 newList.add(targetIndex, dragItem)
+                                                                 orderedWallets = newList
+
+                                                                 dragOffsetY -= (targetIndex - currentIndex) * peekPx
+                                                                 draggedIndex = targetIndex
+
+                                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                             }
+                                                         }
+                                                     }
+                                                 }
+                                             }
+                                         } else if (!hasMovedBeyondSlop) {
+                                             // Short tap
+                                             val tapDuration = System.currentTimeMillis() - downTime
+                                             if (tapDuration < longPressTimeout) {
+                                                 if (poppedCard == wallet.name) {
+                                                     when (popState) {
+                                                         1 -> { popState = 2 } // peek -> full
+                                                         2 -> { poppedCard = null; popState = 0 } // full -> close
+                                                         else -> { poppedCard = wallet.name; popState = 1 }
+                                                     }
+                                                 } else {
+                                                     poppedCard = wallet.name
+                                                     popState = 1 // first tap = peek
+                                                 }
+                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                             }
+                                         }
+                                     }
+                                 }
                     ) {
                         if (wallet.backgroundType == "GRADIENT") {
                             val parts = wallet.backgroundValue.split(",")
