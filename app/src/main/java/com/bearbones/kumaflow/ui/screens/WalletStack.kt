@@ -557,15 +557,31 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                              if (tapDuration < longPressTimeout) {
                                                  if (poppedCard == wallet.name) {
                                                      when (popState) {
-                                                         1 -> { popState = 2 } // peek -> full
-                                                         2 -> { poppedCard = null; popState = 0 } // full -> close
-                                                         else -> { poppedCard = wallet.name; popState = 1 }
+                                                         1 -> {
+                                                             popState = 2
+                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                         }
+                                                         2 -> {
+                                                             poppedCard = null
+                                                             popState = 0
+                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                         }
+                                                         else -> {
+                                                             // State 0 tapi poppedCard masih ke-set = stale state
+                                                             // Reset dan mulai dari peek
+                                                             poppedCard = wallet.name
+                                                             popState = 1
+                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                         }
                                                      }
                                                  } else {
+                                                     // Tap card yang berbeda — reset state card lama dulu
+                                                     poppedCard = null
+                                                     popState = 0
                                                      poppedCard = wallet.name
-                                                     popState = 1 // first tap = peek
+                                                     popState = 1
+                                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                  }
-                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                              }
                                          }
                                      }
