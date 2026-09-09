@@ -838,12 +838,13 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     fontSize = 10.sp
                                 )
                             }
-                            Text(
-                                "$prefix$currencySymbol ${formatHide(abs(amt))}",
+                            AutoSizeText(
+                                text = "$prefix$currencySymbol ${formatHide(abs(amt))}",
                                 color = Color.White,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Black,
-                                maxLines = 1
+                                maxLines = 1,
+                                minimumFallbackSize = 12.sp
                             )
                         }
                         } // end Box(card)

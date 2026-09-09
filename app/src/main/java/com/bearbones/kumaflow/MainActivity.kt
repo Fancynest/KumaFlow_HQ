@@ -3452,8 +3452,8 @@ fun AutoSizeText(
     minimumFallbackSize: TextUnit = 12.sp,
     textAlign: TextAlign? = null
 ) {
-    var scaledTextStyle by remember { mutableStateOf(TextStyle(fontSize = fontSize)) }
-    var readyToDraw by remember { mutableStateOf(false) }
+    var scaledTextStyle by remember(text, fontSize) { mutableStateOf(TextStyle(fontSize = fontSize)) }
+    var readyToDraw by remember(text, fontSize) { mutableStateOf(false) }
 
     Text(
         text = text,
@@ -3465,8 +3465,14 @@ fun AutoSizeText(
         softWrap = false,
         textAlign = textAlign,
         onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.hasVisualOverflow && scaledTextStyle.fontSize > minimumFallbackSize) {
-                scaledTextStyle = scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.9f)
+            val currentSize = scaledTextStyle.fontSize
+            if (textLayoutResult.hasVisualOverflow && currentSize.value > minimumFallbackSize.value) {
+                val nextVal = maxOf(currentSize.value * 0.9f, minimumFallbackSize.value)
+                if (nextVal < currentSize.value) {
+                    scaledTextStyle = scaledTextStyle.copy(fontSize = nextVal.sp)
+                } else {
+                    readyToDraw = true
+                }
             } else {
                 readyToDraw = true
             }

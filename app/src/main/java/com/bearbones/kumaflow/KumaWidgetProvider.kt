@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.TypedValue
 import android.widget.RemoteViews
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -124,22 +125,77 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     return if (isPrivacyMode) formatted.replace(Regex("\\d"), "*") else formatted
                 }
 
+                fun formatSmartAbbr(value: Long, useAbs: Boolean = false): String {
+                    val v = if (useAbs) abs(value) else value
+                    val sign = if (!useAbs && value < 0) "- " else ""
+                    val isId = curSym == "Rp"
+                    val absV = abs(v)
+
+                    val (numStr, unit) = when {
+                        absV >= 1_000_000_000_000L -> {
+                            val d = absV.toDouble() / 1_000_000_000_000.0
+                            val formatted = if (d % 1.0 == 0.0) "%.0f".format(locale, d)
+                                            else "%.2f".format(locale, d).trimEnd('0').trimEnd(',').trimEnd('.')
+                            formatted to " T"
+                        }
+                        absV >= 1_000_000_000L -> {
+                            val d = absV.toDouble() / 1_000_000_000.0
+                            val formatted = if (d % 1.0 == 0.0) "%.0f".format(locale, d)
+                                            else "%.2f".format(locale, d).trimEnd('0').trimEnd(',').trimEnd('.')
+                            formatted to (if (isId) " M" else " B")
+                        }
+                        absV >= 1_000_000L -> {
+                            val d = absV.toDouble() / 1_000_000.0
+                            val formatted = if (d % 1.0 == 0.0) "%.0f".format(locale, d)
+                                            else if (d >= 100) "%.1f".format(locale, d).trimEnd('0').trimEnd(',').trimEnd('.')
+                                            else "%.2f".format(locale, d).trimEnd('0').trimEnd(',').trimEnd('.')
+                            formatted to (if (isId) " Jt" else " M")
+                        }
+                        absV >= 100_000L -> {
+                            val d = absV.toDouble() / 1_000.0
+                            val formatted = if (d % 1.0 == 0.0) "%.0f".format(locale, d)
+                                            else "%.1f".format(locale, d).trimEnd('0').trimEnd(',').trimEnd('.')
+                            formatted to (if (isId) " rb" else " k")
+                        }
+                        else -> {
+                            NumberFormat.getInstance(locale).format(absV) to ""
+                        }
+                    }
+
+                    val result = "$sign$numStr$unit"
+                    return if (isPrivacyMode) result.replace(Regex("\\d"), "*") else result
+                }
+
                 // Update widget UI components with the newly calculated data
-                views.setTextViewText(R.id.tv_widget_balance, "$curSym ${formatWidget(totalBal)}")
-                views.setTextViewText(R.id.tv_widget_income, "$curSym ${formatWidget(income)}")
-                views.setTextViewText(R.id.tv_widget_expense, "$curSym ${formatWidget(expenses)}")
+                val balPref = if (totalBal < 0) "- " else ""
+                val totalBalFormatted = "$balPref$curSym ${formatWidget(totalBal, true)}"
+                views.setTextViewText(R.id.tv_widget_balance, totalBalFormatted)
+
+                // Auto-scale total balance font size in widget based on character length
+                if (totalBalFormatted.length > 18) {
+                    views.setTextViewTextSize(R.id.tv_widget_balance, TypedValue.COMPLEX_UNIT_SP, 20f)
+                } else if (totalBalFormatted.length > 14) {
+                    views.setTextViewTextSize(R.id.tv_widget_balance, TypedValue.COMPLEX_UNIT_SP, 24f)
+                } else {
+                    views.setTextViewTextSize(R.id.tv_widget_balance, TypedValue.COMPLEX_UNIT_SP, 28f)
+                }
+
+                val formattedInc = if (abs(income) >= 1_000_000_000L) formatSmartAbbr(income) else formatWidget(income)
+                val formattedExp = if (abs(expenses) >= 1_000_000_000L) formatSmartAbbr(expenses) else formatWidget(expenses)
+                views.setTextViewText(R.id.tv_widget_income, "$curSym $formattedInc")
+                views.setTextViewText(R.id.tv_widget_expense, "$curSym $formattedExp")
 
                 if (top3Wallets.isNotEmpty()) {
                     views.setTextViewText(R.id.tv_w1_name, top3Wallets[0].key)
-                    views.setTextViewText(R.id.tv_w1_bal, "$curSym ${formatWidget(top3Wallets[0].value, true)}")
+                    views.setTextViewText(R.id.tv_w1_bal, "$curSym ${formatSmartAbbr(top3Wallets[0].value, true)}")
                 }
                 if (top3Wallets.size > 1) {
                     views.setTextViewText(R.id.tv_w2_name, top3Wallets[1].key)
-                    views.setTextViewText(R.id.tv_w2_bal, "$curSym ${formatWidget(top3Wallets[1].value, true)}")
+                    views.setTextViewText(R.id.tv_w2_bal, "$curSym ${formatSmartAbbr(top3Wallets[1].value, true)}")
                 }
                 if (top3Wallets.size > 2) {
                     views.setTextViewText(R.id.tv_w3_name, top3Wallets[2].key)
-                    views.setTextViewText(R.id.tv_w3_bal, "$curSym ${formatWidget(top3Wallets[2].value, true)}")
+                    views.setTextViewText(R.id.tv_w3_bal, "$curSym ${formatSmartAbbr(top3Wallets[2].value, true)}")
                 }
 
                 // Apply the updated views to the homescreen widget

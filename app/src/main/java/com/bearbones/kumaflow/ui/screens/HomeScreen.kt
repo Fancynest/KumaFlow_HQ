@@ -426,7 +426,7 @@ fun HomeScreen(
                                         fontSize = 42.sp, 
                                         fontWeight = FontWeight.Black, 
                                         color = if (isSpecialThemeCardActive) Color.White else AppText(), 
-                                        minimumFallbackSize = 24.sp
+                                        minimumFallbackSize = 18.sp
                                     )
                                 }
                             }
