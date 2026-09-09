@@ -468,19 +468,16 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                                 isReconcileHold = true
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 onWalletClick(wallet.name)
-                                            } else if (currentPoppedCard == wallet.name && currentPopState == 1) {
-                                                isReconcileHold = true
-                                                popState = 2
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             } else {
+                                                // Long pressing any card immediately pops it to FULL state (2)
                                                 isReconcileHold = false
                                                 val startIndex = orderedWallets.indexOf(wallet)
                                                 if (startIndex != -1) {
                                                     draggedIndex = startIndex
                                                 }
                                                 dragOffsetY = 0f
-                                                poppedCard = null
-                                                popState = 0
+                                                poppedCard = wallet.name
+                                                popState = 2
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
                                         },
@@ -519,6 +516,7 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                             lastLongPressTime = System.currentTimeMillis()
                                             draggedIndex = -1
                                             dragOffsetY = 0f
+                                            // Card stays in FULL state (2) on release
                                             if (!isReconcileHold) onOrderChange(orderedWallets)
                                             isReconcileHold = false
                                         },
@@ -531,16 +529,22 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                     )
                                 }
                                 .clickable {
-                                    // Prevent tap if a long press drag/hold just finished (within 300ms)
-                                    if (System.currentTimeMillis() - lastLongPressTime < 300) return@clickable
+                                    // Prevent tap if a long press drag/hold just finished (within 450ms)
+                                    if (System.currentTimeMillis() - lastLongPressTime < 450) return@clickable
                                     
                                     if (poppedCard == wallet.name) {
-                                        // If already popped (quarter or full), tapping unpops it
-                                        poppedCard = null
-                                        popState = 0
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        if (popState == 1) {
+                                            // Progressive tap: peek -> FULL STATE
+                                            popState = 2
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        } else {
+                                            // Full state -> close
+                                            poppedCard = null
+                                            popState = 0
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        }
                                     } else {
-                                        // Tapping unpopped card pops it to quarter (1)
+                                        // Tapping unpopped card pops it to peek (1)
                                         poppedCard = wallet.name
                                         popState = 1
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)

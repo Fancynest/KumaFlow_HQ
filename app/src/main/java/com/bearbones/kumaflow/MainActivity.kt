@@ -911,37 +911,37 @@ fun MainScreen(
                 val random = remember { kotlin.random.Random(42) }
 
                 val positions = listOf(
-                    // Page 0 (Home)
-                    Pair(0.04f, 0.06f), Pair(0.50f, 0.11f),
-                    Pair(0.04f, 0.17f), Pair(0.48f, 0.23f),
-                    Pair(0.03f, 0.32f), Pair(0.50f, 0.38f),
-                    Pair(0.04f, 0.49f), Pair(0.48f, 0.56f),
-                    Pair(0.03f, 0.65f), Pair(0.50f, 0.72f),
-                    Pair(0.04f, 0.83f), Pair(0.50f, 0.90f),
+                    // Page 0 (Home) - 6 spacious positions with 120-140dp vertical separation
+                    Pair(0.04f, 0.08f),
+                    Pair(0.52f, 0.22f),
+                    Pair(0.03f, 0.38f),
+                    Pair(0.52f, 0.54f),
+                    Pair(0.03f, 0.70f),
+                    Pair(0.50f, 0.86f),
 
                     // Page 1 (History)
-                    Pair(1.04f, 0.06f), Pair(1.50f, 0.11f),
-                    Pair(1.04f, 0.17f), Pair(1.48f, 0.23f),
-                    Pair(1.03f, 0.32f), Pair(1.50f, 0.38f),
-                    Pair(1.04f, 0.49f), Pair(1.48f, 0.56f),
-                    Pair(1.03f, 0.65f), Pair(1.50f, 0.72f),
-                    Pair(1.04f, 0.83f), Pair(1.50f, 0.90f),
+                    Pair(1.04f, 0.08f),
+                    Pair(1.52f, 0.22f),
+                    Pair(1.03f, 0.38f),
+                    Pair(1.52f, 0.54f),
+                    Pair(1.03f, 0.70f),
+                    Pair(1.50f, 0.86f),
 
                     // Page 2 (Savings)
-                    Pair(2.04f, 0.06f), Pair(2.50f, 0.11f),
-                    Pair(2.04f, 0.17f), Pair(2.48f, 0.23f),
-                    Pair(2.03f, 0.32f), Pair(2.50f, 0.38f),
-                    Pair(2.04f, 0.49f), Pair(2.48f, 0.56f),
-                    Pair(2.03f, 0.65f), Pair(2.50f, 0.72f),
-                    Pair(2.04f, 0.83f), Pair(2.50f, 0.90f),
+                    Pair(2.04f, 0.08f),
+                    Pair(2.52f, 0.22f),
+                    Pair(2.03f, 0.38f),
+                    Pair(2.52f, 0.54f),
+                    Pair(2.03f, 0.70f),
+                    Pair(2.50f, 0.86f),
 
                     // Page 3 (Reports)
-                    Pair(3.04f, 0.06f), Pair(3.50f, 0.11f),
-                    Pair(3.04f, 0.17f), Pair(3.48f, 0.23f),
-                    Pair(3.03f, 0.32f), Pair(3.50f, 0.38f),
-                    Pair(3.04f, 0.49f), Pair(3.48f, 0.56f),
-                    Pair(3.03f, 0.65f), Pair(3.50f, 0.72f),
-                    Pair(3.04f, 0.83f), Pair(3.50f, 0.90f)
+                    Pair(3.04f, 0.08f),
+                    Pair(3.52f, 0.22f),
+                    Pair(3.03f, 0.38f),
+                    Pair(3.52f, 0.54f),
+                    Pair(3.03f, 0.70f),
+                    Pair(3.50f, 0.86f)
                 )
 
                 if (userProfile.themeMode == 9) {
@@ -1434,7 +1434,7 @@ fun MainScreen(
                                 Text(
                                     text = song,
                                     fontFamily = customFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 27.sp,
+                                    fontSize = if (conf.screenWidthDp >= 600) 30.sp else 26.sp,
                                     color = Color(0xFFBE185D),
                                     maxLines = 1,
                                     softWrap = false,
@@ -1538,14 +1538,53 @@ fun MainScreen(
                         )
                     }
 
+                    // Pre-allocate unit vector paths for moons and celestial stars to prevent per-frame allocations
+                    val cachedMoonUnitPath = remember {
+                        androidx.compose.ui.graphics.Path().apply {
+                            op(
+                                androidx.compose.ui.graphics.Path().apply { addOval(androidx.compose.ui.geometry.Rect(-1f, -1f, 1f, 1f)) },
+                                androidx.compose.ui.graphics.Path().apply { addOval(androidx.compose.ui.geometry.Rect(0.45f - 0.85f, -0.2f - 0.85f, 0.45f + 0.85f, -0.2f + 0.85f)) },
+                                androidx.compose.ui.graphics.PathOperation.Difference
+                            )
+                        }
+                    }
+                    val cached5PointStarUnitPath = remember {
+                        androidx.compose.ui.graphics.Path().apply {
+                            for (i in 0 until 10) {
+                                val r = if (i % 2 == 0) 1.0f else 0.42f
+                                val angle = Math.toRadians((i * 36.0 - 90.0))
+                                val x = (r * kotlin.math.cos(angle)).toFloat()
+                                val y = (r * kotlin.math.sin(angle)).toFloat()
+                                if (i == 0) moveTo(x, y) else lineTo(x, y)
+                            }
+                            close()
+                        }
+                    }
+                    val cachedSparkleStarUnitPath = remember {
+                        androidx.compose.ui.graphics.Path().apply {
+                            for (i in 0 until 8) {
+                                val r = if (i % 2 == 0) 1.0f else 0.22f
+                                val angle = Math.toRadians((i * 45.0 - 90.0))
+                                val x = (r * kotlin.math.cos(angle)).toFloat()
+                                val y = (r * kotlin.math.sin(angle)).toFloat()
+                                if (i == 0) moveTo(x, y) else lineTo(x, y)
+                            }
+                            close()
+                        }
+                    }
+
                     androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                         val screenWidth = size.width
                         val h = size.height
 
                         if (screenWidth > 0f && h > 0f) {
+                            val startPage = (pageOffset.toInt() - 1).coerceAtLeast(0)
+                            val endPage = (pageOffset.toInt() + 2).coerceAtMost(3)
+
                             translate(left = -pageOffset * screenWidth) {
-                                // Draw GUTS stickers
+                                // Draw GUTS stickers (culled to visible pages)
                                 gutsStickers.forEach { s ->
+                                    if (s.page !in startPage..endPage) return@forEach
                                     val bmp = gutsStickerBitmaps[s.resId] ?: return@forEach
                                     val pageBaseX = s.page * screenWidth
                                     val cx = pageBaseX + s.xNorm * screenWidth
@@ -1570,106 +1609,81 @@ fun MainScreen(
                                     }
                                 }
 
-                                for (p in 0..3) {
+                                // Helper methods drawing precomputed unit paths with GPU matrix scaling & rotation
+                                fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, baseAlpha: Float, moonIndex: Int) {
+                                    val pulse = (kotlin.math.sin(animT * 0.45 + moonIndex * 2.1).toFloat() + 1f) / 2f
+                                    val currentR = radius * (0.95f + 0.10f * pulse)
+                                    val auraStroke = (2.5f + 4.5f * pulse).dp.toPx()
+                                    val moonAlpha = (baseAlpha * (0.90f + 0.80f * pulse)).coerceIn(0.25f, 0.80f)
+                                    val moonColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFF3E5FF), pulse)
+
+                                    drawContext.canvas.save()
+                                    drawContext.canvas.translate(cx, cy)
+                                    drawContext.canvas.rotate(rotation)
+                                    drawContext.canvas.scale(currentR, currentR)
+
+                                    // Glowing moonlight halo
+                                    drawPath(
+                                        path = cachedMoonUnitPath,
+                                        color = Color(0xFFD1B3FF).copy(alpha = moonAlpha * 0.50f),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = auraStroke / currentR)
+                                    )
+                                    // Moon body
+                                    drawPath(
+                                        path = cachedMoonUnitPath,
+                                        color = moonColor.copy(alpha = moonAlpha)
+                                    )
+
+                                    drawContext.canvas.restore()
+                                }
+
+                                fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
+                                    val freq = 1.0 + (starIndex % 4) * 0.35
+                                    val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.5).toFloat() + 1f) / 2f
+                                    val dynamicOuterR = outerR * (0.85f + 0.30f * shimmer)
+                                    val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
+                                    val starAlpha = (alpha * (1.1f + 2.4f * shimmer)).coerceIn(0.20f, 0.95f)
+
+                                    drawContext.canvas.save()
+                                    drawContext.canvas.translate(cx, cy)
+                                    drawContext.canvas.rotate(rotation)
+                                    drawContext.canvas.scale(dynamicOuterR, dynamicOuterR)
+
+                                    drawPath(
+                                        path = cached5PointStarUnitPath,
+                                        color = starColor.copy(alpha = starAlpha)
+                                    )
+
+                                    drawContext.canvas.restore()
+                                }
+
+                                fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
+                                    val freq = 1.2 + (starIndex % 3) * 0.4
+                                    val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.8).toFloat() + 1f) / 2f
+                                    val dynamicOuterR = outerR * (0.82f + 0.35f * shimmer)
+                                    val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
+                                    val starAlpha = (alpha * (1.0f + 2.6f * shimmer)).coerceIn(0.22f, 0.98f)
+
+                                    drawContext.canvas.save()
+                                    drawContext.canvas.translate(cx, cy)
+                                    drawContext.canvas.rotate(rotation)
+                                    drawContext.canvas.scale(dynamicOuterR, dynamicOuterR)
+
+                                    drawPath(
+                                        path = cachedSparkleStarUnitPath,
+                                        color = Color(0xFFF8F0FF).copy(alpha = starAlpha * 0.55f * shimmer),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8.dp.toPx() / dynamicOuterR)
+                                    )
+                                    drawPath(
+                                        path = cachedSparkleStarUnitPath,
+                                        color = starColor.copy(alpha = starAlpha)
+                                    )
+
+                                    drawContext.canvas.restore()
+                                }
+
+                                for (p in startPage..endPage) {
                                     val pageBaseX = p * screenWidth
-
-                                     // Crescent Moon Helper (Difference of 2 circles) with soft continuous moonlight aura pulse
-                                    fun drawCrescentMoon(cx: Float, cy: Float, radius: Float, rotation: Float, baseAlpha: Float, moonIndex: Int) {
-                                        val pulse = (kotlin.math.sin(animT * 0.45 + moonIndex * 2.1).toFloat() + 1f) / 2f
-                                        val currentR = radius * (0.95f + 0.10f * pulse)
-                                        val innerR = currentR * 0.85f
-                                        val innerCx = cx + currentR * 0.45f
-                                        val innerCy = cy - currentR * 0.2f
-                                        val moonPath = Path().apply {
-                                            op(
-                                                Path().apply {
-                                                    addOval(Rect(cx - currentR, cy - currentR, cx + currentR, cy + currentR))
-                                                },
-                                                Path().apply {
-                                                    addOval(Rect(innerCx - innerR, innerCy - innerR, innerCx + innerR, innerCy + innerR))
-                                                },
-                                                PathOperation.Difference
-                                            )
-                                        }
-                                        val auraStroke = (2.5f + 4.5f * pulse).dp.toPx()
-                                        val moonAlpha = (baseAlpha * (0.90f + 0.80f * pulse)).coerceIn(0.25f, 0.80f)
-                                        val moonColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFF3E5FF), pulse)
-
-                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
-                                            // Glowing moonlight halo
-                                            drawPath(
-                                                path = moonPath,
-                                                color = Color(0xFFD1B3FF).copy(alpha = moonAlpha * 0.50f),
-                                                style = Stroke(width = auraStroke)
-                                            )
-                                            // Moon body
-                                            drawPath(
-                                                path = moonPath,
-                                                color = moonColor.copy(alpha = moonAlpha)
-                                            )
-                                        }
-                                    }
-
-                                    // 5-Point Star Helper with Smooth Continuous Twinkling (No Pauses, Never Dead)
-                                    fun draw5PointStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
-                                        val freq = 1.0 + (starIndex % 4) * 0.35
-                                        val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.5).toFloat() + 1f) / 2f
-
-                                        val dynamicOuterR = outerR * (0.85f + 0.30f * shimmer)
-                                        val innerR = dynamicOuterR * 0.42f
-                                        val starPath = Path().apply {
-                                            for (i in 0 until 10) {
-                                                val r = if (i % 2 == 0) dynamicOuterR else innerR
-                                                val angle = Math.toRadians((i * 36.0 - 90.0))
-                                                val x = (cx + r * kotlin.math.cos(angle)).toFloat()
-                                                val y = (cy + r * kotlin.math.sin(angle)).toFloat()
-                                                if (i == 0) moveTo(x, y) else lineTo(x, y)
-                                            }
-                                            close()
-                                        }
-                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
-                                        val starAlpha = (alpha * (1.1f + 2.4f * shimmer)).coerceIn(0.20f, 0.95f)
-
-                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
-                                            drawPath(
-                                                path = starPath,
-                                                color = starColor.copy(alpha = starAlpha)
-                                            )
-                                        }
-                                    }
-
-                                    // 4-Point Sparkle Star Helper with Smooth Continuous Twinkling (No Pauses, Never Dead)
-                                    fun drawSparkleStar(cx: Float, cy: Float, outerR: Float, rotation: Float, alpha: Float, starIndex: Int) {
-                                        val freq = 1.2 + (starIndex % 3) * 0.4
-                                        val shimmer = (kotlin.math.sin(animT * freq + starIndex * 1.8).toFloat() + 1f) / 2f
-
-                                        val dynamicOuterR = outerR * (0.82f + 0.35f * shimmer)
-                                        val innerR = dynamicOuterR * 0.22f
-                                        val sparklePath = Path().apply {
-                                            for (i in 0 until 8) {
-                                                val r = if (i % 2 == 0) dynamicOuterR else innerR
-                                                val angle = Math.toRadians((i * 45.0 - 90.0))
-                                                val x = (cx + r * kotlin.math.cos(angle)).toFloat()
-                                                val y = (cy + r * kotlin.math.sin(angle)).toFloat()
-                                                if (i == 0) moveTo(x, y) else lineTo(x, y)
-                                            }
-                                            close()
-                                        }
-                                        val starColor = androidx.compose.ui.graphics.lerp(Color(0xFFC084FC), Color(0xFFFFFFFF), shimmer)
-                                        val starAlpha = (alpha * (1.0f + 2.6f * shimmer)).coerceIn(0.22f, 0.98f)
-
-                                        rotate(degrees = rotation, pivot = Offset(cx, cy)) {
-                                            drawPath(
-                                                path = sparklePath,
-                                                color = Color(0xFFF8F0FF).copy(alpha = starAlpha * 0.55f * shimmer),
-                                                style = Stroke(width = 1.8.dp.toPx())
-                                            )
-                                            drawPath(
-                                                path = sparklePath,
-                                                color = starColor.copy(alpha = starAlpha)
-                                            )
-                                        }
-                                    }
 
                                     // 3 Crescent Moons (60dp, 35dp, 25dp)
                                     drawCrescentMoon(
@@ -1807,6 +1821,16 @@ fun MainScreen(
                                 }
                                 list
                             }
+
+                            val gutsFontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily
+                            val gutsTextStyle = remember {
+                                androidx.compose.ui.text.TextStyle(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color(0xFFD8B4FE).copy(alpha = 0.65f),
+                                        blurRadius = 14f
+                                    )
+                                )
+                            }
                             
                             displayGutsSongs.forEachIndexed { index, song ->
                                 val xPos = positions[index].first * screenWidthPx
@@ -1815,36 +1839,23 @@ fun MainScreen(
                                 val rot = remember {
                                     random.nextFloat() * 12f - 6f
                                 }
-                                
-                                // Wave breathing calculation with phase shift per song - continuous smooth breathing without pauses
-                                val breathPhase = kotlin.math.sin(gutsAnimTime.value * 0.55 + index * 0.55)
-                                val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
-                                
-                                // Continuous alpha breathing - prominent neon watermark (0.32f up to 0.76f)
-                                val songAlpha = (0.35f + 0.38f * breathNorm).coerceIn(0.32f, 0.76f)
-                                
-                                // Continuous color transition from electric lavender to brilliant starlight white
-                                val songColor = androidx.compose.ui.graphics.lerp(Color(0xFFB388FF), Color(0xFFFFFFFF), breathNorm)
-                                
-                                val glowBlur = 6f + 16f * breathNorm
 
                                 Text(
                                     text = song,
-                                    fontFamily = com.bearbones.kumaflow.ui.theme.GUTSAppFontFamily,
-                                    fontSize = if (conf.screenWidthDp >= 600) 32.sp else 27.sp,
+                                    fontFamily = gutsFontFamily,
+                                    fontSize = if (conf.screenWidthDp >= 600) 30.sp else 26.sp,
                                     maxLines = 1,
                                     softWrap = false,
-                                    style = androidx.compose.ui.text.TextStyle(
-                                        shadow = androidx.compose.ui.graphics.Shadow(
-                                            color = Color(0xFFD8B4FE).copy(alpha = songAlpha * 0.85f),
-                                            blurRadius = glowBlur
-                                        )
-                                    ),
-                                    color = songColor.copy(alpha = songAlpha),
+                                    style = gutsTextStyle,
+                                    color = Color(0xFFF3E8FF),
                                     modifier = Modifier
                                         .graphicsLayer {
+                                            val currentAnimT = gutsAnimTime.value
+                                            val breathPhase = kotlin.math.sin(currentAnimT * 0.55 + index * 0.55)
+                                            val breathNorm = ((breathPhase.toFloat() + 1f) / 2f).coerceIn(0f, 1f)
+                                            alpha = (0.35f + 0.38f * breathNorm).coerceIn(0.32f, 0.76f)
                                             translationX = xPos
-                                            translationY = yPos + (kotlin.math.sin(gutsAnimTime.value * 0.35 + index.toDouble()).toFloat() * 10f)
+                                            translationY = yPos + (kotlin.math.sin(currentAnimT * 0.35 + index.toDouble()).toFloat() * 10f)
                                             rotationZ = rot
                                         }
                                 )
@@ -1967,8 +1978,12 @@ fun MainScreen(
                         val sh = size.height
                         if (sw <= 0f || sh <= 0f) return@Canvas
 
+                        val startPage = (pageOffset.toInt() - 1).coerceAtLeast(0)
+                        val endPage = (pageOffset.toInt() + 2).coerceAtMost(3)
+
                         translate(left = -pageOffset * sw) {
                             sourStickers.forEach { s ->
+                                if (s.page !in startPage..endPage) return@forEach
                                 val bmp = sourStickerBitmaps[s.resId] ?: return@forEach
                                 val pageBaseX = s.page * sw
                                 val cx = pageBaseX + s.xNorm * sw
