@@ -557,14 +557,18 @@ val cardsVisibleHeight = cardHeight + (effectiveCardPeek * (effectiveCardCount -
                                              if (tapDuration < longPressTimeout) {
                                                  if (poppedCard == wallet.name) {
                                                      when (popState) {
-                                                         1 -> {
-                                                             onWalletClick(wallet.name)
-                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                         }
-                                                         2 -> {
-                                                             onWalletClick(wallet.name)
-                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                         }
+                                                          1 -> {
+                                                              // Tap peek = tutup, kembali ke idle/dalam dompet
+                                                              poppedCard = null
+                                                              popState = 0
+                                                              haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                          }
+                                                          2 -> {
+                                                              // Tap full = tutup, kembali ke idle/dalam dompet
+                                                              poppedCard = null
+                                                              popState = 0
+                                                              haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                          }
                                                          else -> {
                                                              // State 0 tapi poppedCard masih ke-set = stale state
                                                              // Reset dan mulai dari peek
