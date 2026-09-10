@@ -568,7 +568,7 @@ fun MainScreen(
     val totalIncome by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
     val totalExpenses by remember(monthlyTransactionsWithSplits, forceUpdateTrigger) { derivedStateOf { monthlyTransactionsWithSplits.filter { !it.transaction.isIncome && it.transaction.category != "Transfer" }.sumOf { it.transaction.amount.toLongOrNull() ?: 0L } } }
 
-    var showMilestone by remember { mutableStateOf(false /* userProfile.currentStreak > 0 && userProfile.currentStreak % 30 == 0 && userProfile.currentStreak > userProfile.lastMilestoneNotified */) }
+    var showMilestone by remember { mutableStateOf(false) }
     var showRouletteSheet by remember { mutableStateOf(false) }
     var showSplitBill by remember { mutableStateOf(false) }
     

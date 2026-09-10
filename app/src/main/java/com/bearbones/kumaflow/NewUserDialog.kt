@@ -28,7 +28,6 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
     val windowSize = rememberKumaWindowSize()
     val sharedPref = context.getSharedPreferences("KumaFlowPrefs", Context.MODE_PRIVATE)
 
-    // Verify if this is the user's first time launching the application (defaults to true)
     var showDialog by remember {
         mutableStateOf(sharedPref.getBoolean("is_first_time_user", true))
     }
@@ -39,10 +38,7 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
         }
         AlertDialog(
             modifier = Modifier.widthIn(max = 480.dp),
-            onDismissRequest = {
-                // Intentionally left blank to prevent the user from accidentally dismissing the dialog
-                // by tapping outside the pop-up area. Explicit interaction with the "Got it" button is required.
-            },
+            onDismissRequest = {},
             title = {
                 Text(
                     text = AppStr.infoReminder,
@@ -70,8 +66,6 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
             confirmButton = {
                 KumaTextButton(
                     onClick = {
-                        // Upon button interaction, update the "is_first_time_user" status flag to false
-                        // Persist this state locally to ensure the dialog is not displayed on subsequent app launches
                         showDialog = false
                         onDismissed()
                     }
@@ -81,8 +75,6 @@ fun NewUserAnnouncementDialog(onDismissed: () -> Unit) {
             }
         )
     } else {
-        // If the user already acknowledged it previously, we just call onDismissed immediately
-        // so the app can proceed to other flows like Tutorial
         LaunchedEffect(Unit) {
             onDismissed()
         }

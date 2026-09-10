@@ -23,7 +23,6 @@ import kotlin.math.abs
 class KumaWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        // Sync widget data on every update request
         appWidgetIds.forEach { widgetId ->
             updateWidget(context, appWidgetManager, widgetId)
         }
@@ -31,7 +30,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        // Intercept broadcast actions emitted by MainActivity for manual updates
         if (intent.action == "com.bearbones.kumaflow.UPDATE_WIDGET") {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val ids = appWidgetManager.getAppWidgetIds(ComponentName(context, KumaWidgetProvider::class.java))
@@ -56,7 +54,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
         val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
         val isExpanded = minHeight >= 180
 
-        // Set onClick listener on the entire widget root to launch the app
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
@@ -64,7 +61,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
 
         views.setViewVisibility(R.id.layout_recent_transactions, if (isExpanded) View.VISIBLE else View.GONE)
 
-        // Immediately show a loading state so the widget doesn't stay stuck on XML template text
         views.setTextViewText(R.id.tv_widget_balance, "...")
         views.setTextViewText(R.id.tv_widget_income, "...")
         views.setTextViewText(R.id.tv_widget_expense, "...")
@@ -76,13 +72,11 @@ class KumaWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(R.id.tv_w3_bal, "")
         appWidgetManager.updateAppWidget(widgetId, views)
 
-        // Fetch application data asynchronously in the background
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val db = KumaDatabase.getDatabase(context)
                 val profile = db.transactionDao().getUserProfile().firstOrNull()
                 if (profile == null) {
-                    // No profile yet — show zeros
                     views.setTextViewText(R.id.tv_widget_balance, "Rp 0")
                     views.setTextViewText(R.id.tv_widget_income, "Rp 0")
                     views.setTextViewText(R.id.tv_widget_expense, "Rp 0")
@@ -90,7 +84,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     return@launch
                 }
 
-                // Utilize the updated DAO query (WithSplits) for complex transaction structures
                 val transactionsWithSplits = db.transactionDao().getAllTransactionsWithSplits().firstOrNull() ?: emptyList()
 
                 val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
@@ -116,7 +109,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
                         val dt = LocalDateTime.parse(t.timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                         val amt = t.amount.toLongOrNull() ?: 0L
 
-                        // Compute and allocate split transaction values across different wallets
                         if (txObj.splits.isNotEmpty()) {
                             txObj.splits.forEach { split ->
                                 val current = walletBalances[split.splitWallet] ?: 0L
@@ -127,7 +119,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
                             walletBalances[t.wallet] = current + (if(t.isIncome) amt else -amt)
                         }
 
-                        // Calculate the total income and expenses exclusively for the current month
                         if (dt.monthValue == currentMonth && dt.year == currentYear) {
                             if (t.category != "Transfer") {
                                 if (t.isIncome) income += amt else expenses += amt
@@ -186,13 +177,11 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     return if (isPrivacyMode) result.replace(Regex("\\d"), "*") else result
                 }
 
-                // Update widget UI components with the newly calculated data
                 views.setTextViewText(R.id.tv_widget_total_balance_title, if (isId) "Total Saldo" else "Total Balance")
                 val balPref = if (totalBal < 0) "- " else ""
                 val totalBalFormatted = "$balPref$curSym ${formatWidget(totalBal, true)}"
                 views.setTextViewText(R.id.tv_widget_balance, totalBalFormatted)
 
-                // Auto-scale total balance font size in widget based on character length
                 if (totalBalFormatted.length > 18) {
                     views.setTextViewTextSize(R.id.tv_widget_balance, TypedValue.COMPLEX_UNIT_SP, 20f)
                 } else if (totalBalFormatted.length > 14) {
@@ -219,7 +208,6 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     views.setTextViewText(R.id.tv_w3_bal, "$curSym ${formatSmartAbbr(top3Wallets[2].value, true)}")
                 }
 
-                // Render recent transactions when widget is expanded vertically
                 if (isExpanded) {
                     views.setViewVisibility(R.id.layout_recent_transactions, View.VISIBLE)
                     views.setTextViewText(R.id.tv_widget_recent_title, if (isId) "Transaksi Terakhir" else "Recent Transactions")
@@ -275,10 +263,8 @@ class KumaWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(R.id.layout_recent_transactions, View.GONE)
                 }
 
-                // Apply the updated views to the homescreen widget
                 appWidgetManager.updateAppWidget(widgetId, views)
             } catch (e: Exception) {
-                // Even on error, push what we have so widget doesn't stay on template
                 e.printStackTrace()
                 appWidgetManager.updateAppWidget(widgetId, views)
             }

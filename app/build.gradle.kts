@@ -81,10 +81,8 @@ dependencies {
 
     implementation("com.airbnb.android:lottie-compose:6.4.0")
     implementation("dev.chrisbanes.haze:haze:1.1.1")
-    implementation("dev.chrisbanes.haze:haze-materials:1.1.1")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.7")
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
-    implementation("androidx.lifecycle:lifecycle-process:2.8.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3")
     
     // QR Code & OCR Processing

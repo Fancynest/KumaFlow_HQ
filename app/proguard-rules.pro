@@ -81,7 +81,6 @@
 
 # Widget
 -keep class com.bearbones.kumaflow.KumaWidgetProvider { *; }
--keep class com.bearbones.kumaflow.KumaReminder { *; }
 -keep class com.bearbones.kumaflow.KumaService { *; }
 
 # WalletLogoManager (network + file I/O)

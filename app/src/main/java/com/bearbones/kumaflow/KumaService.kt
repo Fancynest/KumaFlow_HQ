@@ -24,7 +24,7 @@ import java.util.Calendar
 class KumaService : Service() {
 
     private var serviceJob: Job? = null
-    private var lastTriggeredMinute = -1 // Prevent duplicate notification triggers within the same minute
+    private var lastTriggeredMinute = -1
 
     override fun onCreate() {
         super.onCreate()
@@ -33,7 +33,6 @@ class KumaService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Return START_STICKY to ensure automatic restart if the OS kills the service
         return START_STICKY
     }
 
@@ -43,7 +42,7 @@ class KumaService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceJob?.cancel() // Terminate the background loop when the service is destroyed
+        serviceJob?.cancel()
     }
 
     private fun startInternalTimer() {
@@ -65,7 +64,6 @@ class KumaService : Service() {
                                 val targetHour = parts[0].toIntOrNull() ?: 0
                                 val targetMin = parts[1].toIntOrNull() ?: 0
 
-                                // Trigger reminder if the exact time matches and has not been triggered yet
                                 if (currentHour == targetHour && currentMin == targetMin && currentMin != lastTriggeredMinute) {
                                     lastTriggeredMinute = currentMin
                                     showReminderNotification(this@KumaService)
@@ -73,7 +71,6 @@ class KumaService : Service() {
                             }
                         }
 
-                        // Reset the trigger lock once the minute changes
                         if (currentMin != lastTriggeredMinute) {
                             lastTriggeredMinute = -1
                         }
@@ -82,7 +79,6 @@ class KumaService : Service() {
                     e.printStackTrace()
                 }
 
-                // Polling every 15 seconds. Designed to be lightweight with minimal battery impact.
                 delay(15000L)
             }
         }

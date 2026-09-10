@@ -190,22 +190,7 @@
             android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="alarm_scheduler"/>
         </service>
-        <!--
-        <receiver
-            android:name=".KumaReminder"
-            android:enabled="true"
-            android:exported="false" />
 
-        <receiver
-            android:name=".KumaBootReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
-            -->
         <receiver android:name=".KumaWidgetProvider"
             android:exported="true">
             <intent-filter>
