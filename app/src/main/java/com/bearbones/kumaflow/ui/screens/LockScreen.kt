@@ -156,7 +156,7 @@ fun MorphingPinIndicator(
     }
     val currentShape = remember(progress) { MorphPolygonShape(morph, progress) }
     
-    val color = if (isFilled) AppText() else AppSurfaceVariant()
+    val color = if (isFilled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
     
     val scale by animateFloatAsState(
         targetValue = if (isFilled) 1f else 0.8f,
@@ -226,7 +226,7 @@ fun LockScreen(correctPin: String, activity: FragmentActivity, onSuccess: () -> 
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             repeat(6) { index ->
                 MorphingPinIndicator(
                     isFilled = index < inputPin.length,
@@ -283,12 +283,12 @@ fun MorphingKeypadButton(
     var isPressed by remember { mutableStateOf(false) }
     
     val width by animateDpAsState(
-        targetValue = if (isPressed) 80.dp else 70.dp,
+        targetValue = if (isPressed) 72.dp else 64.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh),
         label = "width"
     )
     val height by animateDpAsState(
-        targetValue = if (isPressed) 60.dp else 70.dp,
+        targetValue = if (isPressed) 56.dp else 64.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh),
         label = "height"
     )
@@ -296,8 +296,8 @@ fun MorphingKeypadButton(
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
     val buttonShape = RoundedCornerShape(percent = 50)
     
-    val fallbackColor = if (isBrutal) Color.White else AppSurface()
-    val contentColor = if (isBrutal) Color.Black else AppText()
+    val fallbackColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.surfaceContainerHigh
+    val contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onSurface
     
     val isLiquidGlass = com.bearbones.kumaflow.LocalIsLiquidGlass.current
     val isPremiumGlassBlur = com.bearbones.kumaflow.LocalIsPremiumGlassBlur.current
@@ -305,9 +305,9 @@ fun MorphingKeypadButton(
     val hazeState = com.bearbones.kumaflow.LocalHazeState.current
 
     val glassColor = if (isDark) {
-        Color(0xFF2C2C2E).copy(alpha = 0.60f)
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.60f)
     } else {
-        Color(0xFFE8E8EC).copy(alpha = 0.85f)
+        MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.85f)
     }
 
     val shineGradient = remember {
