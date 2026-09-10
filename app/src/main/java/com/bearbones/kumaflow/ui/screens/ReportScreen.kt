@@ -80,19 +80,20 @@ fun ReportScreen(
     val locale = Locale.forLanguageTag("id-ID")
     val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
+    val colorScheme = MaterialTheme.colorScheme
     fun getCatColor(catName: String): Color {
         val predefined = mapOf(
-            "Financial" to Color(0xFF4CAF50),
-            "Food" to Color(0xFFFF9800),
-            "Shopping" to Color(0xFFE91E63),
-            "Health" to Color(0xFFF44336),
-            "Transport" to Color(0xFF2196F3),
-            "Education" to Color(0xFF9C27B0),
-            "Entertainment" to Color(0xFF673AB7),
-            "Transfer" to Color(0xFF00BCD4),
-            "Others" to Color(0xFF607D8B)
+            "Financial" to colorScheme.tertiary,
+            "Food" to colorScheme.primary,
+            "Shopping" to colorScheme.secondary,
+            "Health" to colorScheme.error,
+            "Transport" to Color(0xFF1976D2),
+            "Education" to Color(0xFF7B1FA2),
+            "Entertainment" to Color(0xFFE65100),
+            "Transfer" to Color(0xFF0097A7),
+            "Others" to colorScheme.outline
         )
-        return predefined[catName] ?: Color(android.graphics.Color.HSVToColor(floatArrayOf(abs(catName.hashCode()) % 360f, 0.7f, 0.8f)))
+        return predefined[catName] ?: colorScheme.secondary
     }
 
     val expensePerCat = monthlyTransactions.filter { !it.isIncome && it.category != "Transfer" }.groupBy { it.category }.mapValues { entry -> entry.value.sumOf { it.amount.toLongOrNull() ?: 0L } }.toList().sortedByDescending { it.second }
@@ -246,19 +247,20 @@ fun ReportScreen(
         }
 
         if (profile.monthlyTarget > 0) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             val progress = (expenses.toFloat() / profile.monthlyTarget.toFloat()).coerceIn(0f, 1f)
             val isOver = expenses > profile.monthlyTarget
 
             Text(AppStr.targetProg, fontWeight = FontWeight.Bold, color = AppText())
             Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(CircleShape), color = if(isOver) AppRed() else AppGreen(), trackColor = AppSurfaceVariant())
-            Text("${(progress * 100).toInt()}% " + (if(AppStr.isId) "dari" else "of") + " $curSym ${NumberFormat.getInstance(locale).format(profile.monthlyTarget)}", fontSize = 12.sp, color = if(isOver) AppRed() else Color.Gray)
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape), color = if(isOver) AppRed() else AppGreen(), trackColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("${(progress * 100).toInt()}% " + (if(AppStr.isId) "dari" else "of") + " $curSym ${NumberFormat.getInstance(locale).format(profile.monthlyTarget)}", fontSize = 12.sp, color = if(isOver) AppRed() else MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         Text(AppStr.spendBreak, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = AppText())
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Card(
             modifier = Modifier
@@ -378,24 +380,29 @@ fun ReportScreen(
                                 else -> Icons.Default.DashboardCustomize
                             }
 
-                            Box(modifier = Modifier.fillMaxWidth().height(65.dp)) {
-                                if (target > 0) Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(progress).background(catCol.copy(alpha = 0.15f)).align(Alignment.CenterStart))
-                                Row(modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                                    KumaExpressiveIcon(icon, contentDescription = null, tint = catCol, containerColor = catCol.copy(alpha = 0.2f), size = 36.dp, iconPadding = 9.dp)
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppText(), modifier = Modifier.weight(1f))
-                                    Text("$curSym ${NumberFormat.getInstance(locale).format(amt)}", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = AppText())
-                                }
-                                if (target > 0) {
-                                    val budgetInfo = if(isOverLimit) "$curSym ${NumberFormat.getInstance(locale).format(amt-target)} OVER!" else "$curSym ${NumberFormat.getInstance(locale).format(target-amt)} left"
-                                    Text(budgetInfo, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if(isOverLimit) AppRed() else AppText().copy(alpha=0.6f), modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 6.dp))
-                                }
-                            }
+                            ListItem(
+                                headlineContent = {
+                                    Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = AppText())
+                                },
+                                supportingContent = if (target > 0) {
+                                    {
+                                        val budgetInfo = if(isOverLimit) "$curSym ${NumberFormat.getInstance(locale).format(amt-target)} OVER!" else "$curSym ${NumberFormat.getInstance(locale).format(target-amt)} left"
+                                        Text(budgetInfo, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = if(isOverLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                } else null,
+                                leadingContent = {
+                                    KumaExpressiveIcon(icon, contentDescription = null, tint = catCol, containerColor = catCol.copy(alpha = 0.2f), size = 36.dp, iconPadding = 8.dp)
+                                },
+                                trailingContent = {
+                                    Text("$curSym ${NumberFormat.getInstance(locale).format(amt)}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = AppText())
+                                },
+                                colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                            )
 
                             if (index < itemsToShow.size - 1) {
                                 HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 60.dp),
-                                    color = AppText().copy(alpha = 0.05f)
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant
                                 )
                             }
                             index++
