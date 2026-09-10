@@ -19,21 +19,63 @@ import androidx.core.view.WindowCompat
 // 1. Dark Mode Color Scheme
 private val DarkColorScheme = darkColorScheme(
     primary = BearRust,
+    onPrimary = PitchBlack,
+    primaryContainer = CardDark,
+    onPrimaryContainer = CreamyText,
+    secondary = BearTan,
+    onSecondary = PitchBlack,
+    secondaryContainer = Color(0xFF382319),
+    onSecondaryContainer = CreamyText,
+    tertiary = BearGreen,
+    onTertiary = PitchBlack,
     background = PitchBlack,
-    surface = CardDark, // Background color for card and menu elements
-    onPrimary = PitchBlack, // Text color overlaid on primary color
-    onBackground = CreamyText, // Primary text color for Dark Mode
-    onSurface = CreamyText
+    onBackground = CreamyText,
+    surface = CardDark,
+    onSurface = CreamyText,
+    surfaceVariant = Color(0xFF382319),
+    onSurfaceVariant = AshBear,
+    surfaceContainerLowest = Color(0xFF120A07),
+    surfaceContainerLow = PitchBlack,
+    surfaceContainer = CardDark,
+    surfaceContainerHigh = Color(0xFF382319),
+    surfaceContainerHighest = Color(0xFF452B1F),
+    outline = AshBear,
+    outlineVariant = Color(0xFF3D251A),
+    error = BearRed,
+    onError = PitchBlack,
+    errorContainer = Color(0xFF5A1605),
+    onErrorContainer = CreamyText
 )
 
 // 2. Light Mode Color Scheme
 private val LightColorScheme = lightColorScheme(
     primary = DeepGrizzly,
-    background = Color(0xFFF6F7F9),
-    surface = Color.White,
     onPrimary = Color.White,
+    primaryContainer = CreamyBelly,
+    onPrimaryContainer = DeepGrizzly,
+    secondary = BearRust,
+    onSecondary = Color.White,
+    secondaryContainer = BearTan,
+    onSecondaryContainer = BearCharcoal,
+    tertiary = BearGreen,
+    onTertiary = Color.White,
+    background = Color(0xFFF6F7F9),
     onBackground = DeepGrizzly,
-    onSurface = DeepGrizzly
+    surface = Color.White,
+    onSurface = DeepGrizzly,
+    surfaceVariant = CreamyBelly,
+    onSurfaceVariant = BearCharcoal,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFFBF8F5),
+    surfaceContainer = Color(0xFFF5EDE0),
+    surfaceContainerHigh = BearTan,
+    surfaceContainerHighest = Color(0xFFDEC3A3),
+    outline = AshBear,
+    outlineVariant = Color(0xFFE0D0BE),
+    error = BearRed,
+    onError = Color.White,
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002)
 )
 
 // Ensure a data type exists to represent the application settings state, for example:
