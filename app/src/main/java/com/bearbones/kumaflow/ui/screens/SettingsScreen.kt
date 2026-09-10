@@ -308,7 +308,7 @@ fun SettingsScreen(
             ) {
                 var expandReminders by remember { mutableStateOf(false) }
 
-                Column(modifier = Modifier.padding(18.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         AppStr.notif,
                         fontWeight = FontWeight.ExtraBold,
@@ -318,12 +318,12 @@ fun SettingsScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 14.dp, horizontal = 8.dp),
+                            .padding(vertical = 16.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -350,15 +350,14 @@ fun SettingsScreen(
                                     dao.saveProfile(currentProfile.copy(useCarryOver = isChecked))
                                     onForceUpdate()
                                 }
-                            },
-                            modifier = Modifier.scale(0.8f)
+                            }
                         )
                     }
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 14.dp, horizontal = 8.dp),
+                            .padding(vertical = 16.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -407,8 +406,7 @@ fun SettingsScreen(
                                     onForceUpdate()
                                 }
                                 if (!isChecked) expandReminders = false
-                            },
-                            modifier = Modifier.scale(0.8f)
+                            }
                         )
                     }
 
@@ -476,7 +474,7 @@ fun SettingsScreen(
                 colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 26.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -517,8 +515,7 @@ fun SettingsScreen(
                                 autoTrackerEnabled = false
                                 sharedPrefs.edit().putBoolean("enable_auto_tracker", false).apply()
                             }
-                        },
-                        modifier = Modifier.scale(0.8f)
+                        }
                     )
                 }
             }
@@ -1436,8 +1433,7 @@ fun SettingsScreen(
                                         dao.saveProfile(currentProfile.copy(isAmoledMode = isChecked))
                                         onForceUpdate()
                                     }
-                                },
-                                modifier = Modifier.scale(0.8f)
+                                }
                             )
                         }
 
@@ -1460,8 +1456,7 @@ fun SettingsScreen(
                                         dao.saveProfile(currentProfile.copy(isLiquidGlass = isChecked))
                                         onForceUpdate()
                                     }
-                                },
-                                modifier = Modifier.scale(0.8f)
+                                }
                             )
                         }
 
@@ -1484,8 +1479,7 @@ fun SettingsScreen(
                                         dao.saveProfile(currentProfile.copy(isNavMotionEnabled = isChecked))
                                         onForceUpdate()
                                     }
-                                },
-                                modifier = Modifier.scale(0.8f)
+                                }
                             )
                         }
 
@@ -1509,8 +1503,7 @@ fun SettingsScreen(
                                         dao.saveProfile(currentProfile.copy(isParallaxEnabled = isChecked))
                                         onForceUpdate()
                                     }
-                                },
-                                modifier = Modifier.scale(0.8f)
+                                }
                             )
                         }
 
