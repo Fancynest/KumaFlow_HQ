@@ -404,12 +404,12 @@ fun HomeScreen(
                             ) {
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(AppStr.totalBalanceTitle, color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        Text(AppStr.totalBalanceTitle, color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Icon(
                                             imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                             contentDescription = "Toggle Privacy",
-                                            tint = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.8f),
+                                            tint = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.clip(CircleShape).clickable {
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                 isPrivacyMode = !isPrivacyMode
@@ -438,7 +438,7 @@ fun HomeScreen(
                             val animatedExp by androidx.compose.animation.core.animateFloatAsState(targetValue = expenses.toFloat(), animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "exp")
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
-                                    Text("Total Income", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Total Income", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.ArrowUpward, null, tint = if(isSpecialThemeCardActive) Color.White else AppGreen(), modifier = Modifier.size(16.dp))
@@ -447,7 +447,7 @@ fun HomeScreen(
                                     }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("Total Expenses", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else AppText().copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Total Expenses", color = if (isSpecialThemeCardActive) Color.White.copy(alpha=0.8f) else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         AutoSizeText(text = "$curSym ${formatHide(animatedExp.toLong())}", modifier = Modifier, color = if(isSpecialThemeCardActive) Color.White else AppText(), fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, minimumFallbackSize = 10.sp)
@@ -465,81 +465,84 @@ fun HomeScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
                         
                         // QRIS Button
-                        Box(
+                        FilledTonalButton(
+                            onClick = {
+                                if (profile.qrisFilePath.isNotEmpty()) {
+                                    qrisDirectAmount = 0L
+                                    qrisDirectMessage = ""
+                                    showQrisDirectResult = true
+                                } else {
+                                    android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp)
                                 .then(
-                                    if (isBrutal) 
-                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
-                                    else 
-                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
-                                )
-                                .clickable { 
-                                    if (profile.qrisFilePath.isNotEmpty()) {
-                                        qrisDirectAmount = 0L
-                                        qrisDirectMessage = ""
-                                        showQrisDirectResult = true 
-                                    } else {
-                                        android.widget.Toast.makeText(context, if(AppStr.isId) "Silakan upload QRIS di Pengaturan terlebih dahulu." else "Please upload your QRIS in Settings first.", android.widget.Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                .padding(horizontal = 4.dp),
-                            contentAlignment = Alignment.Center
+                                    if (isBrutal) Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp) else Modifier
+                                ),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
+                                Text("QRIS", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                         
                         // Split Bill Button
-                        Box(
+                        FilledTonalButton(
+                            onClick = { onOpenSplitBill() },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp)
                                 .then(
-                                    if (isBrutal) 
-                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
-                                    else 
-                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
-                                )
-                                .clickable { onOpenSplitBill() }
-                                .padding(horizontal = 4.dp),
-                            contentAlignment = Alignment.Center
+                                    if (isBrutal) Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp) else Modifier
+                                ),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ReceiptLong, contentDescription = "Split Bill", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.ReceiptLong, contentDescription = "Split Bill", modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Split", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
+                                Text("Split", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
                             }
                         }
 
                         // Kuma Roulette / Spin Entry Point
-                        Box(
+                        FilledTonalButton(
+                            onClick = { onOpenRoulette() },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp)
                                 .then(
-                                    if (isBrutal) 
-                                        Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp)
-                                    else 
-                                        Modifier.clip(RoundedCornerShape(24.dp)).background(AppPrimary().copy(alpha = 0.2f))
-                                )
-                                .clickable { onOpenRoulette() }
-                                .padding(horizontal = 4.dp),
-                            contentAlignment = Alignment.Center
+                                    if (isBrutal) Modifier.neobrutalism(backgroundColor = Color.White, cornerRadius = 24.dp) else Modifier
+                                ),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
+                                Text("Spin", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
