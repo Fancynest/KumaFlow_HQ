@@ -606,6 +606,7 @@ fun MainScreen(
     var showMainOcrSourceChooser by remember { mutableStateOf(false) }
     var showMainOcrKeyPromptDialog by remember { mutableStateOf(false) }
     var mainCameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var mainCameraCacheFile by remember { mutableStateOf<java.io.File?>(null) }
     var pendingOcrResult by remember { mutableStateOf<com.bearbones.kumaflow.utils.ReceiptParseResult?>(null) }
 
     fun processMainReceiptImage(uri: Uri) {
@@ -650,6 +651,9 @@ fun MainScreen(
                     Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
                     isMainOcrScanning = false
                 }
+            } finally {
+                mainCameraCacheFile?.delete()
+                mainCameraCacheFile = null
             }
         }
     }
@@ -669,6 +673,10 @@ fun MainScreen(
             mainCameraImageUri?.let { uri ->
                 processMainReceiptImage(uri)
             }
+        } else {
+            mainCameraCacheFile?.delete()
+            mainCameraCacheFile = null
+            mainCameraImageUri = null
         }
     }
 
@@ -678,6 +686,7 @@ fun MainScreen(
         if (isGranted) {
             try {
                 val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+                mainCameraCacheFile = cacheFile
                 val uri = androidx.core.content.FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider",
@@ -702,6 +711,7 @@ fun MainScreen(
         if (hasCamPermission) {
             try {
                 val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+                mainCameraCacheFile = cacheFile
                 val uri = androidx.core.content.FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider",
@@ -2501,6 +2511,7 @@ fun TransactionBottomSheet(
     var showOcrKeyPromptDialog by remember { mutableStateOf(false) }
     var showOcrSourceChooser by remember { mutableStateOf(false) }
     var tempCameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var tempCameraCacheFile by remember { mutableStateOf<java.io.File?>(null) }
 
     LaunchedEffect(initialOcrResult) {
         if (initialOcrResult != null && initialOcrResult.isSuccess) {
@@ -2588,6 +2599,9 @@ fun TransactionBottomSheet(
                     Toast.makeText(context, AppStr.scanReceiptFailed, Toast.LENGTH_SHORT).show()
                     isOcrLoading = false
                 }
+            } finally {
+                tempCameraCacheFile?.delete()
+                tempCameraCacheFile = null
             }
         }
     }
@@ -2607,12 +2621,17 @@ fun TransactionBottomSheet(
             tempCameraImageUri?.let { uri ->
                 processReceiptImage(uri)
             }
+        } else {
+            tempCameraCacheFile?.delete()
+            tempCameraCacheFile = null
+            tempCameraImageUri = null
         }
     }
 
     fun executeCameraLaunch() {
         try {
             val cacheFile = java.io.File(context.cacheDir, "receipt_capture_${System.currentTimeMillis()}.jpg")
+            tempCameraCacheFile = cacheFile
             val uri = androidx.core.content.FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -3896,6 +3915,7 @@ fun SettingsGroupCard(
     title: String,
     modifier: Modifier = Modifier,
     items: List<Pair<String, ImageVector>>,
+    trailingTexts: Map<String, String> = emptyMap(),
     hasSwitch: Boolean = false,
     isSwitchOn: Boolean = false,
     onSwitchChange: (Boolean) -> Unit = {},
@@ -3947,6 +3967,15 @@ fun SettingsGroupCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    trailingTexts[label]?.let { trailing ->
+                        Text(
+                            text = trailing,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = AppText().copy(alpha = 0.5f),
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                    }
                     if (hasSwitch && label == AppStr.appLck) {
                         Switch(
                             checked = isSwitchOn,

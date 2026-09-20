@@ -165,6 +165,25 @@ fun SettingsScreen(
     var showWalletDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showOcrDialog by remember { mutableStateOf(false) }
+    var showClearCacheDialog by remember { mutableStateOf(false) }
+
+    var cacheSizeBytes by remember {
+        mutableStateOf(
+            try {
+                context.cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            } catch (_: Exception) {
+                0L
+            }
+        )
+    }
+    val formattedCacheSize = remember(cacheSizeBytes) {
+        if (cacheSizeBytes <= 0L) "0 B"
+        else {
+            val kb = cacheSizeBytes / 1024.0
+            if (kb < 1024) String.format(java.util.Locale.US, "%.1f KB", kb)
+            else String.format(java.util.Locale.US, "%.1f MB", kb / 1024.0)
+        }
+    }
 
     var pinInput by remember { mutableStateOf("") }
     var targetInput by remember { mutableStateOf(currentProfile.monthlyTarget.toString()) }
@@ -536,7 +555,11 @@ fun SettingsScreen(
                         "Kuma Duo (Shared Wallet)" to Icons.Default.SyncAlt,
                         AppStr.rest to Icons.Default.History,
                         AppStr.optDb to Icons.Default.CleaningServices,
+                        AppStr.clearCache to Icons.Default.DeleteSweep,
                         AppStr.resetBal to Icons.Default.Delete
+                    ),
+                    trailingTexts = mapOf(
+                        AppStr.clearCache to formattedCacheSize
                     )
                 ) { label ->
                     val plainMonthlyTxs = monthlyTransactionsWithSplits.map { it.transaction }
@@ -548,6 +571,7 @@ fun SettingsScreen(
                         "Transfer via Local WiFi" -> onOpenQrTransfer()
                         "Kuma Duo (Shared Wallet)" -> onOpenDuoSync()
                         AppStr.rest -> { mainActivity?.openSafeFilePicker() }
+                        AppStr.clearCache -> { showClearCacheDialog = true }
                         AppStr.resetBal -> { showResetDialog = true }
                         AppStr.optDb -> {
                             scope.launch(Dispatchers.IO) {
@@ -1658,6 +1682,51 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = { showResetDialog = false }) { Text(AppStr.cancelBtn) }
+                }
+            )
+        }
+
+        if (showClearCacheDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearCacheDialog = false },
+                modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier).glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = { Text(AppStr.clearCache, fontWeight = FontWeight.Bold, color = AppText()) },
+                text = {
+                    Column(
+                        modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
+                    ) {
+                        Text(AppStr.clearCacheDesc, color = AppText())
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "${AppStr.currentCacheSizeLabel} $formattedCacheSize",
+                            fontWeight = FontWeight.Bold,
+                            color = AppPrimary(),
+                            fontSize = 13.sp
+                        )
+                    }
+                },
+                confirmButton = {
+                    com.bearbones.kumaflow.ui.components.KumaButton(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    context.cacheDir.listFiles()?.forEach { file ->
+                                        if (file.isFile) file.delete()
+                                        else if (file.isDirectory) file.deleteRecursively()
+                                    }
+                                } catch (_: Exception) {}
+                                withContext(Dispatchers.Main) {
+                                    cacheSizeBytes = 0L
+                                    showClearCacheDialog = false
+                                    Toast.makeText(context, AppStr.cacheCleared, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    ) { Text(AppStr.clearCache, color = androidx.compose.ui.graphics.Color.White) }
+                },
+                dismissButton = {
+                    com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = { showClearCacheDialog = false }) { Text(AppStr.cancelBtn) }
                 }
             )
         }

@@ -326,6 +326,12 @@ object AppStr {
     val tutTitleNotes get() = if(isId) "Masukkan judul dan nominal transaksi. Anda juga dapat menambahkan catatan kecil jika diperlukan." else "Enter the title and amount of the transaction. You can also add a small note if necessary."
     val tutFunding get() = if(isId) "Terakhir, pilih dompet atau rekening yang digunakan untuk transaksi ini." else "Lastly, select the wallet or account used for this transaction."
     val tutSave get() = if(isId) "Setelah semuanya selesai, ketuk Simpan!\nSelamat, Anda siap menggunakan KumaFlow! \uD83D\uDE80" else "Once everything is set, tap Save!\nCongratulations, you are ready to use KumaFlow! \uD83D\uDE80"
+
+    // Cache Management
+    val clearCache get() = if(isId) "Hapus Cache" else "Clear Cache"
+    val clearCacheDesc get() = if(isId) "Menghapus file sementara. Data transaksi dan pengaturan Anda tidak akan terpengaruh." else "Deletes temporary files. Your transactions and settings are not affected."
+    val cacheCleared get() = if(isId) "Cache berhasil dihapus" else "Cache cleared successfully"
+    val currentCacheSizeLabel get() = if(isId) "Ukuran cache:" else "Cache size:"
 }
 
 // ... [KumaIconLibrary] ...
