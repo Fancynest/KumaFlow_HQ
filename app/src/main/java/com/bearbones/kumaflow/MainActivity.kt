@@ -964,79 +964,34 @@ fun MainScreen(
                                 val h = size.height
                                 val w = screenWidth
 
-                                val sc = minOf(w * 0.22f, h * 0.16f)  // scale unit
-                                val base = h * 0.62f          // baseline
-                                val cap  = base - sc * 1.4f   // cap height (top of letters)
-                                val mid  = (base + cap) / 2f  // x-height midpoint
-
-                                val ox = w * 1.60f   // center of "O"
-                                val oW = sc * 0.44f  // O half-width
-                                val rx = w * 1.98f   // "R" stem x
-
-                                // Entry from screen 1
-                                moveTo(0f, h * 0.2f)
+                                // Alur benang dinamis & organik melintasi seluruh halaman (Home -> History -> Savings -> Reports)
+                                // Screen 0 (Home): Masuk dari kiri, meliuk turun lembut lalu naik
+                                moveTo(0f, h * 0.24f)
                                 cubicTo(
-                                    w * 1.05f, h * 0.15f,
-                                    ox - oW - sc * 0.35f, base + sc * 0.1f,
-                                    ox - oW, base  // bottom-left of O
+                                    w * 0.30f, h * 0.42f,
+                                    w * 0.70f, h * 0.14f,
+                                    w * 1.05f, h * 0.32f
                                 )
 
-                                // O left arc (up)
+                                // Screen 1 (History): Menukik anggun ke bawah lalu melengkung naik
                                 cubicTo(
-                                    ox - oW * 1.25f, mid,
-                                    ox - oW * 0.85f, cap,
-                                    ox, cap  // top of O
-                                )
-                                // O right arc (down)
-                                cubicTo(
-                                    ox + oW * 0.85f, cap,
-                                    ox + oW * 1.25f, mid,
-                                    ox + oW, base  // bottom-right of O
-                                )
-                                // O bottom crossover — cursive loop, ujung benang menyilang sedikit
-                                cubicTo(
-                                    ox + oW * 0.2f, base + sc * 0.09f,
-                                    ox - oW * 0.15f, base + sc * 0.09f,
-                                    ox - oW * 0.25f, base
+                                    w * 1.40f, h * 0.50f,
+                                    w * 1.65f, h * 0.74f,
+                                    w * 2.05f, h * 0.54f
                                 )
 
-                                // Connector O → R (flowing stroke at baseline)
+                                // Screen 2 (Savings): Melengkung naik ke sepertiga atas lalu turun melandai
                                 cubicTo(
-                                    ox + oW * 0.6f, base + sc * 0.1f,
-                                    rx - sc * 0.22f, base + sc * 0.06f,
-                                    rx, base  // base of R stem
+                                    w * 2.45f, h * 0.34f,
+                                    w * 2.65f, h * 0.16f,
+                                    w * 3.05f, h * 0.38f
                                 )
 
-                                // R stem naik ke atas
+                                // Screen 3 (Reports): Mengalir meliuk ke bawah lalu keluar mulus ke kanan layar
                                 cubicTo(
-                                    rx - sc * 0.04f, mid,
-                                    rx - sc * 0.03f, cap + sc * 0.08f,
-                                    rx + sc * 0.04f, cap  // top of R
-                                )
-                                // R bump/lobe — keluar kanan, balik ke mid-stem
-                                cubicTo(
-                                    rx + sc * 0.44f, cap - sc * 0.06f,
-                                    rx + sc * 0.52f, mid + sc * 0.1f,
-                                    rx + sc * 0.07f, mid  // kembali ke stem
-                                )
-                                // R diagonal leg
-                                cubicTo(
-                                    rx + sc * 0.26f, mid + sc * 0.06f,
-                                    rx + sc * 0.64f, base + sc * 0.1f,
-                                    rx + sc * 0.74f, base + sc * 0.34f
-                                )
-                                // R curl di ujung kaki
-                                cubicTo(
-                                    rx + sc * 0.90f, base + sc * 0.62f,
-                                    rx + sc * 0.74f, base + sc * 0.75f,
-                                    rx + sc * 0.56f, base + sc * 0.58f
-                                )
-
-                                // Exit to screen 4
-                                cubicTo(
-                                    rx + sc * 0.98f, base + sc * 0.12f,
-                                    w * 3.0f, h * 0.3f,
-                                    w * 4.0f, h * 0.6f
+                                    w * 3.45f, h * 0.60f,
+                                    w * 3.75f, h * 0.72f,
+                                    w * 4.0f, h * 0.46f
                                 )
                             }
 
