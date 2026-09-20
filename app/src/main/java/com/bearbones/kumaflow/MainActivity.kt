@@ -963,35 +963,39 @@ fun MainScreen(
                             val path = androidx.compose.ui.graphics.Path().apply {
                                 val h = size.height
                                 val w = screenWidth
-                                val centerX = w * 2.0f
-                                val unitW = minOf(w, h * 0.48f)
+                                val heartCenterX = w * 2.0f
+                                val heartCenterY = h * 0.45f
+                                val heartSize = minOf(w, h * 0.5f)
+
+                                val bottomPointY = heartCenterY + heartSize * 0.45f
+                                val notchY = heartCenterY - heartSize * 0.15f
 
                                 // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
                                 moveTo(0f, h * 0.2f)
                                 cubicTo(
-                                    centerX - unitW * 1.5f, h * 0.2f,
-                                    centerX - unitW * 1.2f, h * 0.8f,
-                                    centerX, h * 0.8f // Bottom tip of the heart
+                                    heartCenterX - heartSize * 1.5f, h * 0.2f,
+                                    heartCenterX - heartSize * 1.2f, bottomPointY,
+                                    heartCenterX, bottomPointY
                                 )
-                                
-                                // Screen 2: Right lobe of heart
+
+                                // Lobe kiri: dari ujung bawah, naik melengkung ke notch tengah
                                 cubicTo(
-                                    centerX + unitW * 0.8f, h * 0.8f,
-                                    centerX + unitW * 0.5f, h * 0.1f,
-                                    centerX, h * 0.4f // Center dip of heart
+                                    heartCenterX - heartSize * 0.55f, heartCenterY - heartSize * 0.05f,
+                                    heartCenterX - heartSize * 0.55f, heartCenterY - heartSize * 0.45f,
+                                    heartCenterX, notchY
                                 )
-                                
-                                // Screen 2 to 3: Left lobe of heart
+
+                                // Lobe kanan: dari notch tengah, turun melengkung balik ke ujung bawah (simetris ke lobe kiri)
                                 cubicTo(
-                                    centerX - unitW * 0.5f, h * 0.1f,
-                                    centerX - unitW * 0.8f, h * 0.8f,
-                                    centerX, h * 0.8f // Crosses back at the bottom tip
+                                    heartCenterX + heartSize * 0.55f, heartCenterY - heartSize * 0.45f,
+                                    heartCenterX + heartSize * 0.55f, heartCenterY - heartSize * 0.05f,
+                                    heartCenterX, bottomPointY
                                 )
-                                
+
                                 // Screen 3 to 4: Exit to Settings
                                 cubicTo(
-                                    centerX + unitW * 0.5f, h * 0.8f,
-                                    centerX + unitW * 1.5f, h * 0.2f,
+                                    heartCenterX + heartSize * 0.5f, bottomPointY,
+                                    heartCenterX + heartSize * 1.5f, h * 0.2f,
                                     w * 4.0f, h * 0.6f
                                 )
                             }
