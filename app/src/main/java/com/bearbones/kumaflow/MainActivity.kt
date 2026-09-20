@@ -965,37 +965,39 @@ fun MainScreen(
                                 val w = screenWidth
                                 val heartCenterX = w * 2.0f
                                 val heartCenterY = h * 0.45f
-                                val heartSize = minOf(w, h * 0.5f)
+                                val heartWidth = minOf(w, h * 0.55f)
+                                val heartHeight = heartWidth * 0.85f
 
-                                val bottomPointY = heartCenterY + heartSize * 0.45f
-                                val notchY = heartCenterY - heartSize * 0.15f
+                                val bottomPointY = heartCenterY + heartHeight * 0.42f
+                                val notchY = heartCenterY - heartHeight * 0.28f
+                                val crossoverOffset = heartWidth * 0.04f
 
-                                // Screen 1: Home (Start at middle-left and wave down to bottom of heart)
+                                // Screen 1: Home — masuk ke titik bawah kiri (sebelum silangan)
                                 moveTo(0f, h * 0.2f)
                                 cubicTo(
-                                    heartCenterX - heartSize * 1.5f, h * 0.2f,
-                                    heartCenterX - heartSize * 1.2f, bottomPointY,
-                                    heartCenterX, bottomPointY
+                                    heartCenterX - heartWidth * 1.5f, h * 0.2f,
+                                    heartCenterX - heartWidth * 1.2f, bottomPointY,
+                                    heartCenterX - crossoverOffset, bottomPointY
                                 )
 
-                                // Lobe kiri: dari ujung bawah, naik melengkung ke notch tengah
+                                // Lobe kiri: dari ujung bawah kiri, naik melengkung ke notch tengah
                                 cubicTo(
-                                    heartCenterX - heartSize * 0.55f, heartCenterY - heartSize * 0.05f,
-                                    heartCenterX - heartSize * 0.55f, heartCenterY - heartSize * 0.45f,
+                                    heartCenterX - heartWidth * 0.5f, heartCenterY + heartHeight * 0.05f,
+                                    heartCenterX - heartWidth * 0.5f, heartCenterY - heartHeight * 0.3f,
                                     heartCenterX, notchY
                                 )
 
-                                // Lobe kanan: dari notch tengah, turun melengkung balik ke ujung bawah (simetris ke lobe kiri)
+                                // Lobe kanan: dari notch tengah, turun melengkung ke ujung bawah kanan (sedikit di kanan → menyilang)
                                 cubicTo(
-                                    heartCenterX + heartSize * 0.55f, heartCenterY - heartSize * 0.45f,
-                                    heartCenterX + heartSize * 0.55f, heartCenterY - heartSize * 0.05f,
-                                    heartCenterX, bottomPointY
+                                    heartCenterX + heartWidth * 0.5f, heartCenterY - heartHeight * 0.3f,
+                                    heartCenterX + heartWidth * 0.5f, heartCenterY + heartHeight * 0.05f,
+                                    heartCenterX + crossoverOffset, bottomPointY
                                 )
 
-                                // Screen 3 to 4: Exit to Settings
+                                // Screen 3 to 4: Exit to Settings — keluar dari titik bawah kanan (setelah silangan)
                                 cubicTo(
-                                    heartCenterX + heartSize * 0.5f, bottomPointY,
-                                    heartCenterX + heartSize * 1.5f, h * 0.2f,
+                                    heartCenterX + heartWidth * 0.5f, bottomPointY,
+                                    heartCenterX + heartWidth * 1.5f, h * 0.2f,
                                     w * 4.0f, h * 0.6f
                                 )
                             }
