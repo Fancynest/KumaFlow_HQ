@@ -194,7 +194,7 @@ fun WalletCardStackImpl(
     val walletSidePadding = 12.dp // Padding inside wallet for cards
     // The parent Column in HomeScreen has 24.dp horizontal padding.
     // The Wallet Body will have 0 extra horizontal padding to match Total Balance.
-    val cardWidth = (availableScreenWidth - 48.dp - (walletSidePadding * 2)).coerceAtMost(436.dp)
+    val cardWidth = (availableScreenWidth - 48.dp - (walletSidePadding * 2)).coerceIn(280.dp, 436.dp)
     val cardHeight = cardWidth / 1.6f // Maintain nice aspect ratio
     val cardPeek = 48.dp
     val walletCorner = 28.dp

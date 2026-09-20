@@ -51,7 +51,8 @@ fun MilestonePopUp(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.8f)),
+                .background(Color.Black.copy(alpha = 0.8f))
+                .navigationBarsPadding(),
             contentAlignment = Alignment.Center
         ) {
             Card(

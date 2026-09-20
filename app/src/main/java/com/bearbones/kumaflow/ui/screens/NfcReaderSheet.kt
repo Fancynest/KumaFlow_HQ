@@ -134,7 +134,8 @@ fun NfcReaderSheet(
                 .fillMaxWidth()
                 .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
                 .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
-                .padding(24.dp),
+                .padding(24.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

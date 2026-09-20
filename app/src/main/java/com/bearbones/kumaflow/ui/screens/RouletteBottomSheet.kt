@@ -120,7 +120,8 @@ fun RouletteBottomSheet(
                 .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
                 .then(if (windowSize.isTablet) Modifier.align(Alignment.CenterHorizontally) else Modifier)
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
+                .padding(bottom = 32.dp)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

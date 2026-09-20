@@ -194,6 +194,7 @@ fun LockScreen(correctPin: String, activity: FragmentActivity, onSuccess: () -> 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .safeDrawingPadding()
             .background(AppBg())
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
@@ -750,6 +751,16 @@ class MainActivity : FragmentActivity() {
                 }
 
                 val isORActive = isOREasterEgg && (activeThemeMode in 9..11)
+
+                val view = androidx.compose.ui.platform.LocalView.current
+                if (!view.isInEditMode) {
+                    SideEffect {
+                        androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+                            isAppearanceLightStatusBars = !isDark
+                            isAppearanceLightNavigationBars = !isDark
+                        }
+                    }
+                }
 
                 MaterialTheme(colorScheme = colorScheme, typography = activeTypography, shapes = MaterialTheme.shapes) {
                     val homeListState = androidx.compose.foundation.lazy.rememberLazyListState()

@@ -73,7 +73,8 @@ fun StreakDetailsSheet(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier)
-            .padding(24.dp),
+            .padding(24.dp)
+            .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         
