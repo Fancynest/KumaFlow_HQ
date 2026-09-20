@@ -963,41 +963,79 @@ fun MainScreen(
                             val path = androidx.compose.ui.graphics.Path().apply {
                                 val h = size.height
                                 val w = screenWidth
-                                val heartCenterX = w * 2.0f
-                                val heartCenterY = h * 0.45f
-                                val heartWidth = minOf(w, h * 0.55f)
-                                val heartHeight = heartWidth * 0.85f
 
-                                val bottomPointY = heartCenterY + heartHeight * 0.42f
-                                val notchY = heartCenterY - heartHeight * 0.28f
-                                val crossoverOffset = heartWidth * 0.04f
+                                val sc = minOf(w * 0.22f, h * 0.16f)  // scale unit
+                                val base = h * 0.62f          // baseline
+                                val cap  = base - sc * 1.4f   // cap height (top of letters)
+                                val mid  = (base + cap) / 2f  // x-height midpoint
 
-                                // Screen 1: Home — masuk ke titik bawah kiri (sebelum silangan)
+                                val ox = w * 1.60f   // center of "O"
+                                val oW = sc * 0.44f  // O half-width
+                                val rx = w * 1.98f   // "R" stem x
+
+                                // Entry from screen 1
                                 moveTo(0f, h * 0.2f)
                                 cubicTo(
-                                    heartCenterX - heartWidth * 1.5f, h * 0.2f,
-                                    heartCenterX - heartWidth * 1.2f, bottomPointY,
-                                    heartCenterX - crossoverOffset, bottomPointY
+                                    w * 1.05f, h * 0.15f,
+                                    ox - oW - sc * 0.35f, base + sc * 0.1f,
+                                    ox - oW, base  // bottom-left of O
                                 )
 
-                                // Lobe kiri: dari ujung bawah kiri, naik melengkung ke notch tengah
+                                // O left arc (up)
                                 cubicTo(
-                                    heartCenterX - heartWidth * 0.5f, heartCenterY + heartHeight * 0.05f,
-                                    heartCenterX - heartWidth * 0.5f, heartCenterY - heartHeight * 0.3f,
-                                    heartCenterX, notchY
+                                    ox - oW * 1.25f, mid,
+                                    ox - oW * 0.85f, cap,
+                                    ox, cap  // top of O
+                                )
+                                // O right arc (down)
+                                cubicTo(
+                                    ox + oW * 0.85f, cap,
+                                    ox + oW * 1.25f, mid,
+                                    ox + oW, base  // bottom-right of O
+                                )
+                                // O bottom crossover — cursive loop, ujung benang menyilang sedikit
+                                cubicTo(
+                                    ox + oW * 0.2f, base + sc * 0.09f,
+                                    ox - oW * 0.15f, base + sc * 0.09f,
+                                    ox - oW * 0.25f, base
                                 )
 
-                                // Lobe kanan: dari notch tengah, turun melengkung ke ujung bawah kanan (sedikit di kanan → menyilang)
+                                // Connector O → R (flowing stroke at baseline)
                                 cubicTo(
-                                    heartCenterX + heartWidth * 0.5f, heartCenterY - heartHeight * 0.3f,
-                                    heartCenterX + heartWidth * 0.5f, heartCenterY + heartHeight * 0.05f,
-                                    heartCenterX + crossoverOffset, bottomPointY
+                                    ox + oW * 0.6f, base + sc * 0.1f,
+                                    rx - sc * 0.22f, base + sc * 0.06f,
+                                    rx, base  // base of R stem
                                 )
 
-                                // Screen 3 to 4: Exit to Settings — keluar dari titik bawah kanan (setelah silangan)
+                                // R stem naik ke atas
                                 cubicTo(
-                                    heartCenterX + heartWidth * 0.5f, bottomPointY,
-                                    heartCenterX + heartWidth * 1.5f, h * 0.2f,
+                                    rx - sc * 0.04f, mid,
+                                    rx - sc * 0.03f, cap + sc * 0.08f,
+                                    rx + sc * 0.04f, cap  // top of R
+                                )
+                                // R bump/lobe — keluar kanan, balik ke mid-stem
+                                cubicTo(
+                                    rx + sc * 0.44f, cap - sc * 0.06f,
+                                    rx + sc * 0.52f, mid + sc * 0.1f,
+                                    rx + sc * 0.07f, mid  // kembali ke stem
+                                )
+                                // R diagonal leg
+                                cubicTo(
+                                    rx + sc * 0.26f, mid + sc * 0.06f,
+                                    rx + sc * 0.64f, base + sc * 0.1f,
+                                    rx + sc * 0.74f, base + sc * 0.34f
+                                )
+                                // R curl di ujung kaki
+                                cubicTo(
+                                    rx + sc * 0.90f, base + sc * 0.62f,
+                                    rx + sc * 0.74f, base + sc * 0.75f,
+                                    rx + sc * 0.56f, base + sc * 0.58f
+                                )
+
+                                // Exit to screen 4
+                                cubicTo(
+                                    rx + sc * 0.98f, base + sc * 0.12f,
+                                    w * 3.0f, h * 0.3f,
                                     w * 4.0f, h * 0.6f
                                 )
                             }
