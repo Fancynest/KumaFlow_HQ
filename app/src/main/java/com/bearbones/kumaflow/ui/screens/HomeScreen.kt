@@ -488,15 +488,15 @@ fun HomeScreen(
                                 ),
                             shape = CircleShape,
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                                containerColor = if (isBrutal) Color.White else AppPrimary().copy(alpha = 0.2f),
+                                contentColor = if (isBrutal) Color.Black else AppPrimary()
                             ),
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = "QRIS", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("QRIS", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
+                                Text("QRIS", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
                         
@@ -511,15 +511,15 @@ fun HomeScreen(
                                 ),
                             shape = CircleShape,
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                                containerColor = if (isBrutal) Color.White else AppPrimary().copy(alpha = 0.2f),
+                                contentColor = if (isBrutal) Color.Black else AppPrimary()
                             ),
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.ReceiptLong, contentDescription = "Split Bill", modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.ReceiptLong, contentDescription = "Split Bill", tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Split", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
+                                Text("Split", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
 
@@ -534,15 +534,15 @@ fun HomeScreen(
                                 ),
                             shape = CircleShape,
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+                                containerColor = if (isBrutal) Color.White else AppPrimary().copy(alpha = 0.2f),
+                                contentColor = if (isBrutal) Color.Black else AppPrimary()
                             ),
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Casino, contentDescription = AppStr.rouletteIconText, tint = if (isBrutal) Color.Black else AppPrimary(), modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Spin", fontWeight = FontWeight.Black, style = MaterialTheme.typography.labelMedium)
+                                Text("Spin", color = if (isBrutal) Color.Black else AppPrimary(), fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
                     }

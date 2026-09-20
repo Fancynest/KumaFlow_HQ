@@ -196,17 +196,17 @@ fun AppSurfaceVariant(): Color {
         return if (LocalIsDark.current) Color(0xFF2B2930) else com.bearbones.kumaflow.ui.theme.BrutalWhite
     }
     return if (LocalIsDark.current) {
-        if (LocalIsAmoled.current) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.surfaceContainer
+        if (LocalIsAmoled.current) Color(0xFF1A1A1A) else Color(0xFF1E222B)
     } else {
-        MaterialTheme.colorScheme.surfaceContainerLow
+        Color.White
     }
 }
 
 @Composable
-fun AppGreen() = MaterialTheme.colorScheme.tertiary
+fun AppGreen() = if (LocalIsDark.current) Color(0xFF2ECC71) else Color(0xFF16A34A)
 
 @Composable
-fun AppRed() = MaterialTheme.colorScheme.error
+fun AppRed() = if (LocalIsDark.current) Color(0xFFFF5A5F) else Color(0xFFDC2626)
 
 @Composable
 fun Modifier.glassmorphic(

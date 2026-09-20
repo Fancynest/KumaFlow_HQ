@@ -156,7 +156,7 @@ fun MorphingPinIndicator(
     }
     val currentShape = remember(progress) { MorphPolygonShape(morph, progress) }
     
-    val color = if (isFilled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val color = if (isFilled) AppText() else AppSurfaceVariant()
     
     val scale by animateFloatAsState(
         targetValue = if (isFilled) 1f else 0.8f,
@@ -296,8 +296,8 @@ fun MorphingKeypadButton(
     val isBrutal = com.bearbones.kumaflow.ui.theme.LocalIsBrutal.current
     val buttonShape = RoundedCornerShape(percent = 50)
     
-    val fallbackColor = if (isBrutal) Color.White else MaterialTheme.colorScheme.surfaceContainerHigh
-    val contentColor = if (isBrutal) Color.Black else MaterialTheme.colorScheme.onSurface
+    val fallbackColor = if (isBrutal) Color.White else AppSurface()
+    val contentColor = if (isBrutal) Color.Black else AppText()
     
     val isLiquidGlass = com.bearbones.kumaflow.LocalIsLiquidGlass.current
     val isPremiumGlassBlur = com.bearbones.kumaflow.LocalIsPremiumGlassBlur.current
@@ -305,9 +305,9 @@ fun MorphingKeypadButton(
     val hazeState = com.bearbones.kumaflow.LocalHazeState.current
 
     val glassColor = if (isDark) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.60f)
+        Color(0xFF2C2C2E).copy(alpha = 0.60f)
     } else {
-        MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.85f)
+        Color(0xFFE8E8EC).copy(alpha = 0.85f)
     }
 
     val shineGradient = remember {

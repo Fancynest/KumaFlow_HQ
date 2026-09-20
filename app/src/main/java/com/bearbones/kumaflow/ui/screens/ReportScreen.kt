@@ -80,20 +80,19 @@ fun ReportScreen(
     val locale = Locale.forLanguageTag("id-ID")
     val curSym = when(profile.currency) { "USD", "AUD", "CAD", "SGD" -> "$"; "EUR" -> "€"; "GBP" -> "£"; "JPY", "CNY" -> "¥"; "CHF" -> "CHF"; "MYR" -> "RM"; "THB" -> "฿"; "PHP" -> "₱"; "VND" -> "₫"; else -> "Rp" }
 
-    val colorScheme = MaterialTheme.colorScheme
     fun getCatColor(catName: String): Color {
         val predefined = mapOf(
-            "Financial" to colorScheme.tertiary,
-            "Food" to colorScheme.primary,
-            "Shopping" to colorScheme.secondary,
-            "Health" to colorScheme.error,
-            "Transport" to Color(0xFF1976D2),
-            "Education" to Color(0xFF7B1FA2),
-            "Entertainment" to Color(0xFFE65100),
-            "Transfer" to Color(0xFF0097A7),
-            "Others" to colorScheme.outline
+            "Financial" to Color(0xFF4CAF50),
+            "Food" to Color(0xFFFF9800),
+            "Shopping" to Color(0xFFE91E63),
+            "Health" to Color(0xFFF44336),
+            "Transport" to Color(0xFF2196F3),
+            "Education" to Color(0xFF9C27B0),
+            "Entertainment" to Color(0xFF673AB7),
+            "Transfer" to Color(0xFF00BCD4),
+            "Others" to Color(0xFF607D8B)
         )
-        return predefined[catName] ?: colorScheme.secondary
+        return predefined[catName] ?: Color(android.graphics.Color.HSVToColor(floatArrayOf(kotlin.math.abs(catName.hashCode()) % 360f, 0.7f, 0.8f)))
     }
 
     val expensePerCat = monthlyTransactions.filter { !it.isIncome && it.category != "Transfer" }.groupBy { it.category }.mapValues { entry -> entry.value.sumOf { it.amount.toLongOrNull() ?: 0L } }.toList().sortedByDescending { it.second }
@@ -253,9 +252,9 @@ fun ReportScreen(
 
             Text(AppStr.targetProg, fontWeight = FontWeight.Bold, color = AppText())
             Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape), color = if(isOver) AppRed() else AppGreen(), trackColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape), color = if(isOver) AppRed() else AppGreen(), trackColor = AppSurfaceVariant())
             Spacer(modifier = Modifier.height(4.dp))
-            Text("${(progress * 100).toInt()}% " + (if(AppStr.isId) "dari" else "of") + " $curSym ${NumberFormat.getInstance(locale).format(profile.monthlyTarget)}", fontSize = 12.sp, color = if(isOver) AppRed() else MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${(progress * 100).toInt()}% " + (if(AppStr.isId) "dari" else "of") + " $curSym ${NumberFormat.getInstance(locale).format(profile.monthlyTarget)}", fontSize = 12.sp, color = if(isOver) AppRed() else Color.Gray)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -387,7 +386,7 @@ fun ReportScreen(
                                 supportingContent = if (target > 0) {
                                     {
                                         val budgetInfo = if(isOverLimit) "$curSym ${NumberFormat.getInstance(locale).format(amt-target)} OVER!" else "$curSym ${NumberFormat.getInstance(locale).format(target-amt)} left"
-                                        Text(budgetInfo, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = if(isOverLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(budgetInfo, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = if(isOverLimit) AppRed() else AppText().copy(alpha = 0.6f))
                                     }
                                 } else null,
                                 leadingContent = {
@@ -402,7 +401,7 @@ fun ReportScreen(
                             if (index < itemsToShow.size - 1) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant
+                                    color = AppText().copy(alpha = 0.05f)
                                 )
                             }
                             index++
