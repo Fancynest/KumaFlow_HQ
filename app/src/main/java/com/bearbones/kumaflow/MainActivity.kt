@@ -3866,13 +3866,31 @@ fun backupAppToJSON(context: Context, isAuto: Boolean = false, onComplete: ((Boo
             }
 
             root.put("transactions", tArr)
+            val content = root.toString().toByteArray()
+
+            // Deduplication: skip auto backup jika konten identik dengan backup terakhir
+            if (isAuto) {
+                val newHash = java.security.MessageDigest.getInstance("MD5")
+                    .digest(content)
+                    .joinToString("") { "%02x".format(it) }
+                val lastHash = sharedPref.getString("last_backup_content_hash", "") ?: ""
+                if (newHash == lastHash) {
+                    // Data tidak berubah — update timestamp saja supaya jadwal berikutnya tetap berjalan normal
+                    sharedPref.edit().putLong("last_auto_backup_time", System.currentTimeMillis()).apply()
+                    onComplete?.invoke(true)
+                    return@launch
+                }
+                // Hash beda → data baru, lanjut simpan file dan update hash
+                sharedPref.edit().putString("last_backup_content_hash", newHash).apply()
+            }
+
             val filename = if (isAuto) {
                 "KumaFlow_AutoBackup_${System.currentTimeMillis()}.kuma"
             } else {
                 "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
             }
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray(), showToast = !isAuto)
+                saveToMediaStore(context, filename, "application/json", "KumaBackup", content, showToast = !isAuto)
                 sharedPref.edit().putLong("last_auto_backup_time", System.currentTimeMillis()).apply()
                 if (isAuto) {
                     Toast.makeText(context, AppStr.autoBackupSuccessToast, Toast.LENGTH_SHORT).show()
