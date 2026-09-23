@@ -105,4 +105,7 @@ dependencies {
 
     // OkHttp for downloading the backup JSON
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // WorkManager for reliable background auto backup
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }

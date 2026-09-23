@@ -507,6 +507,9 @@ class MainActivity : FragmentActivity() {
             }
         }
 
+        // Sync WorkManager backup schedule with saved preference
+        AutoBackupWorker.schedule(this)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 androidx.core.app.ActivityCompat.requestPermissions(

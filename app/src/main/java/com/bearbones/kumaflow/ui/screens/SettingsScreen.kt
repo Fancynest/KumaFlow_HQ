@@ -1843,6 +1843,7 @@ fun SettingsScreen(
                                         .clickable {
                                             autoBackupInterval = mode
                                             sharedPrefs.edit().putString("auto_backup_interval", mode).apply()
+                                            AutoBackupWorker.schedule(context)
                                         }
                                         .padding(vertical = 6.dp, horizontal = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -1853,6 +1854,7 @@ fun SettingsScreen(
                                         onClick = {
                                             autoBackupInterval = mode
                                             sharedPrefs.edit().putString("auto_backup_interval", mode).apply()
+                                            AutoBackupWorker.schedule(context)
                                         },
                                         colors = RadioButtonDefaults.colors(selectedColor = AppPrimary())
                                     )
@@ -1875,6 +1877,7 @@ fun SettingsScreen(
                                         val days = digits.toIntOrNull() ?: 1
                                         autoBackupCustomDays = days
                                         sharedPrefs.edit().putInt("auto_backup_custom_days", days).apply()
+                                        AutoBackupWorker.schedule(context)
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
