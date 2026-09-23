@@ -3718,15 +3718,18 @@ fun exportToDrive(context: Context, data: List<KumaTransaction>, profile: UserPr
     }
 }
 
-fun backupAppToJSON(context: Context) {
+fun backupAppToJSON(context: Context, isAuto: Boolean = false, onComplete: ((Boolean) -> Unit)? = null) {
     // Launch Coroutine to perform DB read and file IO off the main thread
     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
         try {
             val dao = KumaDatabase.getDatabase(context).transactionDao()
-            val profile = dao.getProfileSync() ?: return@launch
+            val profile = dao.getProfileSync() ?: run {
+                onComplete?.invoke(false)
+                return@launch
+            }
             val txsWithSplits = dao.getAllTransactionsWithSplitsSync()
 
-            if (txsWithSplits.isEmpty()) {
+            if (!isAuto && txsWithSplits.isEmpty()) {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     Toast.makeText(context, AppStr.noTx, Toast.LENGTH_SHORT).show()
                 }
@@ -3863,15 +3866,93 @@ fun backupAppToJSON(context: Context) {
             }
 
             root.put("transactions", tArr)
-            val filename = "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
+            val filename = if (isAuto) {
+                "KumaFlow_AutoBackup_${System.currentTimeMillis()}.kuma"
+            } else {
+                "KumaFlow_Backup_${System.currentTimeMillis()}.kuma"
+            }
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray())
+                saveToMediaStore(context, filename, "application/json", "KumaBackup", root.toString().toByteArray(), showToast = !isAuto)
+                sharedPref.edit().putLong("last_auto_backup_time", System.currentTimeMillis()).apply()
+                if (isAuto) {
+                    Toast.makeText(context, AppStr.autoBackupSuccessToast, Toast.LENGTH_SHORT).show()
+                    pruneOldAutoBackups(context, 3)
+                }
+                onComplete?.invoke(true)
             }
         } catch (_: Exception) {
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                Toast.makeText(context, AppStr.failBak, Toast.LENGTH_SHORT).show()
+                if (!isAuto) {
+                    Toast.makeText(context, AppStr.failBak, Toast.LENGTH_SHORT).show()
+                }
+                onComplete?.invoke(false)
             }
         }
+    }
+}
+
+private fun pruneOldAutoBackups(context: Context, maxToKeep: Int = 3) {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val collection = android.provider.MediaStore.Files.getContentUri("external")
+            val projection = arrayOf(
+                android.provider.MediaStore.MediaColumns._ID,
+                android.provider.MediaStore.MediaColumns.DISPLAY_NAME,
+                android.provider.MediaStore.MediaColumns.DATE_ADDED
+            )
+            val selection = "${android.provider.MediaStore.MediaColumns.DISPLAY_NAME} LIKE 'KumaFlow_AutoBackup_%.kuma'"
+            val sortOrder = "${android.provider.MediaStore.MediaColumns.DATE_ADDED} DESC"
+
+            context.contentResolver.query(collection, projection, selection, null, sortOrder)?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.MediaColumns._ID)
+                var index = 0
+                val idsToDelete = mutableListOf<Long>()
+                while (cursor.moveToNext()) {
+                    index++
+                    if (index > maxToKeep) {
+                        idsToDelete.add(cursor.getLong(idColumn))
+                    }
+                }
+                for (id in idsToDelete) {
+                    val deleteUri = android.content.ContentUris.withAppendedId(collection, id)
+                    try {
+                        context.contentResolver.delete(deleteUri, null, null)
+                    } catch (_: Exception) {}
+                }
+            }
+        } else {
+            val dir = java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS), "KumaFlow/KumaBackup")
+            if (dir.exists()) {
+                val files = dir.listFiles { f -> f.name.startsWith("KumaFlow_AutoBackup_") && f.name.endsWith(".kuma") }
+                if (files != null && files.size > maxToKeep) {
+                    files.sortedByDescending { it.lastModified() }
+                        .drop(maxToKeep)
+                        .forEach { it.delete() }
+                }
+            }
+        }
+    } catch (_: Exception) {}
+}
+
+fun checkAndPerformAutoBackup(context: Context) {
+    val prefs = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
+    val intervalMode = prefs.getString("auto_backup_interval", "off") ?: "off"
+    if (intervalMode == "off") return
+
+    val intervalDays = when (intervalMode) {
+        "daily" -> 1
+        "weekly" -> 7
+        "monthly" -> 30
+        "custom" -> prefs.getInt("auto_backup_custom_days", 1).coerceAtLeast(1)
+        else -> return
+    }
+
+    val lastBackup = prefs.getLong("last_auto_backup_time", 0L)
+    val intervalMillis = intervalDays * 24L * 60L * 60L * 1000L
+    val now = System.currentTimeMillis()
+
+    if (now - lastBackup >= intervalMillis) {
+        backupAppToJSON(context, isAuto = true)
     }
 }
 
@@ -3880,7 +3961,8 @@ private fun saveToMediaStore(
     filename: String,
     mimeType: String,
     subFolder: String,
-    content: ByteArray
+    content: ByteArray,
+    showToast: Boolean = true
 ) {
     try {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -3892,20 +3974,28 @@ private fun saveToMediaStore(
             val uri = context.contentResolver.insert(android.provider.MediaStore.Files.getContentUri("external"), values)
             if (uri != null) {
                 context.contentResolver.openOutputStream(uri)?.use { it.write(content) }
-                android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+                if (showToast) {
+                    android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+                }
             } else {
-                android.widget.Toast.makeText(context, "Failed to create file", android.widget.Toast.LENGTH_SHORT).show()
+                if (showToast) {
+                    android.widget.Toast.makeText(context, "Failed to create file", android.widget.Toast.LENGTH_SHORT).show()
+                }
             }
         } else {
             val dir = java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS), "KumaFlow/$subFolder")
             if (!dir.exists()) dir.mkdirs()
             val file = java.io.File(dir, filename)
             java.io.FileOutputStream(file).use { it.write(content) }
-            android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+            if (showToast) {
+                android.widget.Toast.makeText(context, "Saved to Documents/KumaFlow/$subFolder", android.widget.Toast.LENGTH_LONG).show()
+            }
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        if (showToast) {
+            android.widget.Toast.makeText(context, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 }
 

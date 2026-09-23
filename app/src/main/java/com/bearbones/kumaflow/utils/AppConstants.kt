@@ -332,6 +332,20 @@ object AppStr {
     val clearCacheDesc get() = if(isId) "Menghapus file sementara. Data transaksi dan pengaturan Anda tidak akan terpengaruh." else "Deletes temporary files. Your transactions and settings are not affected."
     val cacheCleared get() = if(isId) "Cache berhasil dihapus" else "Cache cleared successfully"
     val currentCacheSizeLabel get() = if(isId) "Ukuran cache:" else "Cache size:"
+
+    // Auto Backup
+    val autoBackup get() = if(isId) "Cadangan Otomatis" else "Auto Backup"
+    val autoBackupDesc get() = if(isId) "Pilih frekuensi pencadangan otomatis ke Documents/KumaFlow/KumaBackup." else "Choose auto backup frequency to Documents/KumaFlow/KumaBackup."
+    val autoBackupOff get() = if(isId) "Mati" else "Off"
+    val autoBackupDaily get() = if(isId) "Setiap Hari" else "Daily"
+    val autoBackupWeekly get() = if(isId) "Setiap Minggu" else "Weekly"
+    val autoBackupMonthly get() = if(isId) "Setiap Bulan" else "Monthly"
+    val autoBackupCustom get() = if(isId) "Kustom" else "Custom"
+    val lastBackupLabel get() = if(isId) "Terakhir dicadangkan:" else "Last backed up:"
+    val neverBackedUp get() = if(isId) "Belum pernah" else "Never"
+    val daysUnit get() = if(isId) "hari" else "days"
+    val customDaysHint get() = if(isId) "Interval (Hari)" else "Interval (Days)"
+    val autoBackupSuccessToast get() = if(isId) "Auto backup berhasil disimpan" else "Auto backup saved successfully"
 }
 
 // ... [KumaIconLibrary] ...

@@ -25,6 +25,7 @@ class KumaService : Service() {
 
     private var serviceJob: Job? = null
     private var lastTriggeredMinute = -1
+    private var lastAutoBackupCheckMinute = -1
 
     override fun onCreate() {
         super.onCreate()
@@ -49,14 +50,19 @@ class KumaService : Service() {
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 try {
+                    val now = Calendar.getInstance()
+                    val currentHour = now.get(Calendar.HOUR_OF_DAY)
+                    val currentMin = now.get(Calendar.MINUTE)
+
+                    if (currentMin != lastAutoBackupCheckMinute) {
+                        lastAutoBackupCheckMinute = currentMin
+                        checkAndPerformAutoBackup(this@KumaService)
+                    }
+
                     val db = KumaDatabase.getDatabase(this@KumaService)
                     val profile = db.transactionDao().getUserProfile().firstOrNull()
 
                     if (profile != null && profile.isReminderOn) {
-                        val now = Calendar.getInstance()
-                        val currentHour = now.get(Calendar.HOUR_OF_DAY)
-                        val currentMin = now.get(Calendar.MINUTE)
-
                         val times = profile.reminderTimes.split(",")
                         for (timeStr in times) {
                             val parts = timeStr.split(":")

@@ -462,6 +462,7 @@ class MainActivity : FragmentActivity() {
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null)
         }
         autoSyncManager.start()
+        checkAndPerformAutoBackup(this)
     }
 
     override fun onPause() {

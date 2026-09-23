@@ -166,6 +166,20 @@ fun SettingsScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var showOcrDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
+    var showBackupDialog by remember { mutableStateOf(false) }
+    var autoBackupInterval by remember { mutableStateOf(sharedPrefs.getString("auto_backup_interval", "off") ?: "off") }
+    var autoBackupCustomDays by remember { mutableIntStateOf(sharedPrefs.getInt("auto_backup_custom_days", 3)) }
+    var lastBackupTime by remember { mutableLongStateOf(sharedPrefs.getLong("last_auto_backup_time", 0L)) }
+
+    val autoBackupSummary = remember(autoBackupInterval, autoBackupCustomDays) {
+        when (autoBackupInterval) {
+            "daily" -> AppStr.autoBackupDaily
+            "weekly" -> AppStr.autoBackupWeekly
+            "monthly" -> AppStr.autoBackupMonthly
+            "custom" -> "$autoBackupCustomDays ${AppStr.daysUnit}"
+            else -> AppStr.autoBackupOff
+        }
+    }
 
     var cacheSizeBytes by remember {
         mutableStateOf(
@@ -559,6 +573,7 @@ fun SettingsScreen(
                         AppStr.resetBal to Icons.Default.Delete
                     ),
                     trailingTexts = mapOf(
+                        AppStr.backApp to autoBackupSummary,
                         AppStr.clearCache to formattedCacheSize
                     )
                 ) { label ->
@@ -567,7 +582,7 @@ fun SettingsScreen(
                         AppStr.expPdf -> generatePDF(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.expCsv -> generateCSV(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
                         AppStr.expDrive -> exportToDrive(context, plainMonthlyTxs, currentProfile, selectedMonth, selectedYear)
-                        AppStr.backApp -> backupAppToJSON(context)
+                        AppStr.backApp -> { showBackupDialog = true }
                         "Transfer via Local WiFi" -> onOpenQrTransfer()
                         "Kuma Duo (Shared Wallet)" -> onOpenDuoSync()
                         AppStr.rest -> { mainActivity?.openSafeFilePicker() }
@@ -1727,6 +1742,157 @@ fun SettingsScreen(
                 },
                 dismissButton = {
                     com.bearbones.kumaflow.ui.components.KumaTextButton(onClick = { showClearCacheDialog = false }) { Text(AppStr.cancelBtn) }
+                }
+            )
+        }
+
+        if (showBackupDialog) {
+            var customDaysInput by remember { mutableStateOf(autoBackupCustomDays.toString()) }
+            val formattedLastBackup = remember(lastBackupTime) {
+                if (lastBackupTime > 0L) {
+                    val sdf = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale.getDefault())
+                    sdf.format(java.util.Date(lastBackupTime))
+                } else {
+                    AppStr.neverBackedUp
+                }
+            }
+
+            AlertDialog(
+                onDismissRequest = { showBackupDialog = false },
+                modifier = Modifier.then(if (windowSize.isTablet) Modifier.widthIn(max = 560.dp) else Modifier).glassCard(24.dp, AppSurface()),
+                containerColor = if (LocalIsLiquidGlass.current) androidx.compose.ui.graphics.Color.Transparent else AppSurface(),
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(Icons.Default.CloudUpload, contentDescription = null, tint = AppPrimary())
+                        Text(AppStr.backApp, fontWeight = FontWeight.Bold, color = AppText())
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    backupAppToJSON(context, isAuto = false) { success ->
+                                        if (success) {
+                                            lastBackupTime = System.currentTimeMillis()
+                                        }
+                                    }
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = AppPrimary().copy(alpha = 0.12f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(Icons.Default.Backup, contentDescription = null, tint = AppPrimary())
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(AppStr.backupNow, fontWeight = FontWeight.Bold, color = AppText(), fontSize = 14.sp)
+                                    Text(
+                                        text = "${AppStr.lastBackupLabel} $formattedLastBackup",
+                                        fontSize = 11.sp,
+                                        color = AppText().copy(alpha = 0.65f)
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = AppText().copy(alpha = 0.1f))
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = AppStr.autoBackup,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = AppText()
+                            )
+                            Text(
+                                text = AppStr.autoBackupDesc,
+                                fontSize = 12.sp,
+                                color = AppText().copy(alpha = 0.65f)
+                            )
+                        }
+
+                        val options = listOf(
+                            "off" to AppStr.autoBackupOff,
+                            "daily" to AppStr.autoBackupDaily,
+                            "weekly" to AppStr.autoBackupWeekly,
+                            "monthly" to AppStr.autoBackupMonthly,
+                            "custom" to AppStr.autoBackupCustom
+                        )
+
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            options.forEach { (mode, label) ->
+                                val isSelected = autoBackupInterval == mode
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            autoBackupInterval = mode
+                                            sharedPrefs.edit().putString("auto_backup_interval", mode).apply()
+                                        }
+                                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = {
+                                            autoBackupInterval = mode
+                                            sharedPrefs.edit().putString("auto_backup_interval", mode).apply()
+                                        },
+                                        colors = RadioButtonDefaults.colors(selectedColor = AppPrimary())
+                                    )
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) AppPrimary() else AppText(),
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            if (autoBackupInterval == "custom") {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                com.bearbones.kumaflow.ui.components.KumaOutlinedTextField(
+                                    value = customDaysInput,
+                                    onValueChange = { input ->
+                                        val digits = input.filter { it.isDigit() }
+                                        customDaysInput = digits
+                                        val days = digits.toIntOrNull() ?: 1
+                                        autoBackupCustomDays = days
+                                        sharedPrefs.edit().putInt("auto_backup_custom_days", days).apply()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, end = 12.dp),
+                                    label = { Text(AppStr.customDaysHint) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    com.bearbones.kumaflow.ui.components.KumaButton(
+                        onClick = { showBackupDialog = false }
+                    ) {
+                        Text(AppStr.save, color = androidx.compose.ui.graphics.Color.White)
+                    }
                 }
             )
         }
