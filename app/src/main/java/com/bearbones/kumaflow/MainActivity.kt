@@ -811,8 +811,6 @@ fun MainScreen(
                     CustomBottomNav(
                         pagerState = pagerState,
                         haptic = haptic,
-                        tiltState = sharedTiltState,
-                        isNavMotionEnabled = userProfile.isNavMotionEnabled,
                         isSpeedDialOpen = isSpeedDialOpen,
                         onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
                         onOpenNormalEntry = {
@@ -854,8 +852,6 @@ fun MainScreen(
                     com.bearbones.kumaflow.ui.components.KumaNavigationRail(
                         pagerState = pagerState,
                         haptic = haptic,
-                        tiltState = sharedTiltState,
-                        isNavMotionEnabled = userProfile.isNavMotionEnabled,
                         isSpeedDialOpen = isSpeedDialOpen,
                         onToggleSpeedDial = { isSpeedDialOpen = !isSpeedDialOpen },
                         onOpenNormalEntry = {
@@ -4120,9 +4116,7 @@ private fun NavSlotItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     isSelected: Boolean,
-    isNavMotionEnabled: Boolean,
     shape: androidx.compose.ui.graphics.Shape,
-    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -4172,48 +4166,14 @@ private fun NavSlotItem(
                     scaleY = contentScale
                 }
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (isSelected && isNavMotionEnabled) {
-                    val tilt = tiltState.value
-                    val tx = if (tilt.x.isNaN() || tilt.x.isInfinite()) 0f else tilt.x.coerceIn(-1f, 1f)
-                    val ty = if (tilt.y.isNaN() || tilt.y.isInfinite()) 0f else tilt.y.coerceIn(-1f, 1f)
-
-                    // Echo Layer 2 (Outer - subtle, ±3.5px)
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = AppPrimary().copy(alpha = 0.15f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .graphicsLayer {
-                                translationX = tx * 3.5f
-                                translationY = ty * 3.5f
-                            }
-                    )
-
-                    // Echo Layer 1 (Inner - medium, ±1.8px)
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = AppPrimary().copy(alpha = 0.30f),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .graphicsLayer {
-                                translationX = tx * 1.8f
-                                translationY = ty * 1.8f
-                            }
-                    )
-                }
-
-                KumaExpressiveIcon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
-                    containerColor = Color.Transparent,
-                    size = 24.dp,
-                    iconPadding = 0.dp
-                )
-            }
+            KumaExpressiveIcon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) AppText() else AppText().copy(alpha = 0.5f),
+                containerColor = Color.Transparent,
+                size = 24.dp,
+                iconPadding = 0.dp
+            )
 
             Spacer(Modifier.height(3.dp))
 
@@ -4234,8 +4194,6 @@ private fun NavSlotItem(
 fun CustomBottomNav(
     pagerState: androidx.compose.foundation.pager.PagerState,
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
-    tiltState: androidx.compose.runtime.State<com.bearbones.kumaflow.ui.components.TiltState>,
-    isNavMotionEnabled: Boolean = true,
     isSpeedDialOpen: Boolean,
     onToggleSpeedDial: () -> Unit,
     onOpenNormalEntry: () -> Unit,
@@ -4358,9 +4316,7 @@ fun CustomBottomNav(
                     icon = Icons.Rounded.Home,
                     label = AppStr.home,
                     isSelected = pagerState.currentPage == 0,
-                    isNavMotionEnabled = isNavMotionEnabled,
                     shape = organicTabShape,
-                    tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(0)
@@ -4373,9 +4329,7 @@ fun CustomBottomNav(
                     icon = Icons.Rounded.History,
                     label = AppStr.hist,
                     isSelected = pagerState.currentPage == 1,
-                    isNavMotionEnabled = isNavMotionEnabled,
                     shape = organicTabShape,
-                    tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(1)
@@ -4391,9 +4345,7 @@ fun CustomBottomNav(
                     icon = Icons.Rounded.AccountBalanceWallet,
                     label = if (AppStr.isId) "Tabungan" else "Savings",
                     isSelected = pagerState.currentPage == 2,
-                    isNavMotionEnabled = isNavMotionEnabled,
                     shape = organicTabShape,
-                    tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(2)
@@ -4406,9 +4358,7 @@ fun CustomBottomNav(
                     icon = Icons.Rounded.Equalizer,
                     label = AppStr.rep,
                     isSelected = pagerState.currentPage == 3,
-                    isNavMotionEnabled = isNavMotionEnabled,
                     shape = organicTabShape,
-                    tiltState = tiltState,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onItemSelected(3)
