@@ -3739,6 +3739,19 @@ fun backupAppToJSON(context: Context, isAuto: Boolean = false, onComplete: ((Boo
             root.put("backupVersion", 8) // Incremented backup version (includes user_dob & easter_egg_code)
             val sharedPref = context.getSharedPreferences("kumaflow_prefs", Context.MODE_PRIVATE)
 
+            // Race condition lock: cegah 2 proses auto backup jalan bersamaan (WorkManager + onResume)
+            if (isAuto) {
+                val lockKey = "auto_backup_in_progress"
+                val lockTimestamp = sharedPref.getLong(lockKey, 0L)
+                val now = System.currentTimeMillis()
+                if (now - lockTimestamp < 60_000L) {
+                    // Proses lain masih jalan (< 60 detik lalu), skip
+                    onComplete?.invoke(true)
+                    return@launch
+                }
+                sharedPref.edit().putLong(lockKey, now).apply()
+            }
+
             val pJson = JSONObject().apply {
                 put("userName", profile.userName)
                 put("isAppLocked", profile.isAppLocked)

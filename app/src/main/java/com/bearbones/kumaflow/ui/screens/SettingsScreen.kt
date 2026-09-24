@@ -83,6 +83,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
@@ -1877,13 +1879,16 @@ fun SettingsScreen(
                                         val days = digits.toIntOrNull() ?: 1
                                         autoBackupCustomDays = days
                                         sharedPrefs.edit().putInt("auto_backup_custom_days", days).apply()
-                                        AutoBackupWorker.schedule(context)
+                                        // Catatan: schedule dipanggil saat keyboard Done, bukan tiap keystroke
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(start = 12.dp, end = 12.dp),
                                     label = { Text(AppStr.customDaysHint) },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(onDone = {
+                                        AutoBackupWorker.schedule(context)
+                                    }),
                                     singleLine = true
                                 )
                             }
