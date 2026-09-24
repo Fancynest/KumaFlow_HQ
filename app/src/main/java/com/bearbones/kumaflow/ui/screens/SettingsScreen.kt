@@ -1897,7 +1897,10 @@ fun SettingsScreen(
                 },
                 confirmButton = {
                     com.bearbones.kumaflow.ui.components.KumaButton(
-                        onClick = { showBackupDialog = false }
+                        onClick = {
+                            AutoBackupWorker.schedule(context) // safety net — pastikan jadwal ter-update walau user gak pencet Done di keyboard
+                            showBackupDialog = false
+                        }
                     ) {
                         Text(AppStr.save, color = androidx.compose.ui.graphics.Color.White)
                     }
